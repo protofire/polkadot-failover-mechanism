@@ -1,2 +1,2 @@
-# polkadot-failover-machanism
-Polkadot: Failover machanism enablement
+# polkadot-failover-mechanism
+Polkadot: Failover mechanism enablement
