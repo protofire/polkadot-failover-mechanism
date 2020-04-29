@@ -1,0 +1,11 @@
+*.tfvars
+*terraform.tf*
+.terraform/
+*.tfplan
+*.tfstate
+*.backup
+*.lock
+*.info
+*go.mod
+*go.sum
+*.swp
