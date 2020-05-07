@@ -38,7 +38,7 @@ jobs:
       - checkout
       - run:
           name: Build image
-          command: docker build docker -t ${dockerhub_repo}
+          command: docker build -f docker/Dockerfile . -t ${dockerhub_repo}
       - run:
           name: Login into DockerHub
           command: echo ${dockerhub_token} | docker login -u ${dockerhub_user} --password-stdin
