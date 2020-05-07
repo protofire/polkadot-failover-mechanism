@@ -66,11 +66,14 @@ default_trap ()
   echo \"Catching error on line $LINENO. Shutting down instance\";
   aws cloudwatch put-metric-data --region ${primary-region} --metric-name 'Health report' --dimensions AutoScalingGroupName=${autoscaling-name} --namespace '${prefix}' --value 1000; 
   aws cloudwatch put-metric-data --region ${secondary-region} --metric-name 'Health report' --dimensions AutoScalingGroupName=${autoscaling-name} --namespace '${prefix}' --value 1000; 
-  aws cloudwatch put-metric-data --region ${tertiary-region} --metric-name 'Health report' --dimensions AutoScalingGroupName=${autoscaling-name} --namespace '${prefix}' --value 1000; /usr/local/bin/consul leave;
+  aws cloudwatch put-metric-data --region ${tertiary-region} --metric-name 'Health report' --dimensions AutoScalingGroupName=${autoscaling-name} --namespace '${prefix}' --value 1000; 
+  /usr/local/bin/consul leave;
+  docker stop polkadot
+  shutdown -P +1  
 }
 
 # On error notify cloudwatch and shutdown instance
-  trap default_trap ERR
+  trap default_trap ERR EXIT
 
 # Check that there is no shutting down instance to prevent bug when disk is still not deattached from previous instance before attaching to this one
 INSTANCES_COUNT=$(aws ec2 describe-instances --region $(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region) --filters "Name=instance-state-name,Values=shutting-down,stopping" "Name=tag:prefix,Values=${prefix}" --query 'Reservations[*].Instances[*].InstanceId' --output json | jq '. | length')
@@ -145,7 +148,7 @@ usermod -a -G docker ec2-user
 
 exit_code=1
 set +eE
-trap - ERR
+trap - ERR EXIT
 
 until [ $exit_code -eq 0 ]; do
 
@@ -156,7 +159,7 @@ until [ $exit_code -eq 0 ]; do
 done
 
 set -eE
-trap default_trap ERR
+trap default_trap ERR EXIT
 
 cat <<EOF >/usr/local/bin/watcher.sh
 #!/bin/bash
@@ -209,9 +212,9 @@ cluster_members=0
 until [ $cluster_members -gt ${total_instance_count} ]; do
 
   set +eE
-  trap - ERR
+  trap - ERR EXIT
   /usr/local/bin/consul join ${lb-primary} ${lb-secondary} ${lb-tertiary}
-  trap default_trap ERR
+  trap default_trap ERR EXIT
   set -eE
   cluster_members=$(/usr/local/bin/consul members --status alive | wc -l)
   sleep 1s
@@ -226,6 +229,9 @@ NODEKEY=$(aws ssm get-parameter --region $(curl --silent http://169.254.169.254/
 
 cat <<EOF >/usr/local/bin/double-signing-control.sh
 #!/bin/bash
+
+set -x -e -E
+
 BEST=\$(/usr/local/bin/consul kv get best_block)
 retVal=\$?
 echo "Previous validator best block - \$BEST"
@@ -235,11 +241,18 @@ if [ "\$retVal" -eq 0 ]; then
   VALIDATED=0
   until [ "\$VALIDATED" -gt "\$BEST" ]; do
 
-    BEST=\$(/usr/local/bin/consul kv get best_block)
-    VALIDATED=\$(/usr/bin/docker logs polkadot 2>&1 | /usr/bin/grep finalized | /usr/bin/tail -n 1)
-    VALIDATED=\$(/usr/bin/echo \$${VALIDATED##*#} | /usr/bin/cut -d'(' -f1 | /usr/bin/xargs)
-    echo "Previous validator best block - \$BEST, new validator validated block - \$VALIDATED"
-    sleep 10
+    BEST_TEMP=\$(/usr/local/bin/consul kv get best_block)
+    if [ "\$BEST_TEMP" != "\$BEST" ]; then
+      consul leave
+      shutdown now
+      exit 1
+    else
+      BEST=\$BEST_TEMP
+      VALIDATED=\$(/usr/bin/docker logs polkadot 2>&1 | /usr/bin/grep finalized | /usr/bin/tail -n 1)
+      VALIDATED=\$(/usr/bin/echo \$${VALIDATED##*#} | /usr/bin/cut -d'(' -f1 | /usr/bin/xargs)
+      echo "Previous validator best block - \$BEST, new validator validated block - \$VALIDATED"
+      sleep 10
+    fi
 
   done
 fi
@@ -248,6 +261,9 @@ EOF
 
 cat <<EOF >/usr/local/bin/key-insert.sh
 #!/bin/bash
+
+set -x -e -E
+
 region="\$(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)"
 key_names=\$(aws ssm get-parameters-by-path --region \$region --recursive --path /polkadot/validator-failover/${prefix}/keys/ | jq .Parameters[].Name | awk -F'/' '{print\$(NF-1)}' | sort | uniq)
 
@@ -300,7 +316,7 @@ until [ $n -ge 6 ]; do
 done
 
 set -eE
-trap default_trap ERR
+trap default_trap ERR EXIT
 
 consul leave
 shutdown now

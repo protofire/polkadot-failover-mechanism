@@ -1,0 +1,69 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@3.4.2
+
+jobs:
+  test:
+    docker:
+    - image: circleci/golang:1.12.15
+    steps:
+      - checkout
+      - run:
+          name: Get Terraform
+          command: |
+            wget https://releases.hashicorp.com/terraform/0.12.24/terraform_0.12.24_linux_amd64.zip
+            unzip terraform*.zip
+            sudo mv terraform /usr/local/bin
+      - run:
+          name: Terraform Validate
+          command: |
+            cd aws
+            terraform init -backend-config=backends/s3.tf
+            terraform validate
+      - run:
+          name: Run Go tests
+          command: |
+            export PREFIX="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1)"
+            echo "PREFIX=${PREFIX}"
+            cd tests/aws
+            go mod init test
+            go test -v --timeout 30m
+      - slack/status:
+          fail_only: true
+
+  build:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Build image
+          command: docker build docker/Dockerfile -t ${dockerhub_repo}
+      - run:
+          name: Login into DockerHub
+          command: echo ${dockerhub_token} | docker login -u ${dockerhub_user} --password-stdin
+      - run:
+          name: Push image
+          command: docker push ${dockerhub_repo}:latest
+      - slack/status:
+          fail_only: true
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - approve_test:
+          type: approval
+          filters:
+            branches:
+              only: master
+      - test:
+          requires:
+            - approve_test
+      - approve_build:
+          type: approval
+          requires:
+            - test
+      - build:
+          requires:
+            - approve_build

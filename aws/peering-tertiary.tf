@@ -27,6 +27,10 @@ resource "aws_route" "tertiary-primary" {
   route_table_id            = module.tertiary_network.vpc.main_route_table_id
   destination_cidr_block    = var.vpc_cidrs[0]
   vpc_peering_connection_id = aws_vpc_peering_connection.primary-tertiary.id
+
+  timeouts {
+    create = "5m"
+  }
 }
 
 ### THIS BLOCK ACCEPTS CONNECTIONS FROM SECONDARY REGION
@@ -58,4 +62,8 @@ resource "aws_route" "tertiary-secondary" {
   route_table_id            = module.tertiary_network.vpc.main_route_table_id
   destination_cidr_block    = var.vpc_cidrs[1]
   vpc_peering_connection_id = aws_vpc_peering_connection.secondary-tertiary.id
+
+  timeouts {
+    create = "5m"
+  }
 }

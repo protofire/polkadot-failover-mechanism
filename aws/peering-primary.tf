@@ -20,6 +20,10 @@ resource "aws_route" "primary-secondary" {
   route_table_id            = module.primary_network.vpc.main_route_table_id
   destination_cidr_block    = var.vpc_cidrs[1]
   vpc_peering_connection_id = aws_vpc_peering_connection.primary-secondary.id
+
+  timeouts {
+    create = "5m"
+  }
 }
 
 resource "aws_vpc_peering_connection_options" "primary-secondary" {
@@ -66,4 +70,8 @@ resource "aws_route" "primary-tertiary" {
   route_table_id            = module.primary_network.vpc.main_route_table_id
   destination_cidr_block    = var.vpc_cidrs[2]
   vpc_peering_connection_id = aws_vpc_peering_connection.primary-tertiary.id
+
+  timeouts {
+    create = "5m"
+  }
 }

@@ -20,7 +20,7 @@ Even if the entire region at cloud provider goes down, this solution will ensure
 
 ## Project structure overview
 
-This project contains 2 folders.
+This project contains 4 folders.
 
 ### [CircleCI](.circleci/)
 
@@ -33,6 +33,14 @@ This folder contains Terraform configuration scripts that will deploy the failov
 These scripts will deploy the following architecture components:
 
 ![AWS Design](architecture.png "AWS Design architecture")
+
+### [Docker](docker/)
+
+This folder contains the Dockerfile for the Docker image that published on DockerHub.
+
+### [Tests](tests/)
+
+This folder contains a set of tests to be run through CI mechanism. These tests can be launched manually. Simply go to the tests folder, then select provider to check solution at, open scripts and read a set of environment variables you need to export. Export these variables, install [GoLang](https://golang.org/doc/install) and execute the `go test` command to run the CI tests manually.
 
 # About us
 
