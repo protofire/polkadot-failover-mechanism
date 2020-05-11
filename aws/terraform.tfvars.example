@@ -1,0 +1,18 @@
+# This is the very minimum variables example file. You have to put access and private keys for you AWS account, validator keys from Polkadot, a name and a content of your SSH public key that will be used to connect to the instance. For the full list of supported variables see variables.tf file in the root directory of this repo.
+
+validator_keys = {
+  key = {
+    key="0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    type="gran"
+    seed="click organ olive upper oak void inject side suit toilet stick narrow"
+  },
+  key2 = {
+    key="0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    type="aura"
+    seed="cat organ olive upper oak void inject side suit toilet stick nou"
+  }
+}
+key_name      = "keyname"
+key_content   = "ssh-rsa AAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAaaaaaaaaaaaaaaaaAAAAAAAAAAaaaaaaaaaaaaaAAAAAAAAaaaaaaaaaaaaAAAAAAAAaaaaaaaaaaaaaAAAAAAAaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaAAAaa user@node"
+prefix        = "prefix"
+node_key      = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
