@@ -4,12 +4,27 @@ validator_keys = {
   key = {
     key="0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     type="gran"
-    seed="click organ olive upper oak void inject side suit toilet stick narrow"
+    seed="click click click click click click click click click click click click"
   },
   key2 = {
     key="0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-    type="aura"
-    seed="cat organ olive upper oak void inject side suit toilet stick nou"
+    type="babe"
+    seed="organ organ organ organ organ organ organ organ organ organ organ organ"
+  },
+  key3 = {
+    key="0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    type="imon"
+    seed="olive olive olive olive olive olive olive olive olive olive olive olive"
+  },
+  key4 = {
+    key="0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    type="para"
+    seed="upper upper upper upper upper upper upper upper upper upper upper upper"
+  },
+  key5 = {
+    key="0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    type="audi"
+    seed="cat cat cat cat cat cat cat cat cat cat cat cat"
   }
 }
 key_name      = "keyname"
