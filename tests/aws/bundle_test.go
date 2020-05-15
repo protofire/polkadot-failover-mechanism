@@ -22,16 +22,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//Gather environmental variables and set reasonable defaults
 var awsRegion = [3]string{"us-east-1", "us-east-2", "us-west-1"}
 var aws_access_keys = []string{os.Getenv("AWS_ACCESS_KEY")}
 var aws_secret_keys = []string{os.Getenv("AWS_SECRET_KEY")}
 var prefix = os.Getenv("PREFIX")
 
-// An example of how to test the Terraform module in examples/terraform-aws-example using Terratest.
+// A collection of tests that will be run
 func TestBundle(t *testing.T) {
 
+    // Set backend variables
 	var s3bucket, s3key, s3region string
-
+    
 	if value, ok := os.LookupEnv("TF_STATE_BUCKET"); ok {
 		s3bucket = value
 	} else {
@@ -50,16 +52,17 @@ func TestBundle(t *testing.T) {
 		s3region = "us-east-1"
 	}
 
+    // Generate new SSH key for test virtual machines
 	sshKey := ssh.GenerateRSAKeyPair(t, 4096)
 
-	// Configure Terraform setting path to Terraform code, EC2 instance name, and AWS Region.
+	// Configure Terraform - set backend, minimum set of infrastructure variables. Also expose ssh 
 	terraformOptions := &terraform.Options{
 		// The path to where our Terraform code is located
 		TerraformDir: "../../aws/",
 
 		BackendConfig: map[string]interface{}{
 			"bucket": s3bucket,
-		        "region": s3region,
+		    "region": s3region,
 			"key": prefix + "-" + s3key,
 	        },
 
@@ -71,7 +74,7 @@ func TestBundle(t *testing.T) {
 			"validator_keys": "{key1={key=\"0x6ce96ae5c300096b09dbd4567b0574f6a1281ae0e5cfe4f6b0233d1821f6206b\",type=\"gran\",seed=\"favorite liar zebra assume hurt cage any damp inherit rescue delay panic\"},key2={key=\"0x3ff0766f9ebbbceee6c2f40d9323164d07e70c70994c9d00a9512be6680c2394\",type=\"aura\",seed=\"expire stage crawl shell boss any story swamp skull yellow bamboo copy\"}}",
 			"key_name": "test",
 			"key_content": sshKey.PublicKey,
-                        "prefix": prefix,
+            "prefix": prefix,
 			"delete_on_termination": "true",
 			"cpu_limit": "1",
 			"ram_limit": "1",
@@ -87,11 +90,12 @@ func TestBundle(t *testing.T) {
 	// Run `terraform init` and `terraform apply` and fail the test if there are any errors
 	terraform.InitAndApply(t, terraformOptions)
 
+    // TEST 1: Verify that there are healthy instances in each region with public ips assigned
 	var instanceIDs []string
 	publicIPs := make(map[string]string)
 
 	for _, value := range awsRegion {
-
+        // GetHealthyEc2InstanceIdsByTag located in ec2.go file
 		regionInstances := GetHealthyEc2InstanceIdsByTag(t, value, "prefix", os.Getenv("PREFIX"))
 
 		if len(regionInstances) < 1 {
@@ -101,7 +105,7 @@ func TestBundle(t *testing.T) {
 		}
 
 		instanceIDs = append(instanceIDs, regionInstances...)
-
+        // Fetching PublicIPs for the instances we have found
 		regionIPs := aws.GetPublicIpsOfEc2Instances(t, regionInstances, value)
 
 		if len(regionIPs) < 1 {
@@ -123,11 +127,10 @@ func TestBundle(t *testing.T) {
 	}
 
       var test bool = false
-
+    // TEST 2: Veriy the number of existing EC2 instances - should be an odd number
 	t.Run("Instance count", func(t *testing.T) {
 
 		instance_count := len(instanceIDs)
-
 
 		test = assert.Equal(t, instance_count % 2, 1)
 		if test {
@@ -136,6 +139,7 @@ func TestBundle(t *testing.T) {
 			t.Error("ERROR! There are even instances running")
 		}
 
+    // TEST 3: Verify the number of existing EC2 instances - should be at least 3
 		test = assert.True(t, instance_count > 2)
 		if test {
 			t.Log("INFO. Minimum viable instance count (3) reached. There are " + string(instance_count) + " instances running.")
@@ -144,6 +148,7 @@ func TestBundle(t *testing.T) {
 		}
 	})
 
+    // TEST 4: Veriy the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
 	t.Run("Consul verifications", func(t *testing.T) {
 
 	        test = assert.True(t, ConsulLockCheck(t, publicIPs, sshKey))
@@ -151,6 +156,7 @@ func TestBundle(t *testing.T) {
 		        t.Log("INFO. Consul lock check passed. Each Consul node can see exactly 1 lock.")
 		}
 
+    // TEST 5: All of the Consul nodes should be healthy
 		test = assert.True(t, ConsulCheck(t, publicIPs, sshKey))
 	        if test {
 		        t.Log("INFO. Consul check passed. Each node can see full cluster, all nodes are healthy")
@@ -161,18 +167,21 @@ func TestBundle(t *testing.T) {
 
 	t.Run("Polkadot verifications", func(t *testing.T) {
 
+    // TEST 6: Verify that there is only one Polkadot node working in Validator mode at a time
 		test = assert.True(t, LeadersCheck(t, publicIPs, sshKey))
 		if test {
 			t.Log("INFO. Leaders check passed. Exactly 1 leader found")
 		}
-
+        
+    // TEST 7: Verify that all Polkadot nodes are health
 		test = assert.True(t, PolkadotCheck(t, publicIPs, sshKey))
 		if test {
 			t.Log("INFO. Polkadot node check passed. All instances are healthy")
 		}
 
 	})
-
+    
+    // TEST 8: All the validator keys were successfully uploaded to SSM in each region
 	t.Run("SSM tests", func(t *testing.T) {
 
 		test = assert.True(t, SSMCheck(t))
@@ -181,6 +190,7 @@ func TestBundle(t *testing.T) {
 		}
 	})
 
+    // TEST 9: Verify that all the groups that are used by the nodes are valid and contains verified rules only.
 	t.Run("Security groups tests", func(t *testing.T) {
 
 		test = assert.True(t, SGCheck(t))
@@ -189,16 +199,18 @@ func TestBundle(t *testing.T) {
 		}
 	})
 
+    // TEST 10: Check that there are no unassigned volumes after the nodes started
 	t.Run("Volumes tests", func(t *testing.T) {
 
                 test = assert.True(t, VolumesCheck(t))
                 if test {
-                        t.Log("INFO. Each instance in each region contains exactly two disks. No disks left unattached.")
+                        t.Log("INFO. No disks left unattached.")
                 } else {
 			t.Error("WARNING! An unattached disk was detected with prefix " + prefix)
 		}
         })
-
+    
+    // TEST 11: Check that no CloudWatch alarm were triggered
 	t.Run("CloudWatch tests", func(t *testing.T) {
 
                 test = assert.True(t, CloudWatchCheck(t))
@@ -209,6 +221,7 @@ func TestBundle(t *testing.T) {
 		}
         })
 
+    // TEST 12: Check that ELB and each target group confirms that all the instances are healthy
 	t.Run("NLB tests", func(t *testing.T) {
 
                 test = assert.True(t, NLBCheck(t,terraform.OutputList(t, terraformOptions, "lbs")))
@@ -218,13 +231,15 @@ func TestBundle(t *testing.T) {
         })
 }
 
+// TEST 9
 func SGCheck(t *testing.T) bool {
 
+    // A set of predefined security rules to compare existing rules with.
 	fromPorts := []int64{30333, 22, 8301, 8600, 8500, 8300}
 	toPorts := []int64{30333, 22, 8302, 8600, 8500}
 	ipProtocols := []string{"tcp","udp"}
         cidrIPs := []string{"0.0.0.0/0","10.2.0.0/16", "10.1.0.0/16", "10.0.0.0/16"}
-
+    
 	var rules = []*ec2.IpPermission {
 		&ec2.IpPermission {
 		  FromPort: &fromPorts[0],
@@ -354,6 +369,7 @@ func SGCheck(t *testing.T) bool {
 		},
 	}
 
+    // For each region fetch all the security groups prefixed with predefined prefix and compare it one by one with a list of predefined groups
 	for _, region := range awsRegion {
 
 		ruleSlice := GetSGRulesMapByTag(t, region, "prefix", prefix)
@@ -388,9 +404,11 @@ func SGCheck(t *testing.T) bool {
 	return true
 }
 
+// TEST 10
 func VolumesCheck(t *testing.T) bool {
 
 	count := 0
+    // Go through each region. Select unattached labeled disks. If no disks found, then the test passes successfully
 	for _, region := range awsRegion {
 
 		check := GetVolumeDescribe(t, region, "prefix", prefix)
@@ -413,6 +431,7 @@ func VolumesCheck(t *testing.T) bool {
 
 }
 
+// TEST 11
 func CloudWatchCheck(t *testing.T) bool {
 
 	count := 0
@@ -423,6 +442,7 @@ func CloudWatchCheck(t *testing.T) bool {
 			check = GetAlarmsNamesAndStatesByPrefix(t, region, prefix)
 			lencheck := len(check)
 
+            // Check that there are exactly 4 CloudWatch alarms (should be changed here if new alarms added)
 			if lencheck != 4 {
 				t.Error("ERROR! It is expected to have 4 CloudWatch Alarms in total, got " + string(lencheck))
 				continue
@@ -430,6 +450,7 @@ func CloudWatchCheck(t *testing.T) bool {
 				t.Log("INFO. CloudWatch Alarms number matches the predefined value of 4")
 			}
 
+            // If alarm still has "INSUFFICIENT DATA" status - we need to wait until alarm either triggers or move into "OK" state.
 			for k,v := range check {
 				if v == "OK" {
 					t.Log("INFO. The CloudWatch Alarm " + k + " in region " + region + " has the state OK!")
@@ -444,7 +465,7 @@ func CloudWatchCheck(t *testing.T) bool {
 				}
 			}
 
-
+            // If some of the alarms has insufficient data state - rerun all the checks once again.
 			if !insufficient_data_flag {
 				break;
 			} else {
@@ -463,6 +484,7 @@ func CloudWatchCheck(t *testing.T) bool {
 
 }
 
+// TEST 12
 func NLBCheck(t *testing.T, lbs []string) bool {
 	var err bool = false
 	for i, lb := range lbs {
@@ -471,6 +493,7 @@ func NLBCheck(t *testing.T, lbs []string) bool {
 		resultMap := GetHealthStatusSliceByLBsARN(t, awsRegion[i], lb)
 		lenResultMap := len(resultMap)
 
+        // Check that there exactly 6 TargetGroup were created
 		if lenResultMap != 6 {
 			t.Error ("ERROR! Expected 6 TGs at LoadBalancer " + lb + ", got " + string(lenResultMap))
 			err = true
@@ -478,6 +501,7 @@ func NLBCheck(t *testing.T, lbs []string) bool {
 			t.Log ("INFO. There are exactly 6 TGs at LoadBalancer " + lb)
 		}
 
+        // Check that TG reports healthy status
 		for TG, result := range resultMap {
 			if result != "healthy" {
 				t.Error("DEBUG. The LB " + lb + " contains TG " + TG + " with not healthy instances. Instance health status is " + result)
@@ -498,6 +522,7 @@ func NLBCheck(t *testing.T, lbs []string) bool {
 	}
 }
 
+// Supplementary function: Checks that given parameter in each parameter exists and has the right type (e.g. all the encrypted parameters has the SecureString type)
 func TypeAndValueComparator(t *testing.T, relativePath string, expectedType string, expectedValue string) int {
 
 	for _, region := range awsRegion {
@@ -513,6 +538,7 @@ func TypeAndValueComparator(t *testing.T, relativePath string, expectedType stri
 	return 1
 }
 
+// TEST 8
 func SSMCheck(t *testing.T) bool {
 
 	result := TypeAndValueComparator(t, "cpu_limit",      "String",        "1") *
@@ -533,6 +559,7 @@ func SSMCheck(t *testing.T) bool {
 
 }
 
+// TEST 6
 func LeadersCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
 
   command := "curl -s -H \"Content-Type: application/json\" -d '{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"system_nodeRoles\", \"params\":[]}' http://localhost:9933"
@@ -546,6 +573,7 @@ func LeadersCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) b
 	  return false
   } else {
 
+    // SSH into the node and ensure, that only one node returns "Authority" for system_nodeRoles call
     for _, value := range array {
 
       if value == "{\"jsonrpc\":\"2.0\",\"result\":[\"Authority\"],\"id\":1}" {
@@ -574,6 +602,7 @@ func LeadersCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) b
   }
 }
 
+// TEST 7
 func PolkadotCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
 
   command := "curl -s -H \"Content-Type: application/json\" -d '{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"system_health\", \"params\":[]}' http://localhost:9933"
@@ -585,6 +614,7 @@ func PolkadotCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) 
 	  return false
   } else {
 
+// Parse JSON and verify that node has healthy state
     for _,v := range array {
 
       type resultHealth struct {
@@ -618,6 +648,7 @@ func PolkadotCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) 
 
 }
 
+// TEST 4
 func ConsulLockCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
 
   command := "consul kv export | grep \"prefix/.lock\" | wc -l"
@@ -647,6 +678,8 @@ func ConsulLockCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair
 
 }
 
+
+// TEST 5
 func ConsulCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
 
   command := "consul members --status alive | wc -l"
@@ -678,6 +711,7 @@ func ConsulCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bo
 
 }
 
+// Supplementary function: perform given SSH query on the node 
 func NodeQuery(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair, command string) []string {
 
         var resultArray []string

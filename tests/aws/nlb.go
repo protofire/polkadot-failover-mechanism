@@ -1,13 +1,16 @@
 package test
 
+// This file contains all the supplementary functions that are required to query Load Balancer API V2
+
 import (
 	"testing"
 
 	taws "github.com/gruntwork-io/terratest/modules/aws"
-        "github.com/aws/aws-sdk-go/service/elbv2"
+    "github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/stretchr/testify/require"
 )
 
+// External function that returns a map of target groups and their health statuses
 func GetHealthStatusSliceByLBsARN(t *testing.T, awsRegion string, arn string) (map[string]string) {
 	result := make(map[string]string)
 
@@ -23,6 +26,7 @@ func GetHealthStatusSliceByLBsARN(t *testing.T, awsRegion string, arn string) (m
 	return result
 }
 
+// Function that recieves health status of the given target group
 func GetHealthStatusOfTG(t *testing.T, awsRegion string, tg *string) *elbv2.DescribeTargetHealthOutput {
         rules, err := GetHealthStatusOfTGE(t, awsRegion, tg)
         require.NoError(t, err)
@@ -39,6 +43,7 @@ func GetHealthStatusOfTGE(t *testing.T, awsRegion string, tg *string) (*elbv2.De
 	return nlb.DescribeTargetHealth(input)
 }
 
+// Function that receives all the target groups for the given load balancer
 func GetTGsbyLBsARN(t *testing.T, awsRegion string, arn string) *elbv2.DescribeTargetGroupsOutput {
 	rules, err := GetTGsbyLBsARNE(t, awsRegion, arn)
         require.NoError(t, err)
@@ -61,7 +66,6 @@ func NewNLBClient(t *testing.T, region string) *elbv2.ELBV2 {
         return client
 }
 
-// NewSsmClientE creates an SSM client.
 func NewNLBClientE(t *testing.T, region string) (*elbv2.ELBV2, error) {
         sess, err := taws.NewAuthenticatedSession(region)
         if err != nil {

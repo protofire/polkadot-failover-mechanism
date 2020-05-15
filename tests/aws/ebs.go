@@ -1,5 +1,7 @@
 package test
 
+// This file contains all the supplementary functions that are required to query EC2's Elastic Block Storage API
+
 import (
 	"fmt"
 	"testing"
@@ -10,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 )
 
+// This function list all prefixed volumes that does not attached to any instance 
 func GetVolumeDescribe(t *testing.T, region string, tag string, value string) ([]*ec2.Volume) {
 
 	svc := ec2.New(session.New(&aws.Config{

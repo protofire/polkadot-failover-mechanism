@@ -1,13 +1,16 @@
 package test
 
+// This file contains all the supplementary functions that are required to query Cloud Watch (AWS)
+
 import (
 	"testing"
 
 	taws "github.com/gruntwork-io/terratest/modules/aws"
-        "github.com/aws/aws-sdk-go/service/cloudwatch"
+    "github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/stretchr/testify/require"
 )
 
+// External function that receives prefix as argument and returns all alarms with that prefix in the given region
 func GetAlarmsNamesAndStatesByPrefix(t *testing.T, awsRegion string, prefix string) map[string]string {
 	out, err := GetAlarmsNamesAndStatesByPrefixE(t, awsRegion, prefix)
 	if err != nil {
@@ -42,6 +45,8 @@ func GetAlarmsNamesAndStatesByPrefixE(t *testing.T, awsRegion string, prefix str
 
 }
 
+
+// Supplementary function that enables communications with CW API
 func NewCWClient(t *testing.T, region string) *cloudwatch.CloudWatch {
         client, err := NewCWClientE(t, region)
         require.NoError(t, err)

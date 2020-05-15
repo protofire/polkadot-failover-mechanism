@@ -1,5 +1,7 @@
 package test
 
+// This file contains all the supplementary functions that are required to query EC2 API
+
 import (
         "fmt"
 	"testing"
@@ -8,6 +10,8 @@ import (
         "github.com/stretchr/testify/require"
 )
 
+
+// External function that returns a list of instance IDs that are running in given region
 func GetHealthyEc2InstanceIdsByTag(t *testing.T, region string, tagName string, tagValue string) []string {
         out, err := GetHealthyEc2InstanceIdsByTagE(t, region, tagName, tagValue)
         require.NoError(t, err)

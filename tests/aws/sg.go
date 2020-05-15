@@ -1,14 +1,17 @@
 package test
 
+// This file contains all the supplementary functions that are required to query EC2's Security groups API
+
 import (
 	"testing"
 
 	taws "github.com/gruntwork-io/terratest/modules/aws"
-        aws "github.com/aws/aws-sdk-go/aws"
-        "github.com/aws/aws-sdk-go/service/ec2"
-        "github.com/stretchr/testify/require"
+    aws "github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/service/ec2"
+    "github.com/stretchr/testify/require"
 )
 
+// Function that returns a set of Security group permissions for particular prefix
 func GetSGRulesMapByTag(t *testing.T, awsRegion string, tag string, value string) []*ec2.IpPermission {
 	rules, err := GetSGRulesMapByTagE(t, awsRegion, tag, value)
         require.NoError(t, err)
@@ -47,7 +50,6 @@ func NewSGClient(t *testing.T, region string) *ec2.EC2 {
         return client
 }
 
-// NewSsmClientE creates an SSM client.
 func NewSGClientE(t *testing.T, region string) (*ec2.EC2, error) {
         sess, err := taws.NewAuthenticatedSession(region)
         if err != nil {
