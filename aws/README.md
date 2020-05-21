@@ -36,10 +36,11 @@ Either clone this repo using `git clone` command or simply download it from Web 
 2. Create `terraform.tfvars` file.
 3. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
 4. Set `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` environment variables.
-5. Run `terraform init`
-6. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
-7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
-8. After the deployment is complete you can open your EC2 console to check that the instances were deployed successfully. You can also open Polkadot explorer and ensure that your node is in the validators list.
+5. (Optional) You can either place a Terraform state file on S3 bucket or on your local machine. To place it on the local machine rename the `remote-state.tf` file to `remote-state.tf.stop`. To place it on S3 - create an S3 bucket and proceed to the next step. You will be interactively asked to provide S3 configuration details.
+6. Run `terraform init`
+7. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
+8. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
+9. After the deployment is complete you can open your EC2 console to check that the instances were deployed successfully. You can also open Polkadot explorer and ensure that your node is in the validators list.
 
 ### Validate
 
