@@ -115,10 +115,10 @@ function install_consul {
 
   local -r ui="true"
   local -r server="true"
-  local -r cluster_tag_name="mytag"
 
   prefix=$1
   total_instance_count=$2
+  cluster_tag_name=$prefix
 
   # Add consul user
   id $CONSUL_USER >& /dev/null || useradd --system $CONSUL_USER
