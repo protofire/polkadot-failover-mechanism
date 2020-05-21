@@ -32,8 +32,8 @@ Either clone this repo using `git clone` command or simply download it from Web 
 
 ### Run the Terraform scripts
 
-1. Open cloned (downloaded) repo.
-2. Create `terraform.tfvars` file.
+1. Open `aws` folder of the cloned (downloaded) repo.
+2. Create `terraform.tfvars` file inside of the `aws` folder of the cloned repo, where `terraform.tfvars.example` is located
 3. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
 4. Set `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` environment variables.
 5. (Optional) You can either place a Terraform state file on S3 bucket or on your local machine. To place it on the local machine rename the `remote-state.tf` file to `remote-state.tf.stop`. To place it on S3 - create an S3 bucket and proceed to the next step. You will be interactively asked to provide S3 configuration details.
