@@ -28,7 +28,7 @@ A folder that contains a CircleCI configuration. CI system verifies incoming PRs
 
 ### [AWS](aws/)
 
-This folder contains Terraform configuration scripts that will deploy the failover solution to AWS Cloud. Use [terraform.tfvars.example](.aws/terraform.tfvars.example) file to see the very minimum configuration required to deploy solution. See README inside of AWS folder for more details.
+This folder contains Terraform configuration scripts that will deploy the failover solution to AWS Cloud. Use [terraform.tfvars.example](aws/terraform.tfvars.example) file to see the very minimum configuration required to deploy solution. See README inside of AWS folder for more details.
 
 These scripts will deploy the following architecture components:
 
