@@ -17,11 +17,11 @@ INTERVAL="\$COLLECTD_INTERVAL"
 HOSTNAME="\$COLLECTD_HOSTNAME"
 
 while  true; do
-curl --connect-timeout 2 -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params":[]}' http://127.0.0.1:9933;
-STATE=$?
+  curl --connect-timeout 2 -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params":[]}' http://127.0.0.1:9933;
+  STATE=$?
 
-  echo "PUTVAL ${HOSTNAME}/exec-polkadot/gauge-state/ interval=${INTERVAL} N:${STATE}"
-  sleep ${INTERVAL}
+  echo "PUTVAL \${HOSTNAME}/exec-polkadot/gauge-state/ interval=\${INTERVAL} N:\${STATE}"
+  sleep \${INTERVAL}
 
 done
 
@@ -40,9 +40,9 @@ while true; do
 
   BLOCK_NUMBER=\$(( 16#$(echo \$BLOCK_NUMBER_HEX | sed 's/^0x//')))
 
-  echo "PUTVAL ${HOSTNAME}/exec-polkadot/gauge-blocknumber/ interval=${INTERVAL} N:${BLOCK_NUMBER}"
+  echo "PUTVAL \${HOSTNAME}/exec-polkadot/gauge-blocknumber/ interval=\${INTERVAL} N:\${BLOCK_NUMBER}"
 
-  sleep ${INTERVAL}
+  sleep \${INTERVAL}
 done
 
 EOF
@@ -62,9 +62,9 @@ while true ; do
     AMIVALIDATOR=0
   fi
 
-  echo "PUTVAL ${HOSTNAME}/exec-polkadot/gauge-validatorcount/ interval=${INTERVAL} N:${AMIVALIDATOR}"
+  echo "PUTVAL \${HOSTNAME}/exec-polkadot/gauge-validatorcount/ interval=\${INTERVAL} N:\${AMIVALIDATOR}"
 
-  sleep ${INTERVAL}
+  sleep \${INTERVAL}
 done
 EOF
 
