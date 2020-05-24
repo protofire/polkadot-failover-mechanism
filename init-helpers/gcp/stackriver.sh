@@ -105,9 +105,9 @@ PreCacheChain "PreCache"
       PluginInstance "^polkadot$"
     </Match>
     <Target "set">
-      MetaData "stackdriver_metric_type" "custom.googleapis.com/polkadot/%%{plugin_instance}/%%{type_instance}"
+      MetaData "stackdriver_metric_type" "custom.googleapis.com/polkadot/%{plugin_instance}/%{type_instance}"
       MetaData "label:name"  "polkadot"
-      MetaData "label:hostname" "%%{host}"
+      MetaData "label:hostname" "%{host}"
     </Target>
   </Rule>
 </Chain>
