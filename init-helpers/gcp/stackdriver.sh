@@ -76,7 +76,7 @@ popd
 }
 
 
-function collectdRewriteURL {
+function  generate_collectd_rewrite {
 
 # CollectD rewrite URLs
 
