@@ -69,7 +69,7 @@ function install_consul {
   local -r CONSUL_DATA_DIR="/var/lib/consul"
   local -r CONSUL_CONFIG_DIR="/opt/consul/config"
   local -r CONSUL_BIN_DIR="/usr/local/bin"
-  local -r CONSU,L_CONFIG_FILE="config.json"
+  local -r CONSUL_CONFIG_FILE="config.json"
   local -r CONFIG_PATH="$CONSUL_CONFIG_DIR/$CONSUL_CONFIG_FILE"
 
   local -r INSTANCE_IP_ADDRESS=$(hostname -I | cut -d ' ' -f1)
