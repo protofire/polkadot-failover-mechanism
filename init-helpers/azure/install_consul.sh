@@ -80,9 +80,9 @@ function install_consul {
 
   prefix=$1
   total_instance_count=$2
-  lb-primary="$3"
-  lb-secondary="$4"
-  lb-tertiary="$5"
+  lb_primary="$3"
+  lb_secondary="$4"
+  lb_tertiary="$5"
   cluster_tag_name=$prefix
 
   # Add consul user
@@ -132,7 +132,7 @@ cat <<EOF > $CONFIG_PATH
   "client_addr": "0.0.0.0",
   "node_name": "$INSTANCE_ID",
   "retry_join": [
-    "${lb-primary}", "${lb-secondary}", "${lb-tertiary}"
+    "${lb_primary}", "${lb_secondary}", "${lb_tertiary}"
   ],
   "server": $server,
   "ui": $ui,
