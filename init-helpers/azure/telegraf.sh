@@ -1,4 +1,4 @@
-cat < /etc/telegraf/telegraf.conf
+cat <<EOF >/etc/telegraf/telegraf.conf
 [global_tags]
 prefix = "$1" # will tag all metrics with dc=us-east-1
 
