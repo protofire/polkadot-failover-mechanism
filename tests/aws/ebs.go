@@ -32,7 +32,7 @@ func GetVolumeDescribe(t *testing.T, region string, tag string, value string) ([
 			{   
 			   Name: aws.String("tag:prefix"),
 			   Values: []*string{
-				 aws.String(prefix),
+				 aws.String(value),
 				 },
 			 },
 		 },

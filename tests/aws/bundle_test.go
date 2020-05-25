@@ -74,13 +74,14 @@ func TestBundle(t *testing.T) {
 			"validator_keys": "{key1={key=\"0x6ce96ae5c300096b09dbd4567b0574f6a1281ae0e5cfe4f6b0233d1821f6206b\",type=\"gran\",seed=\"favorite liar zebra assume hurt cage any damp inherit rescue delay panic\"},key2={key=\"0x3ff0766f9ebbbceee6c2f40d9323164d07e70c70994c9d00a9512be6680c2394\",type=\"aura\",seed=\"expire stage crawl shell boss any story swamp skull yellow bamboo copy\"}}",
 			"key_name": "test",
 			"key_content": sshKey.PublicKey,
-            "prefix": prefix,
+                        "prefix": prefix,
 			"delete_on_termination": "true",
 			"cpu_limit": "1",
 			"ram_limit": "1",
 			"validator_name": "test",
 			"expose_ssh": "true",
 			"node_key": "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
+                        "chain": "westend",
 		},
 	}
 
@@ -229,6 +230,15 @@ func TestBundle(t *testing.T) {
                         t.Log("INFO. NLB is configured. All target groups do exists. Health checks responds that instance state is OK.")
                 }
         })
+    // TEST 13: Check that there are exactly 5 keys in the keystore
+        t.Run("Keystore tests", func(t *testing.T) {
+
+                test = assert.True(t, KeystoreCheck(t,publicIPs, sshKey))
+                if test {
+                        t.Log("INFO. There are exactly 5 keys in the Keystore")
+                }
+        })
+
 }
 
 // TEST 9
@@ -678,6 +688,50 @@ func ConsulLockCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair
 
 }
 
+// TEST 13
+func KeystoreCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
+
+  command := "ls -lah /data/chains/westend2/keystore | wc -l"
+
+  for i:=0; i<5; i++ {
+  	array := NodeQuery(t, publicIPs, key, command)
+
+	  iterator := 0
+	  flag := false
+
+	  if len(array) == 0 {
+		  return false
+	  } else {
+
+	    for _, value := range array {
+
+	      var keysExpected string = "5"
+
+	      if value != keysExpected {
+		      t.Log("INFO. Lines at output: " + value + " (should be 3 lines more than keys expected)")
+		      if value != "3" {
+			      flag = true
+		      }
+		      iterator++
+	      }
+	    }
+	  }
+
+	  if flag {
+		  t.Log("Seems that init script is still running, waiting...")
+		  time.Sleep(30 * time.Second)
+		  continue;
+	  }
+
+	  if iterator != 2 {
+	    t.Error("ERROR! Keys count not matched. There should be exactly 5 keys on exactly 1 node.")
+	    return false
+	  }
+	  return true
+  }
+  t.Log("Some keystore are either empty or not full")
+  return false
+}
 
 // TEST 5
 func ConsulCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
@@ -729,6 +783,7 @@ func NodeQuery(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair, comm
 		timeBetweenRetries := 5 * time.Second
 		description := fmt.Sprintf("SSH to public host %s", publicInstanceIP)
 
+		t.Log("DEBUG. Querying instance " + publicInstanceIP + " with command `" + command + "`")
 		// Verify that we can SSH to the Instance and run commands
 		result := retry.DoWithRetry(t, description, maxRetries, timeBetweenRetries, func() (string, error) {
 			result, err := ssh.CheckSshCommandE(t, publicHost, command)
@@ -740,6 +795,7 @@ func NodeQuery(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair, comm
 			return strings.TrimSpace(result), nil
 		})
 
+		t.Log("DEBUG. Command output: " + result)
 		resultArray = append(resultArray, result)
 	}
 	return resultArray

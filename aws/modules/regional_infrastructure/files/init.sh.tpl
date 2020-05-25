@@ -230,10 +230,12 @@ NODEKEY=$(aws ssm get-parameter --region $(curl --silent http://169.254.169.254/
 cat <<EOF >/usr/local/bin/double-signing-control.sh
 #!/bin/bash
 
-set -x -e -E
+set -x
 
 BEST=\$(/usr/local/bin/consul kv get best_block)
 retVal=\$?
+
+set -eE
 echo "Previous validator best block - \$BEST"
 
 if [ "\$retVal" -eq 0 ]; then
@@ -308,7 +310,7 @@ trap - ERR
 
 until [ $n -ge 6 ]; do
 
-  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh; consul kv delete blocks/.lock && consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" & docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --unsafe-rpc-external --rpc-cors=all --validator --name '$NAME' --node-key '$NODEKEY'"
+  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh && consul kv delete blocks/.lock && consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" & docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --unsafe-rpc-external --rpc-cors=all --validator --name '$NAME' --node-key '$NODEKEY'"
 
   sleep 10;
   n=$[$n+1]
