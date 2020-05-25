@@ -80,9 +80,9 @@ function install_consul {
 
   prefix=$1
   total_instance_count=$2
-  lb-primary=$3
-  lb-secondary=$4
-  lb-tertiary=$5
+  lb-primary="$3"
+  lb-secondary="$4"
+  lb-tertiary="$5"
   cluster_tag_name=$prefix
 
   # Add consul user
