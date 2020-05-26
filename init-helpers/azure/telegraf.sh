@@ -18,7 +18,7 @@ prefix = "$1" # will tag all metrics with dc=us-east-1
 [[outputs.azure_monitor]]
   timeout = "20s"
   namespace_prefix = "$1/"
-
+  strings_as_dimensions = true
 ###############################################################################
 #                            INPUT PLUGINS                                    #
 ###############################################################################
