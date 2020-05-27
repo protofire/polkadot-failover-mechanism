@@ -9,14 +9,14 @@ This repository contains a set of [Terraform](https://www.terraform.io/) scripts
 
 The overall idea is to create a similar infrastructures in three separate regions - primary, secondary and tertiary. One of the nodes, created at these regions gets elected as a validator. The other two resume operations in archive mode, which allows to switch them to the validator fast once the current validator goes down. This is called "[Warm standby backup](https://tutorialsdojo.com/backup-and-restore-vs-pilot-light-vs-warm-standby-vs-multi-site/)".
 
-The Polkadot node and the Consul server are both installed during instance startup phase. If instance get elected as a validator, Consul immediately transforms regular Polkadot node into validator. When the lock is lost - the node simply stops. Cloud will notice that the node is down and destroy it to replace using autoscaling mechanisms. The new node will be created as the regular one until gets elected as a validator.
+The Polkadot node and the Consul server are both installed during instance startup phase. If an instance gets elected as a validator, Consul immediately transforms the regular Polkadot node into a validator. When the lock is lost - the node simply stops. Cloud will notice that the node is down and destroy it replacing it via the autoscaling mechanisms. The new node will be created as a regular one until it gets elected as a validator.
 
 ## Leader election mechanism overview
 
-As for the Leader election mechanism script reuses the existing Leader election solution implemented by [Hashicorp](https://www.hashicorp.com/) team in their [Consul](https://www.consul.io/) solution. The very minimum of 3 nodes is required to start the failover scripts. This requirement comes from [Raft algorithm](https://www.consul.io/docs/internals/consensus.html) that is used to identify the current validator. 
-Algorithm works electing one leader accross all nodes joined to the cluster. When one of the instances goes down the rest forms a  quorum that reaches using majority of instance number. If the quorum reached (2 out of 3 nodes, 3 out of 5 nodes, etc.), the new validator gets elected. Otherwise the nodes continue to operate in non-validator mode. The even number of instances will cause the so-called "split-brain" to occur in case exactly half of the nodes goes offline. No leader will be elected at all because of no majority quorum can be reached with 2 out of 4 (3 ot out of 6, etc.) instances (51% of votes not reached).
+As for the Leader election mechanism the script reuses the existing Leader election solution implemented by [Hashicorp](https://www.hashicorp.com/) team in their [Consul](https://www.consul.io/) solution. The very minimum of 3 nodes is required to start the failover scripts. This requirement comes from the [Raft algorithm](https://www.consul.io/docs/internals/consensus.html) that is used to reach consensus on the current validator. 
+The algorithm works by electing one leader accross all nodes joined to the cluster. When one of the instances goes down the rest can still reach consensus via a majority quorum. If the majority quorum is reached (2 out of 3 nodes, 3 out of 5 nodes, etc.), the new validator gets elected. Non-selected nodes continue to operate in non-validator mode. An even number of instances could cause the so-called "split-brain" to occur in case exactly half of the nodes go offline. No leader will be elected at all because no majority quorum can be reached with 2 out of 4 (3 ot out of 6, etc.) instances (51% of votes not reached).
 
-Even if the entire region at cloud provider goes down, this solution will ensure that the polkadot node is still up because of two other regions are still up and can reach the quorum majority.
+Even if the entire region of a cloud provider goes down, this solution will ensure that the Polkadot node is still up given that two other regions are still up and thus the Consul cluster can reach the quorum majority.
 
 ## Project structure overview
 
@@ -36,11 +36,11 @@ These scripts will deploy the following architecture components:
 
 ### [Docker](docker/)
 
-This folder contains the Dockerfile for the Docker image that published on DockerHub.
+This folder contains the Dockerfile for the Docker image that is published on DockerHub.
 
 ### [Tests](tests/)
 
-This folder contains a set of tests to be run through CI mechanism. These tests can be launched manually. Simply go to the tests folder, then select provider to check solution at, open scripts and read a set of environment variables you need to export. Export these variables, install [GoLang](https://golang.org/doc/install) and execute the `go test` command to run the CI tests manually.
+This folder contains a set of tests to be run through CI mechanism. These tests can be launched manually. Simply go to the tests folder, then select provider to check solution at, open scripts and read the set of environment variables you need to export. Export these variables, install [GoLang](https://golang.org/doc/install) and execute the `go test` command to run the CI tests manually.
 
 # About us
 
