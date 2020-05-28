@@ -14,5 +14,5 @@ for key_name in ${key_names[@]} ; do
   KEY=$(gcloud secrets versions access $(gcloud secrets versions list $KEY_NAME --format json | jq '.[] | select(.state == "ENABLED") | .name' -r) --secret=$KEY_NAME --format json | jq .payload.data -r | base64 -d)
   TYPE=$(gcloud secrets versions access $(gcloud secrets versions list $TYPE_NAME --format json | jq '.[] | select(.state == "ENABLED") | .name' -r) --secret=$TYPE_NAME --format json | jq .payload.data -r | base64 -d)
   
-  curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_insertKey", "params":["'"$TYPE"'","'"$SEED"'","'$KEY'"]}' http://localhost:9933
+  docker exec -i polkadot curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_networkState", "params":["'"$TYPE"'","'"$SEED"'","'"$KEY"'"]}' http://localhost:9933
 done
