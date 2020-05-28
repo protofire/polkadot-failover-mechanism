@@ -1,0 +1,49 @@
+# This is the very minimum variables example file. You have to put JSON private key for your GCP account, validator keys from Polkadot, and a content of your SSH public key that will be used to connect to the instance. For the full list of supported variables see variables.tf file in the root directory of this repo.
+
+## You can skip setting gcp_ variables and set environment variables instead (GOOGLE_APPLICATION_CREDENTIALS and GOOGLE_PROJECT)
+# Path to the JSON private key to your GCP account
+gcp_credentials = ""
+# Name of the project at GCP
+gcp_project     = ""
+
+# Validator-related variables
+validator_name = ""
+validator_keys = {
+  key = {
+    key="0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    type="gran"
+    seed="click click click click click click click click click click click click"
+  },
+  key2 = {
+    key="0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    type="babe"
+    seed="organ organ organ organ organ organ organ organ organ organ organ organ"
+  },
+  key3 = {
+    key="0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    type="imon"
+    seed="olive olive olive olive olive olive olive olive olive olive olive olive"
+  },
+  key4 = {
+    key="0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    type="para"
+    seed="upper upper upper upper upper upper upper upper upper upper upper upper"
+  },
+  key5 = {
+    key="0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    type="audi"
+    seed="cat cat cat cat cat cat cat cat cat cat cat cat"
+  }
+}
+
+# This is the SSH key to be used on all the machines
+key_content   = "ssh-rsa AAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAaaaaaaaaaaaaaaaaAAAAAAAAAAaaaaaaaaaaaaaAAAAAAAAaaaaaaaaaaaaAAAAAAAAaaaaaaaaaaaaaAAAAAAAaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaAAAaa user@node"
+
+# This variable is used to avoid infrastructure crossing and for security purposes also. Infrastructure with `prefix` exists in its own namespace
+prefix        = "prefix"
+
+# Node key is used to unify nodes ids. This is the HEX ed25519 key without 0x prefix
+node_key      = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+
+# The email address to send alerts to
+admin_email = "admin@protofire.io"

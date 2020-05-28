@@ -1,6 +1,3 @@
-!aws/terraform.tfvars.example
-!gcp/terraform.tfvars.example
-!azure/terraform.tfvars.example
 *.tfvars
 *terraform.tf*
 .terraform/
@@ -12,3 +9,6 @@
 *go.mod
 *go.sum
 *.swp
+!aws/terraform.tfvars.example
+!gcp/terraform.tfvars.example
+!azure/terraform.tfvars.example
