@@ -1,5 +1,11 @@
 # This is the very minimum variables example file. You have to put access and private keys for you AWS account, validator keys from Polkadot, a name and a content of your SSH public key that will be used to connect to the instance. For the full list of supported variables see variables.tf file in the root directory of this repo.
 
+## These can be omitted if AWS CLI is configured
+# aws_access_keys = ["AAAAAAAAAAA"]
+# aws_secret_keys = ["XXXXXXXXXXX"]
+
+# Validator-related variables
+validator_name = ""
 validator_keys = {
   key = {
     key="0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

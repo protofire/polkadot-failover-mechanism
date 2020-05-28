@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Set quit on error flags
-set -x -e -E
+set -x -eE
 
 ### Function that attaches disk
 disk_attach ()
@@ -140,7 +140,6 @@ for DISK in /dev/nvme?; do
     fi
 done
 
-usermod -a -G docker ec2-user
 # Run docker with regular polkadot container inside of it
 /usr/bin/systemctl start docker
 
@@ -160,33 +159,6 @@ done
 
 set -eE
 trap default_trap ERR EXIT
-
-cat <<EOF >/usr/local/bin/watcher.sh
-#!/bin/bash
-\$(docker inspect -f "{{.State.Running}}" polkadot && curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params":[]}' http://127.0.0.1:9933);
-STATE=\$?
-BLOCK_NUMBER=\$((\$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getBlock", "params":[]}' http://127.0.0.1:9933 | jq .result.block.header.number -r)))
-AMIVALIDATOR=\$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://127.0.0.1:9933 | jq -r .result[0])
-if [ "\$AMIVALIDATOR" == "Authority" ]; then
-  AMIVALIDATOR=1
-else
-  AMIVALIDATOR=0
-fi
-
-regions=( ${primary-region} ${secondary-region} ${tertiary-region} )
-
-for i in "\$${regions[@]}"; do
-  aws cloudwatch put-metric-data --region \$i --metric-name "Health report" --dimensions AutoScalingGroupName=${autoscaling-name} --namespace "${prefix}" --value "\$STATE"
-  aws cloudwatch put-metric-data --region \$i --metric-name "Block Number" --dimensions InstanceID="\$(curl --silent http://169.254.169.254/latest/meta-data/instance-id)" --namespace "${prefix}" --value "\$BLOCK_NUMBER"
-  aws cloudwatch put-metric-data --region \$i --metric-name "Validator count" --dimensions AutoScalingGroupName=${autoscaling-name} --namespace "${prefix}" --value "\$AMIVALIDATOR"
-done
-
-EOF
-
-chmod 777 /usr/local/bin/watcher.sh
-
-### This will add a crontab entry that will check nodes health from inside the VM and send data to the CloudWatch
-(echo '* * * * * /usr/local/bin/watcher.sh') | crontab -
 
 # Clone and install consul
 git clone https://github.com/hashicorp/terraform-aws-consul.git
@@ -227,81 +199,18 @@ CPU=$(aws ssm get-parameter --region $(curl --silent http://169.254.169.254/late
 RAM=$(aws ssm get-parameter --region $(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region) --name "/polkadot/validator-failover/${prefix}/ram_limit" | jq -r .Parameter.Value)
 NODEKEY=$(aws ssm get-parameter --region $(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region) --name "/polkadot/validator-failover/${prefix}/node_key" | jq -r .Parameter.Value)
 
-cat <<EOF >/usr/local/bin/double-signing-control.sh
-#!/bin/bash
+curl -o /usr/local/bin/double-signing-control.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/double-signing-control.sh
+curl -o /usr/local/bin/best-grep.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/best-grep.sh
+curl -o /usr/local/bin/key-insert.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/aws/key-insert.sh
+curl -o /usr/local/bin/watcher.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/aws/watcher.sh
 
-set -x
-
-BEST=\$(/usr/local/bin/consul kv get best_block)
-retVal=\$?
-
-set -eE
-echo "Previous validator best block - \$BEST"
-
-if [ "\$retVal" -eq 0 ]; then
-
-  VALIDATED=0
-  until [ "\$VALIDATED" -gt "\$BEST" ]; do
-
-    BEST_TEMP=\$(/usr/local/bin/consul kv get best_block)
-    if [ "\$BEST_TEMP" != "\$BEST" ]; then
-      consul leave
-      shutdown now
-      exit 1
-    else
-      BEST=\$BEST_TEMP
-      VALIDATED=\$(/usr/bin/docker logs polkadot 2>&1 | /usr/bin/grep finalized | /usr/bin/tail -n 1)
-      VALIDATED=\$(/usr/bin/echo \$${VALIDATED##*#} | /usr/bin/cut -d'(' -f1 | /usr/bin/xargs)
-      echo "Previous validator best block - \$BEST, new validator validated block - \$VALIDATED"
-      sleep 10
-    fi
-
-  done
-fi
-
-EOF
-
-cat <<EOF >/usr/local/bin/key-insert.sh
-#!/bin/bash
-
-set -x -e -E
-
-region="\$(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)"
-key_names=\$(aws ssm get-parameters-by-path --region \$region --recursive --path /polkadot/validator-failover/${prefix}/keys/ | jq .Parameters[].Name | awk -F'/' '{print\$(NF-1)}' | sort | uniq)
-
-for key_name in \$${key_names[@]} ; do
-
-    echo "Adding key \$key_name"
-    SEED="\$(aws ssm get-parameter --with-decryption --region \$region --name /polkadot/validator-failover/${prefix}/keys/\$key_name/seed | jq -r .Parameter.Value)"
-    KEY="\$(aws ssm get-parameter --region \$region --name /polkadot/validator-failover/${prefix}/keys/\$key_name/key | jq -r .Parameter.Value)"
-    TYPE="\$(aws ssm get-parameter --region \$region --name /polkadot/validator-failover/${prefix}/keys/\$key_name/type | jq -r .Parameter.Value)"
-    
-    curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_insertKey", "params":["'"\$TYPE"'","'"\$SEED"'","'"\$KEY"'"]}' http://localhost:9933
-
-done
-EOF
-
-cat <<EOF >/usr/local/bin/best-grep.sh
-#!/bin/bash
-BEST=\$(docker logs polkadot 2>&1 | grep finalized | tail -n 1 | cut -d':' -f4 | cut -d'(' -f1 | cut -d'#' -f2 | xargs)
-re='^[0-9]+$'
-if [[ "\$BEST" =~ \$re ]] ; then
-  if [ "\$BEST" -gt 0 ] ; then
-    /usr/local/bin/consul kv put best_block "\$BEST"
-  else
-    echo "Block number either cannot be compared with 0, or not greater than 0"  
-  fi 
-else
-  echo "Block number is not a number, skipping block insertion"
-fi
-
-sleep 7
-
-EOF
-
-chmod 700 /usr/local/bin/key-insert.sh
-chmod 700 /usr/local/bin/best-grep.sh
 chmod 700 /usr/local/bin/double-signing-control.sh
+chmod 700 /usr/local/bin/best-grep.sh
+chmod 700 /usr/local/bin/key-insert.sh
+chmod 700 /usr/local/bin/watcher.sh
+
+### This will add a crontab entry that will check nodes health from inside the VM and send data to the CloudWatch
+(echo '* * * * * /usr/local/bin/watcher.sh ${prefix} ${autoscaling-name} ${primary-region} ${secondary-region} ${tertiary-region}') | crontab -
 
 # Create lock for the instance
 n=0
@@ -310,17 +219,26 @@ trap - ERR
 
 until [ $n -ge 6 ]; do
 
-  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh && consul kv delete blocks/.lock && consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" & docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --unsafe-rpc-external --rpc-cors=all --validator --name '$NAME' --node-key '$NODEKEY'"
+  set -eE
+  trap "/usr/local/bin/consul leave; docker stop polkadot" ERR
+  node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep Full | wc -l)
+  if [ "$node" != 1 ]; then 
+    echo "ERROR! Node either does not work or work in not correct way"
+    /usr/local/bin/consul leave
+    docker stop polkadot
+  fi
+  trap - ERR
+  set +eE
+
+  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh ${prefix}; consul kv delete blocks/.lock && consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" & docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --unsafe-rpc-external --rpc-cors=all --validator --name '$NAME' --node-key '$NODEKEY'"
+
+  /usr/bin/docker stop polkadot || true
+  /usr/bin/docker rm polkadot || true
+  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -d -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-external --rpc-cors=all --pruning=archive
 
   sleep 10;
   n=$[$n+1]
 
 done
 
-set -eE
-trap default_trap ERR EXIT
-
-consul leave
-shutdown now
-
-# Instance will shutdown when loosing the lock because of no docker container will be running. ASG will replace the instance because it will not pass the ELB health check which monitors all the Consul ports and port 30333 (Polkadot node's port). 
+default_trap

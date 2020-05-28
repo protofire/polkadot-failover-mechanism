@@ -1,0 +1,96 @@
+resource "google_service_account" "service_account" {
+  account_id   = "${var.prefix}-sa"
+  display_name = "SA for Polkadot failover node with prefix ${var.prefix}"
+}
+
+resource "google_project_iam_binding" "project" {
+  provider = google-beta
+
+  role    = "roles/compute.viewer"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+
+}
+
+resource "google_project_iam_binding" "ssm-project" {
+  provider = google-beta
+
+  role    = "roles/secretmanager.viewer"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+
+}
+
+resource "google_project_iam_binding" "metricswriter-project" {
+
+  role    = "roles/monitoring.metricWriter"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+
+}
+
+resource "google_secret_manager_secret_iam_binding" "binding-keys" {
+  provider = google-beta
+
+  for_each = var.validator_keys
+
+  project = google_secret_manager_secret.keys[each.key].project
+  secret_id = google_secret_manager_secret.keys[each.key].secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+}
+
+resource "google_secret_manager_secret_iam_binding" "binding-seeds" {
+  provider = google-beta
+
+  for_each = var.validator_keys
+
+  project = google_secret_manager_secret.seeds[each.key].project
+  secret_id = google_secret_manager_secret.seeds[each.key].secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+}
+
+resource "google_secret_manager_secret_iam_binding" "binding-types" {
+  provider = google-beta
+
+  for_each = var.validator_keys
+
+  project = google_secret_manager_secret.types[each.key].project
+  secret_id = google_secret_manager_secret.types[each.key].secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+}
+
+resource "google_secret_manager_secret_iam_binding" "binding-name" {
+  provider = google-beta
+
+  project = google_secret_manager_secret.name.project
+  secret_id = google_secret_manager_secret.name.secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+}
+
+resource "google_secret_manager_secret_iam_binding" "binding-cpu" {
+  provider = google-beta
+
+  project = google_secret_manager_secret.cpu.project
+  secret_id = google_secret_manager_secret.cpu.secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+}
+
+resource "google_secret_manager_secret_iam_binding" "binding-ram" {
+  provider = google-beta
+
+  project = google_secret_manager_secret.ram.project
+  secret_id = google_secret_manager_secret.ram.secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+}
+
+resource "google_secret_manager_secret_iam_binding" "binding-nodekey" {
+  provider = google-beta
+
+  project = google_secret_manager_secret.nodekey.project
+  secret_id = google_secret_manager_secret.nodekey.secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = ["serviceAccount:${google_service_account.service_account.email}"]
+}

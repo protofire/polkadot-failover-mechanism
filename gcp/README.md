@@ -6,7 +6,7 @@
 
 1. An instance further referred as *Deployer* instance which will be used to run these scripts from.
 2. [Terraform](https://www.terraform.io/downloads.html). To install Terraform proceed to the [Install Terraform](#install-terraform) section.
-3. (Optional) AWS CLI. To install Azure CLI follow [the instruction](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html).
+3. (Optional) GCloud CLI. To install GCloud CLI follow [the instruction](https://cloud.google.com/sdk/docs/quickstarts).
 
 Also you will need a set of keys known as `NODE KEY`, `STASH`, `CONTROLLER` and `SESSION KEYS`. As for this release in `Kusama` and `Westend` network there are 5 keys inside of `SESSION KEYS` object - [GRANDPA, BABE, ImOnline, Parachains, AuthorityDiscovery](https://github.com/paritytech/polkadot/blob/master/runtime/kusama/src/lib.rs#L258). You will have to generate all of them. You can do it either using [Subkey](https://substrate.dev/docs/en/ecosystem/subkey) tool or using [PolkadotJS](https://polkadot.js.org/apps/#/accounts) website.
 
@@ -29,22 +29,23 @@ Also you will need a set of keys known as `NODE KEY`, `STASH`, `CONTROLLER` and 
 2. Unpack Terraform using `unzip terraform*` command.
 3. Move the `terraform` binary to the one of the folders specified at the `PATH` variable. For example: `sudo mv terraform /usr/local/bin/`
 
+### Create project
+
+It is highly recommended to run these scripts at the dedicated project. Despite the fact that security rules are configured to limit deployed service accounts as much as possible there are some CLI requests like secrets listing that can't be constrained. For better security and logical distribution.
+
 ### Clone the repo
 
 Either clone this repo using `git clone` command or simply download it from Web and unpack on the deployer node.
 
 ### Run the Terraform scripts
 
-1. Open `aws` folder of the cloned (downloaded) repo.
-2. Create `terraform.tfvars` file inside of the `aws` folder of the cloned repo, where `terraform.tfvars.example` is located.
+1. Open `gcp` folder of the cloned (downloaded) repo.
+2. Create `terraform.tfvars` file inside of the `gcp` folder of the cloned repo, where `terraform.tfvars.example` is located.
 3. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
-4. Set `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` environment variables.
-5. (Optional) You can either place a Terraform state file on S3 bucket or on your local machine. To place it on the local machine rename the `remote-state.tf` file to `remote-state.tf.stop`. To place it on S3 - create an S3 bucket and proceed to the next step. You will be interactively asked to provide S3 configuration details.
-6. Run `terraform init`.
-7. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
-8. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
-9. After the deployment is complete you can open your EC2 console to check that the instances were deployed successfully.
-10. (Optional) Subscribe to notifications. As for now Terraform does not support automatic email alert creation due to AWS API limitation. Thus, these scripts creates an SNS topic that you should subscribe to manually to start receiving alert messages.
+5. Run `terraform init`.
+6. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
+7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
+8. After the deployment is complete you can open Azure Portal to check that the instances were deployed successfully.
 
 ### Validate
 
@@ -70,10 +71,6 @@ Note that there is only one 0x left, all the others are omitted.
 ## Prefix should contain alphanumeric characters only and have to be short
 
 The prefix is used in a majority of resources names, so they can be easily identified among others. This causes the limitation because not all of the deployed resources supports long names or names with non alphanumeric symbols. The optimal is to have around 5 alphanumeric characters as a system prefix.
-
-## Node not getting started on t2 (and some other) instances
-
-Current version of failover scripts supports only the [Nitro instances](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances) as the node type. This is connected to the way disks are being managed by AWS - nitro instances has the most disks attached as the `/dev/xvd*` which does not have the very same numeration as on the EC2 console. This issue has to be fixed in future, but we are open for any improvements PRs for now.
 
 ## Multi-regional provider outage
 
