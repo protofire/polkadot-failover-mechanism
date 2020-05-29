@@ -11,6 +11,8 @@ The overall idea is to create a similar infrastructures in three separate region
 
 The Polkadot node and the Consul server are both installed during instance startup phase. If an instance gets elected as a validator, Consul immediately transforms the regular Polkadot node into a validator. When the lock is lost - the node simply stops. Cloud will notice that the node is down and destroy it replacing it via the autoscaling mechanisms. The new node will be created as a regular one until it gets elected as a validator.
 
+Note that some regions in clouds might not support all the required features. As the result these scripts will fail on this regions. Scripts were tested and approved to work on default regions only. Use all the other regions with extreme care.
+
 ## Leader election mechanism overview
 
 As for the Leader election mechanism the script reuses the existing Leader election solution implemented by [Hashicorp](https://www.hashicorp.com/) team in their [Consul](https://www.consul.io/) solution. The very minimum of 3 nodes is required to start the failover scripts. This requirement comes from the [Raft algorithm](https://www.consul.io/docs/internals/consensus.html) that is used to reach consensus on the current validator. 

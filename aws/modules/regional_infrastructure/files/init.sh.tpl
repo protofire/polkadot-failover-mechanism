@@ -119,6 +119,8 @@ else
 
 fi
 
+flag=0
+until [ $flag -gt 0 ]; do
 # Loop through attached disks
 for DISK in /dev/nvme?; do
 
@@ -137,13 +139,17 @@ for DISK in /dev/nvme?; do
         /usr/bin/chown ec2-user:ec2-user /data
         # Remove keys inside of data folder TODO
         rm -R /data/chains/*/keystore || true
+    else
+      flag=1
     fi
+
+done
 done
 
 # Run docker with regular polkadot container inside of it
 /usr/bin/systemctl start docker
 
-/usr/bin/docker run --cpus ${cpu_limit} --memory ${ram_limit}GB --kernel-memory ${ram_limit}GB --name polkadot --restart unless-stopped -d -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --rpc-external --rpc-cors=all --pruning=archive
+/usr/bin/docker run --cpus ${cpu_limit} --memory ${ram_limit}GB --kernel-memory ${ram_limit}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
 
 exit_code=1
 set +eE
@@ -220,21 +226,21 @@ trap - ERR
 until [ $n -ge 6 ]; do
 
   set -eE
-  trap "/usr/local/bin/consul leave; docker stop polkadot" ERR
+  trap default_trap ERR
   node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep Full | wc -l)
   if [ "$node" != 1 ]; then 
     echo "ERROR! Node either does not work or work in not correct way"
-    /usr/local/bin/consul leave
-    docker stop polkadot
+    default_trap
   fi
   trap - ERR
   set +eE
 
-  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh ${prefix}; consul kv delete blocks/.lock && consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" & docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --unsafe-rpc-external --rpc-cors=all --validator --name '$NAME' --node-key '$NODEKEY'"
+  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh ${prefix} && (consul kv delete blocks/.lock && consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY'"
 
   /usr/bin/docker stop polkadot || true
   /usr/bin/docker rm polkadot || true
-  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -d -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-external --rpc-cors=all --pruning=archive
+  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+  pkill best-grep.sh
 
   sleep 10;
   n=$[$n+1]

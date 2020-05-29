@@ -92,7 +92,7 @@ resource "google_monitoring_alert_policy" "validator" {
 
 resource "null_resource" "delay" {
   provisioner "local-exec" {
-    command = "sleep 400"
+    command = "sleep 600"
   }
   triggers = {
     before = google_monitoring_notification_channel.polkadot.name 
