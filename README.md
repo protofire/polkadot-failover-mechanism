@@ -76,4 +76,4 @@ Feel free to contribute by opening issues and PR at this repository. There are n
 
 [![License: Apache v2.0](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 
-This project is licensed under the Apache v2.0 public license. See the [LICENSE](LICENSE.md) file for details.
+This project is licensed under the Apache Public License v2.0. See the [LICENSE](LICENSE.md) file for details.

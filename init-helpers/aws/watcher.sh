@@ -13,7 +13,7 @@ fi
 regions=( $3 $4 $5 )
 
 for i in "${regions[@]}"; do
-  aws cloudwatch put-metric-data --region $i --metric-name "Health report" --dimensions AutoScalingGroupName=$2 --namespace "${prefix}" --value "$STATE"
-  aws cloudwatch put-metric-data --region $i --metric-name "Block Number" --dimensions InstanceID="$(curl --silent http://169.254.169.254/latest/meta-data/instance-id)" --namespace "$1" --value "$BLOCK_NUMBER"
-  aws cloudwatch put-metric-data --region $i --metric-name "Validator count" --dimensions AutoScalingGroupName=$2 --namespace "$1" --value "$AMIVALIDATOR"
+  aws cloudwatch put-metric-data --region $i --metric-name "Health report" --dimensions AutoScalingGroupName=$2 --namespace "${1}" --value "$STATE"
+  aws cloudwatch put-metric-data --region $i --metric-name "Block Number" --dimensions InstanceID="$(curl --silent http://169.254.169.254/latest/meta-data/instance-id)" --namespace "${1}" --value "$BLOCK_NUMBER"
+  aws cloudwatch put-metric-data --region $i --metric-name "Validator count" --dimensions AutoScalingGroupName=$2 --namespace "${1}" --value "$AMIVALIDATOR"
 done
