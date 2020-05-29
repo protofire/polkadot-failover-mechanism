@@ -7,6 +7,7 @@ key_names=$(az keyvault secret list --vault-name ${1}-vault | jq .[].name -r | g
 for key_name in ${key_names[@]} ; do
 
   echo "Adding key $key_name"
+
   SEED=$(az keyvault secret show --vault-name ${1}-vault --name polkadot-${1}-keys-${key_name}-seed | jq .value -r)
   KEY=$(az keyvault secret show --vault-name ${1}-vault --name polkadot-${1}-keys-${key_name}-key | jq .value -r)
   TYPE=$(az keyvault secret show --vault-name ${1}-vault --name polkadot-${1}-keys-${key_name}-type| jq .value -r)

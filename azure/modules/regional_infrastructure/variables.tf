@@ -1,10 +1,15 @@
+variable "region_prefix" {
+  type = string
+  default = "undefined"
+  description = "Unique prefix for region"
+}
+
 variable "prefix" {
   type = string
   description = "Unique prefix for cloud resources at Terraform"
 }
 
 variable "instance_type" {
-  default = "t3.medium"
 }
 
 variable "disk_size" {
@@ -21,20 +26,12 @@ variable "validator_name" {
   description = "A moniker of the validator"
 }
 
-variable "validator_keys" {
-  type = map(object({
-    seed = string
-    key = string
-    type = string
-  }))
-}
-
 variable "instance_count" {
   default = 1
 }
 
 variable "cpu_limit" {
-  default = "1.5"
+  default = "0.75"
   description = "CPU limit in CPUs number that Polkadot node can use. Should never be greater than chosen instance type has."
 }
 
@@ -47,18 +44,7 @@ variable "total_instance_count" {
   default = 3
 }
 
-variable "key_name" {
-}
-
-variable "key_content" {
-  default = ""
-}
-
-variable "regions" {
-  default = ["us-east-1", "us-east-2", "eu-west-1"]
-}
-
-variable "asg_role" {
+variable "region" {
 }
 
 variable "chain" {
@@ -66,34 +52,32 @@ variable "chain" {
   description = "A name of the chain to run Polkadot node at"
 }
 
-variable "vpc" {
+variable "vnet_cidr" {
 }
 
-variable "subnet" {
+variable "subnet_cidr" {
 }
 
-variable "lb" {
+variable "subnet_cidrs" {
 }
 
-variable "lbs" {
-}
-
-variable "cidrs" {
-}
-
-variable "health_check_interval" {
-}
-
-variable "health_check_healthy_threshold" {
-}
-
-variable "health_check_unhealthy_threshold" {
+variable "rg" {
 }
 
 variable "expose_ssh" {
-  default = "false"
+  default = "False"
 }
 
-variable "node_key" {
-  description = "A unique ed25519 key that identifies the node"
+variable "key_content" {
+}
+
+variable "sa_type" {
+  default = "Standard_LRS"
+  description = "Storage account type"
+}
+
+variable "tenant" {
+}
+
+variable "action_group_id" {
 }

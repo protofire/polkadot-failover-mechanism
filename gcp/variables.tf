@@ -1,32 +1,22 @@
-variable "aws_profiles" {
-  type    = list(string)
-  default = ["default"]
+variable "gcp_credentials" {
+  type    = string
+  default = ""
 }
 
-variable "aws_regions" {
+variable "gcp_regions" {
   type        = list(string)
-  default     = ["us-east-1", "us-east-2", "us-west-1"]
+  default     = ["us-east1", "us-east4", "us-west1"]
   description = "Should be an array consisting of exactly three elements"
 }
 
-variable "aws_access_keys" {
-  type    = list(string)
-  default = []
-}
-
-variable "aws_secret_keys" {
-  type    = list(string)
-  default = []
+variable "gcp_project" {
+  type    = string
+  default = ""
 }
 
 variable "prefix" {
   type = string
   description = "Unique prefix for cloud resources at Terraform"
-}
-
-variable "vpc_cidrs" {
-  description = "VPC CIDR for each region, must be different for VPC peering to work"
-  default = ["10.0.0.0/16","10.1.0.0/16","10.2.0.0/16"]
 }
 
 variable "public_subnet_cidrs" {
@@ -35,11 +25,11 @@ variable "public_subnet_cidrs" {
 }
 
 variable "instance_type" {
-  default = "t3.medium"
+  default = "n1-standard-1"
 }
 
 variable "cpu_limit" {
-  default = "1.5"
+  default = "0.75"
   description = "CPU limit in CPUs number that Polkadot node can use. Should never be greater than chosen instance type has."
 }
 
@@ -62,20 +52,9 @@ variable "validator_name" {
   description = "A moniker of the validator"
 }
 
-variable "node_key" {
-  description = "A unique ed25519 key that identifies the node"
-}
-
 variable "instance_count" {
   default = [1, 1, 1]
   description = "A number of instances to run in each region. Odd number of instances in total is a must have for proper work"
-}
-
-variable "key_name" {
-}
-
-variable "key_content" {
-  default = ""
 }
 
 variable "chain" {
@@ -104,5 +83,13 @@ variable "validator_keys" {
 }
 
 variable "expose_ssh" {
-  default = false
+  default = "true"
+}
+
+variable "node_key" {
+  description = "A unique ed25519 key that identifies the node"
+}
+
+variable "admin_email" {
+  description = "An Admin email to send alerts to"
 }
