@@ -24,7 +24,7 @@ service stackdriver-agent restart
 # get helper functons to install and configure necessary tools and systems
 curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/gcp/install_consul.sh
 curl -o /usr/local/bin/install_consulate.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/install_consulate.sh
-curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/gcp/stackdriver.sh
+curl -o /usr/local/bin/stackdriver.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/gcp/stackdriver.sh
 
 source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh  
@@ -57,10 +57,9 @@ trap - ERR
 trap default_trap ERR
 set -eE
 # Mound disk and add automount entry in /etc/fstab
-UUID=$(/usr/bin/lsblk /dev/sdb -nr -o UUID)
 /usr/bin/mkdir /data
 /usr/bin/mount /dev/sdb /data
-/usr/bin/echo "UUID=$${UUID} /data xfs defaults 0 0" >> /etc/fstab
+/usr/bin/echo "/dev/sdb /data xfs defaults 0 0" >> /etc/fstab
 
 chown 1000:1000 /data
 
@@ -77,7 +76,7 @@ RAM=$(gcloud secrets versions access $(gcloud secrets versions list $RAM_NAME --
 NODEKEY_NAME=$(gcloud secrets list --format=json --filter="name ~ ${prefix}_nodekey AND labels.prefix=${prefix} AND labels.type != key" | jq -r .[0].name)
 NODEKEY=$(gcloud secrets versions access $(gcloud secrets versions list $NODEKEY_NAME --format json | jq '.[] | select(.state == "ENABLED") | .name' -r) --secret=$NODEKEY_NAME --format json | jq .payload.data -r | base64 -d)
 
-/usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -d -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-external --rpc-cors=all --pruning=archive
+/usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
 
 exit_code=1
 until [ $exit_code -eq 0 ]; do
@@ -115,11 +114,12 @@ until [ $n -ge 6 ]; do
   trap - ERR
   set +eE
   
-  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh ${prefix} && consul kv delete blocks/.lock && consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" & docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --unsafe-rpc-external --rpc-cors=all --validator --name '$NAME' --node-key '$NODEKEY'"
+  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh ${prefix} && consul kv delete blocks/.lock && (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY'"
 
   /usr/bin/docker stop polkadot || true
   /usr/bin/docker rm polkadot || true
-  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --name polkadot --restart unless-stopped -d -p 30333:30333 -p 127.0.0.1:9933:9933 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-external --rpc-cors=all --pruning=archive
+  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+  pkill best-grep.sh
 
   sleep 10;
   n=$[$n+1]

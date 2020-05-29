@@ -63,7 +63,7 @@ resource "azurerm_monitor_metric_alert" "disk" {
 
 resource "null_resource" "delay" {
   provisioner "local-exec" {
-    command = "sleep 550"
+    command = "sleep 1000"
   }
   triggers = {
     before = azurerm_linux_virtual_machine_scale_set.polkadot.id

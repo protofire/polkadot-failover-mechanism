@@ -1,4 +1,4 @@
-[submodule "azure/modules/load_balancer"]
+[submodule "lb"]
 	path = azure/modules/load_balancer
 	url = https://github.com/ArseniiPetrovich/terraform-azurerm-loadbalancer.git
 	branch = patch-2

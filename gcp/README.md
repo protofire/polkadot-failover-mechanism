@@ -47,6 +47,8 @@ Either clone this repo using `git clone` command or simply download it from Web 
 7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
 8. After the deployment is complete you can open Azure Portal to check that the instances were deployed successfully.
 
+*!IMPORTANT!* Unlike AWS and Azure GCP will not provide you with alarm each time failover occurs due to metrics sending methods currently implemented. #5 issue should fix this.
+
 ### Validate
 
 1. Watch [Polkadot Telemetry](https://telemetry.polkadot.io/) for your node to synchronize with the network.<br />

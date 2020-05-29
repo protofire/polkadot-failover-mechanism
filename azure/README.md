@@ -1,3 +1,6 @@
+# Beta-release note
+According to [Azure docs](https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/virtual-machines/linux/using-cloud-init.md) the CentOS image with cloud-init scripts that is used in this solution is still in beta. Despite the fact that these scripts were tested on Azure the new versions of image might introduce breaking changes that will affect the scripts behavior.
+
 # Deployment instruction
 
 ## Manual installation
@@ -84,3 +87,7 @@ As for now the implemented failover mechanism won't work if 2 out of the 3 chose
 ## Not all disks are deleted after infrastructure is deleted
 
 Set `delete_on_terminate` variable to `true` to override this behavior.
+
+## Nodes are not getting started with "Failed to listen on MultiAddress" error
+
+We faced this issue when set the abnormally long validator name with a number of spaces in it. While the roots of that issue remains unclear we recommend to set validator name using alphanumeric characters only with the length of around 10 symbols.

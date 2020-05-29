@@ -5,7 +5,7 @@ variable "aws_profiles" {
 
 variable "aws_regions" {
   type        = list(string)
-  default     = ["us-east-1", "us-east-2", "eu-west-1"]
+  default     = ["us-east-1", "us-east-2", "us-west-1"]
   description = "Should be an array consisting of exactly three elements"
 }
 
