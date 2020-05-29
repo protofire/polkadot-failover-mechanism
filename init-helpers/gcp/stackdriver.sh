@@ -17,7 +17,7 @@ INTERVAL="\$COLLECTD_INTERVAL"
 HOSTNAME="\$COLLECTD_HOSTNAME"
 
 while  true; do
-  docker exec -i polkadot /bin/curl --connect-timeout 2 -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params":[]}' http://127.0.0.1:9933;
+  curl --connect-timeout 2 -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params":[]}' http://127.0.0.1:9933;
   STATE=$?
 
   echo "PUTVAL \${HOSTNAME}/exec-polkadot/gauge-state/ interval=\${INTERVAL} N:\${STATE}"
@@ -35,7 +35,7 @@ HOSTNAME="\$COLLECTD_HOSTNAME"
 
 while true; do
 
-  BLOCK_NUMBER_HEX=\$(docker exec -i polkadot /bin/curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getBlock", "params":[]}' http://127.0.0.1:9933 | jq .result.block.header.number -r)
+  BLOCK_NUMBER_HEX=\$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getBlock", "params":[]}' http://127.0.0.1:9933 | jq .result.block.header.number -r)
 
 
   BLOCK_NUMBER=\$(( 16#$(echo \$BLOCK_NUMBER_HEX | sed 's/^0x//')))
@@ -55,7 +55,7 @@ HOSTNAME="\$COLLECTD_HOSTNAME"
 
 while true ; do
 
-  AMIVALIDATOR=\$(docker exec -i polkadot /bin/curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://127.0.0.1:9933 | jq -r .result[0])
+  AMIVALIDATOR=\$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://127.0.0.1:9933 | jq -r .result[0])
   if [ "\$AMIVALIDATOR" == "Authority" ]; then
     AMIVALIDATOR=1
   else
