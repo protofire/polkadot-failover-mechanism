@@ -7,5 +7,5 @@ for lib in "${libs[@]}"; do
   docker cp /usr/lib64/${lib} polkadot:/usr/lib/
 done
 
-docker cp /usr/lib64/libmetalink.so.3.0.0 polkadot:/usr/lib64/libmetalink.so.3
+docker cp /usr/lib64/libmetalink.so.3.0.0 polkadot:/usr/lib/libmetalink.so.3
 docker cp /usr/bin/curl polkadot:/bin/curl
