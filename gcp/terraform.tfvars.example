@@ -36,9 +36,6 @@ validator_keys = {
   }
 }
 
-# This is the SSH key to be used on all the machines
-key_content   = "ssh-rsa AAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAaaaaaaaaaaaaaaaaAAAAAAAAAAaaaaaaaaaaaaaAAAAAAAAaaaaaaaaaaaaAAAAAAAAaaaaaaaaaaaaaAAAAAAAaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaAAAaa user@node"
-
 # This variable is used to avoid infrastructure crossing and for security purposes also. Infrastructure with `prefix` exists in its own namespace
 prefix        = "prefix"
 
