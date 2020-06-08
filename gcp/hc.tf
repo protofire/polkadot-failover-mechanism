@@ -1,4 +1,6 @@
 resource "google_compute_health_check" "autohealing" {
+  project = var.gcp_project != "" ? var.gcp_project : null
+
   name                = "${var.prefix}-autohealing-health-check"
   check_interval_sec  = var.health_check_interval
   timeout_sec         = 5

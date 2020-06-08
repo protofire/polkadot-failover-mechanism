@@ -1,10 +1,12 @@
 resource "google_service_account" "service_account" {
+  project      = var.gcp_project != "" ? var.gcp_project : null
   account_id   = "${var.prefix}-sa"
   display_name = "SA for Polkadot failover node with prefix ${var.prefix}"
 }
 
 resource "google_project_iam_binding" "project" {
   provider = google-beta
+  project = var.gcp_project != "" ? var.gcp_project : null
 
   role    = "roles/compute.viewer"
   members = ["serviceAccount:${google_service_account.service_account.email}"]
@@ -13,6 +15,7 @@ resource "google_project_iam_binding" "project" {
 
 resource "google_project_iam_binding" "ssm-project" {
   provider = google-beta
+  project = var.gcp_project != "" ? var.gcp_project : null
 
   role    = "roles/secretmanager.viewer"
   members = ["serviceAccount:${google_service_account.service_account.email}"]
@@ -20,6 +23,7 @@ resource "google_project_iam_binding" "ssm-project" {
 }
 
 resource "google_project_iam_binding" "metricswriter-project" {
+  project = var.gcp_project != "" ? var.gcp_project : null
 
   role    = "roles/monitoring.metricWriter"
   members = ["serviceAccount:${google_service_account.service_account.email}"]

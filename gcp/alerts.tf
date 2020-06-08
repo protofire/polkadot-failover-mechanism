@@ -1,4 +1,6 @@
 resource "google_monitoring_notification_channel" "polkadot" {
+  project = var.gcp_project != "" ? var.gcp_project : null
+
   display_name = "${var.prefix}-notifications"
   type         = "email"
 
@@ -8,6 +10,8 @@ resource "google_monitoring_notification_channel" "polkadot" {
 }
 
 resource "google_monitoring_alert_policy" "validator" {
+  project = var.gcp_project != "" ? var.gcp_project : null
+
   display_name = "${var.prefix}-validator-min"
   combiner     = "OR"
 
@@ -92,7 +96,7 @@ resource "google_monitoring_alert_policy" "validator" {
 
 resource "null_resource" "delay" {
   provisioner "local-exec" {
-    command = "sleep 600"
+    command = "sleep 800"
   }
   triggers = {
     before = google_monitoring_notification_channel.polkadot.name 

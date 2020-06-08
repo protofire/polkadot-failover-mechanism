@@ -1,4 +1,6 @@
 resource "google_compute_firewall" "health-check" {
+  project = var.gcp_project != "" ? var.gcp_project : null
+
   name        = "${var.prefix}-polkadot-validator-hc"
   description = "A security group health checks"
   network     = google_compute_network.vpc_network.self_link
@@ -14,6 +16,8 @@ resource "google_compute_firewall" "health-check" {
 
 
 resource "google_compute_firewall" "validator-node-internal" {
+  project = var.gcp_project != "" ? var.gcp_project : null
+
   name        = "${var.prefix}-polkadot-validator-internal"
   description = "Security for consul communications"
   network     = google_compute_network.vpc_network.self_link
@@ -33,6 +37,8 @@ resource "google_compute_firewall" "validator-node-internal" {
 }
 
 resource "google_compute_firewall" "validator-node-external" {
+  project = var.gcp_project != "" ? var.gcp_project : null
+
   name        = "${var.prefix}-polkadot-validator-external"
   description = "For blockchain node to be accessible from outside, also for SSH access if configured"
   network     = google_compute_network.vpc_network.self_link 
