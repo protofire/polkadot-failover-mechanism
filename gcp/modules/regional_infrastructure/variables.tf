@@ -59,3 +59,6 @@ variable "expose_ssh" {
 
 variable "sa_email" {
 }
+
+variable "gcp_project" {
+}

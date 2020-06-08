@@ -5,7 +5,8 @@ module "primary_region" {
 
   prefix                = var.prefix
   subnet                = google_compute_subnetwork.primary.id
-  
+  gcp_project           = var.gcp_project
+
   instance_type         = var.instance_type
   disk_size             = var.disk_size
   delete_on_termination = var.delete_on_termination
@@ -35,7 +36,8 @@ module "secondary_region" {
 
   prefix                = var.prefix
   subnet                = google_compute_subnetwork.secondary.id
-  
+  gcp_project           = var.gcp_project  
+
   instance_type         = var.instance_type
   disk_size             = var.disk_size
   delete_on_termination = var.delete_on_termination
@@ -67,7 +69,8 @@ module "tertiary_region" {
 
   prefix                = var.prefix
   subnet                = google_compute_subnetwork.tertiary.id
-  
+  gcp_project           = var.gcp_project  
+
   instance_type         = var.instance_type
   disk_size             = var.disk_size
   delete_on_termination = var.delete_on_termination

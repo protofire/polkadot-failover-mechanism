@@ -4,6 +4,8 @@ data "google_compute_image" "centos" {
 }
 
 resource "google_compute_instance_template" "instance_template" {
+  project = var.gcp_project != "" ? var.gcp_project : null
+
   name_prefix  = "${var.prefix}-"
   machine_type = var.instance_type
   region       = var.region
@@ -63,6 +65,8 @@ resource "google_compute_instance_template" "instance_template" {
 }
 
 resource "google_compute_region_instance_group_manager" "instance_group_manager" {
+    project = var.gcp_project != "" ? var.gcp_project : null
+
   name               = "${var.prefix}-instance-group-manager"
   version {
     instance_template  = google_compute_instance_template.instance_template.self_link
@@ -114,4 +118,5 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
 }
 
 data "google_compute_zones" "available" {
+  project = var.gcp_project != "" ? var.gcp_project : null
 }
