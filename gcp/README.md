@@ -95,3 +95,7 @@ As for now the implemented failover mechanism won't work if 2 out of the 3 chose
 ## Not all disks are deleted after infrastructure is deleted
 
 Set `delete_on_terminate` variable to `true` to override this behavior.
+
+## I get the alert about zero validators running when launching the scripts
+
+Sometimes the existing delay between creating virtual machines (validators) and alerts is not enough, which triggers an alert. An increase in the delay does not always help to resolve the situation, so you should be aware that in some cases an alert can be triggered. The alert should be solved automatically within a few minutes after the Terraform finishes it tasks.
