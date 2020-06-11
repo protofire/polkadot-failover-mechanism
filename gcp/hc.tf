@@ -1,4 +1,5 @@
 resource "google_compute_health_check" "autohealing" {
+  provider = google.primary
   project = var.gcp_project != "" ? var.gcp_project : null
 
   name                = "${var.prefix}-autohealing-health-check"

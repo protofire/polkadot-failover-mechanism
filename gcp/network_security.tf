@@ -1,4 +1,5 @@
 resource "google_compute_firewall" "health-check" {
+  provider = google.primary
   project = var.gcp_project != "" ? var.gcp_project : null
 
   name        = "${var.prefix}-polkadot-validator-hc"
@@ -16,6 +17,7 @@ resource "google_compute_firewall" "health-check" {
 
 
 resource "google_compute_firewall" "validator-node-internal" {
+  provider = google.primary
   project = var.gcp_project != "" ? var.gcp_project : null
 
   name        = "${var.prefix}-polkadot-validator-internal"
@@ -37,6 +39,7 @@ resource "google_compute_firewall" "validator-node-internal" {
 }
 
 resource "google_compute_firewall" "validator-node-external" {
+  provider = google.primary
   project = var.gcp_project != "" ? var.gcp_project : null
 
   name        = "${var.prefix}-polkadot-validator-external"

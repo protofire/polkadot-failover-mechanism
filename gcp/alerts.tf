@@ -1,4 +1,5 @@
 resource "google_monitoring_notification_channel" "polkadot" {
+  provider = google.primary
   project = var.gcp_project != "" ? var.gcp_project : null
 
   display_name = "${var.prefix}-notifications"
@@ -11,6 +12,7 @@ resource "google_monitoring_notification_channel" "polkadot" {
 }
 
 resource "google_monitoring_alert_policy" "validator" {
+  provider = google.primary
   project = var.gcp_project != "" ? var.gcp_project : null
 
   display_name = "${var.prefix}-validator-min"
