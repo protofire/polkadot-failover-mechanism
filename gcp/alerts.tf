@@ -7,6 +7,7 @@ resource "google_monitoring_notification_channel" "polkadot" {
   labels = {
     email_address = var.admin_email
   }
+  depends_on = [module.primary_region, module.secondary_region, module.tertiary_region]
 }
 
 resource "google_monitoring_alert_policy" "validator" {
