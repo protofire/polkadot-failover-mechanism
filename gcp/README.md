@@ -37,6 +37,20 @@ It is highly recommended to run these scripts at the dedicated project. Despite 
 
 Either clone this repo using `git clone` command or simply download it from Web and unpack on the deployer node.
 
+### Enable GCP APIs
+
+To run these scripts you will need to have a number of API services enabled:
+- Stackdriver API (`gcloud services enable monitoring`)
+- Secret Manager API (`gcloud services enable secretmanager.googleapis.com`)
+- Compute Engine API (`gcloud services enable compute.googleapis.com`)
+- IAM API (`gcloud services enable iam.googleapis.com`)
+- Cloud Resource Manager API (`gcloud services enable cloudresourcemanager.googleapis.com`)
+
+
+To enable APIs simply visit the GCP Console page of each of the services above and press "Enable API" if needed. If you don't have an access - you can enable the very same using the `gcloud` CLI (see the [instructions](https://cloud.google.com/sdk/gcloud/reference/services/enable)). 
+
+Note that you will have to wait some time before running the scripts, so the API enablement can propagate.
+
 ### Run the Terraform scripts
 
 1. Open `gcp` folder of the cloned (downloaded) repo.
@@ -81,3 +95,7 @@ As for now the implemented failover mechanism won't work if 2 out of the 3 chose
 ## Not all disks are deleted after infrastructure is deleted
 
 Set `delete_on_terminate` variable to `true` to override this behavior.
+
+## I get the alert about zero validators running when launching the scripts
+
+Sometimes the existing delay between creating virtual machines (validators) and alerts is not enough, which triggers an alert. An increase in the delay does not always help to resolve the situation, so you should be aware that in some cases an alert can be triggered. The alert should be solved automatically within a few minutes after the Terraform finishes it tasks.
