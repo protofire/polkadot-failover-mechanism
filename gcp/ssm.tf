@@ -1,5 +1,5 @@
 resource "google_secret_manager_secret_version" "keys-version" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -9,7 +9,7 @@ resource "google_secret_manager_secret_version" "keys-version" {
 }
 
 resource "google_secret_manager_secret" "keys" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -36,7 +36,7 @@ resource "google_secret_manager_secret" "keys" {
 }
 
 resource "google_secret_manager_secret_version" "seeds-version" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -46,7 +46,7 @@ resource "google_secret_manager_secret_version" "seeds-version" {
 }
 
 resource "google_secret_manager_secret" "seeds" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -73,7 +73,7 @@ resource "google_secret_manager_secret" "seeds" {
 }
 
 resource "google_secret_manager_secret_version" "types-version" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -83,7 +83,7 @@ resource "google_secret_manager_secret_version" "types-version" {
 }
 
 resource "google_secret_manager_secret" "types" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -110,7 +110,7 @@ resource "google_secret_manager_secret" "types" {
 }
 
 resource "google_secret_manager_secret_version" "name-version" {
-  provider = google-beta
+  provider = google.primary
 
   secret = google_secret_manager_secret.name.id
 
@@ -118,7 +118,7 @@ resource "google_secret_manager_secret_version" "name-version" {
 }
 
 resource "google_secret_manager_secret" "name" {
-  provider = google-beta
+  provider = google.primary
 
   secret_id = "${var.prefix}_name"
 
@@ -142,7 +142,7 @@ resource "google_secret_manager_secret" "name" {
 }
 
 resource "google_secret_manager_secret_version" "cpu-version" {
-  provider = google-beta
+  provider = google.primary
 
   secret = google_secret_manager_secret.cpu.id
 
@@ -150,7 +150,7 @@ resource "google_secret_manager_secret_version" "cpu-version" {
 }
 
 resource "google_secret_manager_secret" "cpu" {
-  provider = google-beta
+  provider = google.primary
 
   secret_id = "${var.prefix}_cpulimit"
 
@@ -174,7 +174,7 @@ resource "google_secret_manager_secret" "cpu" {
 }
 
 resource "google_secret_manager_secret_version" "ram-version" {
-  provider = google-beta
+  provider = google.primary
 
   secret = google_secret_manager_secret.ram.id
 
@@ -182,7 +182,7 @@ resource "google_secret_manager_secret_version" "ram-version" {
 }
 
 resource "google_secret_manager_secret" "ram" {
-  provider = google-beta
+  provider = google.primary
 
   secret_id = "${var.prefix}_ramlimit"
 
@@ -206,7 +206,7 @@ resource "google_secret_manager_secret" "ram" {
 }
 
 resource "google_secret_manager_secret_version" "nodekey-version" {
-  provider = google-beta
+  provider = google.primary
 
   secret = google_secret_manager_secret.nodekey.id
 
@@ -214,7 +214,7 @@ resource "google_secret_manager_secret_version" "nodekey-version" {
 }
 
 resource "google_secret_manager_secret" "nodekey" {
-  provider = google-beta
+  provider = google.primary
 
   secret_id = "${var.prefix}_nodekey"
 

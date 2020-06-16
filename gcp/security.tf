@@ -6,7 +6,7 @@ resource "google_service_account" "service_account" {
 }
 
 resource "google_project_iam_binding" "project" {
-  provider = google-beta
+  provider = google.primary
   project = var.gcp_project != "" ? var.gcp_project : null
 
   role    = "roles/compute.viewer"
@@ -15,7 +15,7 @@ resource "google_project_iam_binding" "project" {
 }
 
 resource "google_project_iam_binding" "ssm-project" {
-  provider = google-beta
+  provider = google.primary
   project = var.gcp_project != "" ? var.gcp_project : null
 
   role    = "roles/secretmanager.viewer"
@@ -33,7 +33,7 @@ resource "google_project_iam_binding" "metricswriter-project" {
 }
 
 resource "google_secret_manager_secret_iam_binding" "binding-keys" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -44,7 +44,7 @@ resource "google_secret_manager_secret_iam_binding" "binding-keys" {
 }
 
 resource "google_secret_manager_secret_iam_binding" "binding-seeds" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -55,7 +55,7 @@ resource "google_secret_manager_secret_iam_binding" "binding-seeds" {
 }
 
 resource "google_secret_manager_secret_iam_binding" "binding-types" {
-  provider = google-beta
+  provider = google.primary
 
   for_each = var.validator_keys
 
@@ -66,7 +66,7 @@ resource "google_secret_manager_secret_iam_binding" "binding-types" {
 }
 
 resource "google_secret_manager_secret_iam_binding" "binding-name" {
-  provider = google-beta
+  provider = google.primary
 
   project = google_secret_manager_secret.name.project
   secret_id = google_secret_manager_secret.name.secret_id
@@ -75,7 +75,7 @@ resource "google_secret_manager_secret_iam_binding" "binding-name" {
 }
 
 resource "google_secret_manager_secret_iam_binding" "binding-cpu" {
-  provider = google-beta
+  provider = google.primary
 
   project = google_secret_manager_secret.cpu.project
   secret_id = google_secret_manager_secret.cpu.secret_id
@@ -84,7 +84,7 @@ resource "google_secret_manager_secret_iam_binding" "binding-cpu" {
 }
 
 resource "google_secret_manager_secret_iam_binding" "binding-ram" {
-  provider = google-beta
+  provider = google.primary
 
   project = google_secret_manager_secret.ram.project
   secret_id = google_secret_manager_secret.ram.secret_id
@@ -93,7 +93,7 @@ resource "google_secret_manager_secret_iam_binding" "binding-ram" {
 }
 
 resource "google_secret_manager_secret_iam_binding" "binding-nodekey" {
-  provider = google-beta
+  provider = google.primary
 
   project = google_secret_manager_secret.nodekey.project
   secret_id = google_secret_manager_secret.nodekey.secret_id

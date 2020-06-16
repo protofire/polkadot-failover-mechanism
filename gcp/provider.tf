@@ -1,12 +1,5 @@
-provider "google-beta" {
-  version = "~> 3.15.0"
-  credentials = var.gcp_credentials != "" ? file(var.gcp_credentials) : null
-  project = var.gcp_project != "" ? var.gcp_project : null
-  region  = var.gcp_regions[0]
-}
-
 provider "google" {
-  version = "~> 3.15.0"
+  version = "~> 3.25.0"
   credentials = var.gcp_credentials != "" ? file(var.gcp_credentials) : null
   project = var.gcp_project != "" ? var.gcp_project : null
   region  = var.gcp_regions[0]
@@ -14,7 +7,7 @@ provider "google" {
 }
 
 provider "google" {
-  version = "~> 3.15.0"
+  version = "~> 3.25.0"
   credentials = var.gcp_credentials != "" ? file(var.gcp_credentials) : null
   project = var.gcp_project != "" ? var.gcp_project : null
   region  = var.gcp_regions[1]
@@ -22,7 +15,7 @@ provider "google" {
 }
 
 provider "google" {
-  version = "~> 3.15.0"
+  version = "~> 3.25.0"
   credentials = var.gcp_credentials != "" ? file(var.gcp_credentials) : null
   project = var.gcp_project != "" ? var.gcp_project : null
   region  = var.gcp_regions[2]
