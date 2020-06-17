@@ -7,6 +7,11 @@
 ## Resource group to create resources at
 azure_rg = "Web3"
 
+## To get the instance type `az vm list-skus --location $REGION --output table` command, where region is each of the 3 regions you will install failover validator at.
+## By default regions are: centralus, eastus, westus.
+## Find SKU that is available at each of the selected region
+instance_type = ""
+
 validator_name = ""
 validator_keys = {
   key = {
