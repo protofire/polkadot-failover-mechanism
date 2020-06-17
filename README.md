@@ -39,7 +39,10 @@ These scripts will deploy the following architecture components:
 
 ### [Azure](azure/)
 
+** Important! ** Unlike with other clouds Azure require you to clone the repository with `--recurse-submodules` argument, so the whole command would be like `git clone --recurse-submodules https://github.com/protofire/polkadot-failover-mechanism`. This is required, because Terraform Azure scripts relies on existing load balancer module in another repository.
+
 This folder contains Terraform configuration scripts that will deploy the failover solution to Azure cloud. Use [terraform.tfvars.example](azure/terraform.tfvars.example) file to see the very minimum configuration required to deploy solution. See README inside of Azure folder for more details.
+
 
 ![Azure Design](azure-architecture.png "Azure Design architecture")
 
