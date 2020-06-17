@@ -43,7 +43,7 @@ variable "public_subnet_cidrs" {
 }
 
 variable "instance_type" {
-  default = "Standard_D1_v2"
+  default = "Standard_D1"
 }
 
 variable "cpu_limit" {
