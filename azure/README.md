@@ -51,7 +51,7 @@ To get the [service account credentials](https://docs.microsoft.com/en-us/azure/
 
 ### Clone the repo
 
-Either clone this repo using `git clone` command or simply download it from Web and unpack on the deployer node.
+You will need to clone this repo and it's submodules. Use `git clone --recurse-submodules` command, `--recurse-submodules` is mandatory to make scripts work.
 
 ### Run the Terraform scripts
 
