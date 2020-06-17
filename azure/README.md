@@ -9,7 +9,7 @@ According to [Azure docs](https://github.com/MicrosoftDocs/azure-docs/blob/maste
 
 1. An instance further referred as *Deployer* instance which will be used to run these scripts from.
 2. [Terraform](https://www.terraform.io/downloads.html). To install Terraform proceed to the [Install Terraform](#install-terraform) section.
-3. (Optional) Azure CLI. To install Azure CLI follow [the instruction](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest).
+3. Azure CLI. To install Azure CLI follow [the instruction](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest).
 
 Also you will need a set of keys known as `NODE KEY`, `STASH`, `CONTROLLER` and `SESSION KEYS`. As for this release in `Kusama` and `Westend` network there are 5 keys inside of `SESSION KEYS` object - [GRANDPA, BABE, ImOnline, Parachains, AuthorityDiscovery](https://github.com/paritytech/polkadot/blob/master/runtime/kusama/src/lib.rs#L258). You will have to generate all of them. You can do it either using [Subkey](https://substrate.dev/docs/en/ecosystem/subkey) tool or using [PolkadotJS](https://polkadot.js.org/apps/#/accounts) website.
 
@@ -55,9 +55,10 @@ You will need to clone this repo and it's submodules. Use `git clone --recurse-s
 
 ### Run the Terraform scripts
 
-1. Open `azure` folder of the cloned (downloaded) repo.
-2. Create `terraform.tfvars` file inside of the `azure` folder of the cloned repo, where `terraform.tfvars.example` is located.
-3. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
+1. Login to Azure CLI. Run `az login` command and follow the instructions on the screen.
+2. Open `azure` folder of the cloned (downloaded) repo.
+3. Create `terraform.tfvars` file inside of the `azure` folder of the cloned repo, where `terraform.tfvars.example` is located.
+4. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
 5. Run `terraform init`.
 6. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
 7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
