@@ -39,6 +39,16 @@ It is highly recommended to run these scripts at the dedicated resource group.
 2. Type "Resource groups" in the search bar to navigate to the Resource Group management section
 3. Click "Add" to create a new Resource group. Note down the name of the created resource group as you will need it further.
 
+### Get Azure credentials
+
+To get the [service account credentials](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal) that will be used to run these scripts you will need to create an application in Azure Active Directory.
+1. Login to [Azure Portal](https://portal.azure.com)
+2. Type "Subscriptions" in the search bar to navigate to the Subscriptions management section. Remember the ID of the subscription you want to create resources in. You can read more about Azure entities [here](https://techcommunity.microsoft.com/t5/azure/understanding-azure-account-subscription-and-directory/td-p/34800).
+3. Type "Azure Active Directory" (AAD) in the search bar. Navigate to "App registrations" tab inside of the AAD management section.
+4. Create new application. Type any recognizable name you want.
+5. Save tenant id and client id after creation in your notes. You will need it later.
+6. Go to the "Certificates & Secrets" tab inside of the application management pane. Create new client secret and save it. You will need this later as well.
+
 ### Clone the repo
 
 Either clone this repo using `git clone` command or simply download it from Web and unpack on the deployer node.
