@@ -40,7 +40,7 @@ Either clone this repo using `git clone` command or simply download it from Web 
 ### Enable GCP APIs
 
 To run these scripts you will need to have a number of API services enabled:
-- Stackdriver API (`gcloud services enable monitoring`)
+- Stackdriver API (`gcloud services enable monitoring`), and the Stackdriver space has to be created inside of the target project (just visit the Stackdriver page, you will be prompted to create the space)
 - Secret Manager API (`gcloud services enable secretmanager.googleapis.com`)
 - Compute Engine API (`gcloud services enable compute.googleapis.com`)
 - IAM API (`gcloud services enable iam.googleapis.com`)
@@ -81,6 +81,21 @@ The argument for sessions.setKeys will be 0xbeaa0ec217371a8559f0d1acfcc4705b4808
 Note that there is only one 0x left, all the others are omitted.
 ```
 4. Start validating - perform a `staking.validate` transaction.
+
+# Operations
+
+## What alerts will I receive to my email?
+
+You will receive the alerts in the following cases:
+- No validator nodes are currently running
+- More than 1 validator is currently running
+- Node reports unhealthy status
+
+## How can I know which node is taking the lead right now?
+
+Basically, there are two possible ways to understand which node is taking the lead. First is to go to the Stackdriver dashboard, select the alerting policy that is created by Terraform script, find the alert that monitors the number of validators, open it and check which of the nodes sends the metric value equals to 1. This is the node that running the validator right now.
+
+The other way is to SSH into each node subsequentally and run `sudo docker ps -a --no-trunc` command. This command will show you the docker container that are run on this machine. Check the command that is used to run the container. Only one container on one instance will have `--validator` argument at the launch command. All the other containers will have the `--pruning=archive`.
 
 # Known issues & limitations
 

@@ -65,6 +65,21 @@ Note that there is only one 0x left, all the others are omitted.
 ```
 4. Start validating - perform a `staking.validate` transaction.
 
+# Operations
+
+## What alerts will I receive to my email?
+
+You will receive the alerts in the following cases:
+- No validator nodes are currently running
+- More than 1 validator is currently running
+- Node reports unhealthy status
+
+## How can I know which node is taking the lead right now?
+
+Basically, there are two possible ways to understand which node is taking the lead. First is to go to the CloudWatch dashboard, select the alarm that is created by Terraform script and monitors the number of validators, open it and check which of the nodes sends the metric value equals to 1. This is the node that running the validator right now.
+
+The other way is to SSH into each node subsequentally and run `sudo docker ps -a --no-trunc` command. This command will show you the docker container that are run on this machine. Check the command that is used to run the container. Only one container on one instance will have `--validator` argument at the launch command. All the other containers will have the `--pruning=archive`.
+
 # Known issues & limitations
 
 ## Prefix should contain alphanumeric characters only and have to be short
