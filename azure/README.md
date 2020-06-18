@@ -85,16 +85,16 @@ Note that there is only one 0x left, all the others are omitted.
 
 # Operations
 
-## What alerts will I receive to my email?
+## What alerts will I receive on my email?
 
 You will receive the alerts in the following cases:
 - Node reports unhealthy status
 
-*!Important!* Since there is no existing way to aggregate multiple VMSS to single metric there is no way to create an alert that will ensure there is only 1 active validator at a time. If you have an idea of how to create this alert - please, open issue or pull request against this repo. Thanks!
+*Important!* Since there is no existing way to aggregate multiple VMSS to single metric there is no way to create an alert that will ensure there is only 1 active validator at a time. If you have an idea of how to create this alert - please, open issue or pull request against this repo. Thanks!
 
 ## How can I know which node is taking the lead right now?
 
-Basically, there are two possible ways to understand which node is taking the lead. First is to go to the Azure Monitor dashboard, and check each of the VMSS. It will have a custom "polkadot/validator" metric, and only one VMSS will report that it runs a validator. In case you are running more than 3 nodes you will not be able to identify validator using this method.
+Basically, there are two possible ways to understand which node is taking the lead. First is to go to the [Azure Monitor dashboard](https://portal.azure.com/#blade/Microsoft_Azure_Monitoring/AzureMonitoringBrowseBlade/overview), and check each of the VMSS. It will have a custom "polkadot/validator" metric, and only one VMSS will report that it runs a validator. In case you are running more than 3 nodes you will not be able to identify validator using this method.
 
 The other way is to SSH into each node subsequentally and run `sudo docker ps -a --no-trunc` command. This command will show you the docker container that are run on this machine. Check the command that is used to run the container. Only one container on one instance will have `--validator` argument at the launch command. All the other containers will have the `--pruning=archive`.
 
