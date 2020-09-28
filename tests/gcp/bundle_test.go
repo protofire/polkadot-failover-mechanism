@@ -34,18 +34,20 @@ func TestBundle(t *testing.T) {
 
 		// Variables to pass to our Terraform code using -var options
 		Vars: map[string]interface{}{
-			"gcp_regions": "[\"" + gcpRegion[0] + "\", \"" + gcpRegion[1] + "\", \"" + gcpRegion[2] + "\"]",
-			"validator_keys": "{key1={key=\"0x6ce96ae5c300096b09dbd4567b0574f6a1281ae0e5cfe4f6b0233d1821f6206b\",type=\"gran\",seed=\"favorite liar zebra assume hurt cage any damp inherit rescue delay panic\"},key2={key=\"0x3ff0766f9ebbbceee6c2f40d9323164d07e70c70994c9d00a9512be6680c2394\",type=\"aura\",seed=\"expire stage crawl shell boss any story swamp skull yellow bamboo copy\"}}",
-			"gcp_ssh_user": "ubuntu",
-			"gcp_ssh_pub_key": sshKey.PublicKey,
+            "gcp_regions": "[\"" + gcpRegion[0] + "\", \"" + gcpRegion[1] + "\", \"" + gcpRegion[2] + "\"]",
+	    "gcp_project": os.Getenv("GCP_PROJECT"),
+            "validator_keys": "{key1={key=\"0x6ce96ae5c300096b09dbd4567b0574f6a1281ae0e5cfe4f6b0233d1821f6206b\",type=\"gran\",seed=\"favorite liar zebra assume hurt cage any damp inherit rescue delay panic\"},key2={key=\"0x3ff0766f9ebbbceee6c2f40d9323164d07e70c70994c9d00a9512be6680c2394\",type=\"aura\",seed=\"expire stage crawl shell boss any story swamp skull yellow bamboo copy\"}}",
+            "gcp_ssh_user": "ubuntu",
+            "gcp_ssh_pub_key": sshKey.PublicKey,
             "prefix": prefix,
-			"delete_on_termination": "true",
-			"cpu_limit": "1",
-			"ram_limit": "1",
-			"validator_name": "test",
-			"expose_ssh": "true",
-			"node_key": "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
+            "delete_on_termination": "true",
+            "cpu_limit": "1",
+            "ram_limit": "1",
+	    "validator_name": "test",
+	    "expose_ssh": "true",
+	    "node_key": "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
             "chain": "westend",
+	    "admin_email": "1627_DEV@altoros.com", 
 		},
 	}
 
@@ -59,7 +61,7 @@ func TestBundle(t *testing.T) {
 	var instanceIPs []string
 
 	for _, value := range gcpRegion {
-        regionInstances := gcp.FetchRegionalInstanceGroup(t, value, os.Getenv("GCP_PROJECT"), os.Getenv("PREFIX")+"-instance-group-manager").GetPublicIps(t, os.Getenv("GCP_PROJECT"))
+        regionInstances := gcp.FetchRegionalInstanceGroup(t, os.Getenv("GCP_PROJECT"), value, os.Getenv("PREFIX")+"-instance-group-manager").GetPublicIps(t, os.Getenv("GCP_PROJECT"))
 
  
 		if len(regionInstances) < 1 {
@@ -291,7 +293,7 @@ func NodeQuery(t *testing.T, publicIPs []string, key *ssh.KeyPair, command strin
 		publicHost := ssh.Host{
 			Hostname:    publicInstanceIP,
 			SshKeyPair:  key,
-			SshUserName: "ec2-user",
+			SshUserName: "ubuntu",
 		}
 
 		// It can take a minute or so for the Instance to boot up, so retry a few times
