@@ -123,7 +123,7 @@ func TestBundle(t *testing.T) {
 			t.Log("INFO. Leaders check passed. Exactly 1 leader found")
 		}
         
-    // TEST 7: Verify that all Polkadot nodes are health
+    // TEST 7: Verify that all Polkadot nodes are healthy
 		test = assert.True(t, PolkadotCheck(t, instanceIPs, sshKey))
 		if test {
 			t.Log("INFO. Polkadot node check passed. All instances are healthy")
