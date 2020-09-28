@@ -3,23 +3,19 @@ package test
 // Set PREFIX, GCP_PROJECT, and GOOGLE_APPLICATION_CREDENTIALS credentials before running these scripts
 
 import (
-	"testing"
-	"os"
-	"time"
-	"strconv"
-	"fmt"
-	"encoding/json"
+    "testing"
+    "os"
+    "strconv"
+    "fmt"
+    "encoding/json"
     "strings"
+    "time"
 
-	"github.com/gruntwork-io/terratest/modules/gcp"
-	"github.com/gruntwork-io/terratest/modules/terraform"
+    "github.com/gruntwork-io/terratest/modules/retry"
+    "github.com/gruntwork-io/terratest/modules/gcp"
+    "github.com/gruntwork-io/terratest/modules/terraform"
     "github.com/gruntwork-io/terratest/modules/ssh"
-	"github.com/gruntwork-io/terratest/modules/retry"
-
-	"github.com/google/go-cmp/cmp"
-
-	"google.golang.org/api/compute/v1"
-	"github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/assert"
 )
 
 //Gather environmental variables and set reasonable defaults
@@ -38,7 +34,7 @@ func TestBundle(t *testing.T) {
 
 		// Variables to pass to our Terraform code using -var options
 		Vars: map[string]interface{}{
-			"gcp_regions": "[\"" + awsRegion[0] + "\", \"" + awsRegion[1] + "\", \"" + awsRegion[2] + "\"]",
+			"gcp_regions": "[\"" + gcpRegion[0] + "\", \"" + gcpRegion[1] + "\", \"" + gcpRegion[2] + "\"]",
 			"validator_keys": "{key1={key=\"0x6ce96ae5c300096b09dbd4567b0574f6a1281ae0e5cfe4f6b0233d1821f6206b\",type=\"gran\",seed=\"favorite liar zebra assume hurt cage any damp inherit rescue delay panic\"},key2={key=\"0x3ff0766f9ebbbceee6c2f40d9323164d07e70c70994c9d00a9512be6680c2394\",type=\"aura\",seed=\"expire stage crawl shell boss any story swamp skull yellow bamboo copy\"}}",
 			"gcp_ssh_user": "ubuntu",
 			"gcp_ssh_pub_key": sshKey.PublicKey,
@@ -62,10 +58,10 @@ func TestBundle(t *testing.T) {
     // TEST 1: Verify that there are healthy instances in each region with public ips assigned
 	var instanceIPs []string
 
-	for _, value := range awsRegion {
-        regionInstances := gcp.FetchRegionalInstanceGroup(t, value, os.Getenv("GCP_PROJECT"),fmt.Println(os.Getenv("PREFIX"),"-instance-group-manager")).GetPublicIps(t, os.Getenv("GCP_PROJECT"))
-        
-        
+	for _, value := range gcpRegion {
+        regionInstances := gcp.FetchRegionalInstanceGroup(t, value, os.Getenv("GCP_PROJECT"), os.Getenv("PREFIX")+"-instance-group-manager").GetPublicIps(t, os.Getenv("GCP_PROJECT"))
+
+ 
 		if len(regionInstances) < 1 {
 			t.Error("ERROR! No instances found in " + value + " region.")
 		} else {
@@ -77,8 +73,8 @@ func TestBundle(t *testing.T) {
 	}
 
 	t.Log("INFO. Instances IPs found in all regions: " + strings.Join(instanceIPs,","))
-	
-      var test bool = false
+
+	var test bool = false
     // TEST 2: Veriy the number of existing EC2 instances - should be an odd number
 	t.Run("Instance count", func(t *testing.T) {
 
@@ -103,13 +99,13 @@ func TestBundle(t *testing.T) {
     // TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
 	t.Run("Consul verifications", func(t *testing.T) {
 
-	        test = assert.True(t, ConsulLockCheck(t, publicIPs, sshKey))
+	        test = assert.True(t, ConsulLockCheck(t, instanceIPs, sshKey))
 	        if test {
 		        t.Log("INFO. Consul lock check passed. Each Consul node can see exactly 1 lock.")
 		}
 
     // TEST 5: All of the Consul nodes should be healthy
-		test = assert.True(t, ConsulCheck(t, publicIPs, sshKey))
+		test = assert.True(t, ConsulCheck(t, instanceIPs, sshKey))
 	        if test {
 		        t.Log("INFO. Consul check passed. Each node can see full cluster, all nodes are healthy")
 		}
@@ -120,13 +116,13 @@ func TestBundle(t *testing.T) {
 	t.Run("Polkadot verifications", func(t *testing.T) {
 
     // TEST 6: Verify that there is only one Polkadot node working in Validator mode at a time
-		test = assert.True(t, LeadersCheck(t, publicIPs, sshKey))
+		test = assert.True(t, LeadersCheck(t, instanceIPs, sshKey))
 		if test {
 			t.Log("INFO. Leaders check passed. Exactly 1 leader found")
 		}
         
     // TEST 7: Verify that all Polkadot nodes are health
-		test = assert.True(t, PolkadotCheck(t, publicIPs, sshKey))
+		test = assert.True(t, PolkadotCheck(t, instanceIPs, sshKey))
 		if test {
 			t.Log("INFO. Polkadot node check passed. All instances are healthy")
 		}
@@ -135,7 +131,7 @@ func TestBundle(t *testing.T) {
 }
 
 // TEST 4
-func ConsulLockCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
+func ConsulLockCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair) bool {
 
   command := "consul kv export | grep \"prefix/.lock\" | wc -l"
   array := NodeQuery(t, publicIPs, key, command)
@@ -165,7 +161,7 @@ func ConsulLockCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair
 }
 
 // TEST 5
-func ConsulCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
+func ConsulCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair) bool {
 
   command := "consul members --status alive | wc -l"
   array := NodeQuery(t, publicIPs, key, command)
@@ -197,7 +193,7 @@ func ConsulCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bo
 }
 
 // TEST 6
-func LeadersCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
+func LeadersCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair) bool {
 
   command := "curl -s -H \"Content-Type: application/json\" -d '{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"system_nodeRoles\", \"params\":[]}' http://localhost:9933"
   array := NodeQuery(t, publicIPs, key, command)
@@ -240,7 +236,7 @@ func LeadersCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) b
 }
 
 // TEST 7
-func PolkadotCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) bool {
+func PolkadotCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair) bool {
 
   command := "curl -s -H \"Content-Type: application/json\" -d '{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"system_health\", \"params\":[]}' http://localhost:9933"
   array := NodeQuery(t, publicIPs, key, command)
@@ -284,3 +280,40 @@ func PolkadotCheck(t *testing.T, publicIPs map[string]string, key *ssh.KeyPair) 
   return true
 
 }
+
+// Supplementary function: perform given SSH query on the node 
+func NodeQuery(t *testing.T, publicIPs []string, key *ssh.KeyPair, command string) []string {
+
+        var resultArray []string
+
+        for _, publicInstanceIP := range publicIPs {
+
+		publicHost := ssh.Host{
+			Hostname:    publicInstanceIP,
+			SshKeyPair:  key,
+			SshUserName: "ec2-user",
+		}
+
+		// It can take a minute or so for the Instance to boot up, so retry a few times
+		maxRetries := 10
+		timeBetweenRetries := 5 * time.Second
+		description := fmt.Sprintf("SSH to public host %s", publicInstanceIP)
+
+		t.Log("DEBUG. Querying instance " + publicInstanceIP + " with command `" + command + "`")
+		// Verify that we can SSH to the Instance and run commands
+		result := retry.DoWithRetry(t, description, maxRetries, timeBetweenRetries, func() (string, error) {
+			result, err := ssh.CheckSshCommandE(t, publicHost, command)
+
+			if err != nil {
+				return "", err
+			}
+
+			return strings.TrimSpace(result), nil
+		})
+
+		t.Log("DEBUG. Command output: " + result)
+		resultArray = append(resultArray, result)
+	}
+	return resultArray
+}
+
