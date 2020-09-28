@@ -93,3 +93,11 @@ variable "node_key" {
 variable "admin_email" {
   description = "An Admin email to send alerts to"
 }
+
+variable "gcp_ssh_user" {
+  default = ""
+}
+
+variable "gcp_ssh_pub_key" {
+  default = ""
+}

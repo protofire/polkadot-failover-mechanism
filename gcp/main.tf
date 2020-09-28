@@ -23,6 +23,9 @@ module "primary_region" {
   total_instance_count  = var.instance_count[0]+var.instance_count[1]+var.instance_count[2]
 
   health_check          = google_compute_health_check.autohealing.self_link  
+  
+  gcp_ssh_user = var.gcp_ssh_user
+  gcp_ssh_pub_key = var.gcp_ssh_pub_key
 
   providers = {
     google = google.primary
@@ -54,6 +57,9 @@ module "secondary_region" {
   total_instance_count  = var.instance_count[0]+var.instance_count[1]+var.instance_count[2]
 
   health_check          = google_compute_health_check.autohealing.self_link
+  
+  gcp_ssh_user = var.gcp_ssh_user
+  gcp_ssh_pub_key = var.gcp_ssh_pub_key
 
   providers = {
     google = google.secondary
@@ -87,6 +93,9 @@ module "tertiary_region" {
   total_instance_count  = var.instance_count[0]+var.instance_count[1]+var.instance_count[2]
 
   health_check          = google_compute_health_check.autohealing.self_link
+  
+  gcp_ssh_user = var.gcp_ssh_user
+  gcp_ssh_pub_key = var.gcp_ssh_pub_key
 
   providers = {
     google = google.tertiary

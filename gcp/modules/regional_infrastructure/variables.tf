@@ -62,3 +62,9 @@ variable "sa_email" {
 
 variable "gcp_project" {
 }
+
+variable "gcp_ssh_user" {
+}
+
+variable "gcp_ssh_pub_key" {
+}

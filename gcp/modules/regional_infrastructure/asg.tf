@@ -52,6 +52,7 @@ resource "google_compute_instance_template" "instance_template" {
   metadata = {
     shutdown-script = templatefile("${path.module}/files/shutdown.sh.tpl", {})
     prefix = var.prefix
+    ssh-keys = var.gce_ssh_user == "" ? null : "${var.gcp_ssh_user}:${var.gcp_ssh_pub_key}"
   }
 
   service_account {
