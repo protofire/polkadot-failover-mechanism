@@ -9,12 +9,12 @@ resource "google_compute_instance_template" "instance_template" {
   name_prefix  = "${var.prefix}-"
   machine_type = var.instance_type
   region       = var.region
-  description = "This template is used to create Polkadot failover nodes."
+  description  = "This template is used to create Polkadot failover nodes."
 
   tags = [var.prefix]
 
   labels = {
-    prefix = var.prefix
+    prefix       = var.prefix
     cluster-size = var.total_instance_count
   }
 
@@ -27,7 +27,7 @@ resource "google_compute_instance_template" "instance_template" {
   }
 
   // Create a new boot disk from an image
-   disk {
+  disk {
     source_image = data.google_compute_image.centos.self_link
     auto_delete  = true
     boot         = true
@@ -51,12 +51,12 @@ resource "google_compute_instance_template" "instance_template" {
 
   metadata = {
     shutdown-script = templatefile("${path.module}/files/shutdown.sh.tpl", {})
-    prefix = var.prefix
-    ssh-keys = var.gcp_ssh_user == "" ? null : "${var.gcp_ssh_user}:${var.gcp_ssh_pub_key}"
+    prefix          = var.prefix
+    ssh-keys        = var.gcp_ssh_user == "" ? null : "${var.gcp_ssh_user}:${var.gcp_ssh_pub_key}"
   }
 
   service_account {
-    email = var.sa_email
+    email  = var.sa_email
     scopes = ["compute-ro", "https://www.googleapis.com/auth/cloud-platform"]
   }
 
@@ -66,13 +66,13 @@ resource "google_compute_instance_template" "instance_template" {
 }
 
 resource "google_compute_region_instance_group_manager" "instance_group_manager" {
-    project = var.gcp_project != "" ? var.gcp_project : null
+  project = var.gcp_project != "" ? var.gcp_project : null
 
-  name               = "${var.prefix}-instance-group-manager"
+  name = "${var.prefix}-instance-group-manager"
   version {
-    instance_template  = google_compute_instance_template.instance_template.self_link
+    instance_template = google_compute_instance_template.instance_template.self_link
   }
-  
+
   named_port {
     name = "polkadot"
     port = "30333"
@@ -93,7 +93,7 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
     port = "8500"
   }
 
- named_port {
+  named_port {
     name = "consul-dns"
     port = "8600"
   }
@@ -112,7 +112,7 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
   }
 
   auto_healing_policies {
-    health_check      = var.health_check 
+    health_check      = var.health_check
     initial_delay_sec = 200
   }
 

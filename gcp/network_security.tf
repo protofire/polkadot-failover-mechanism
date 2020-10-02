@@ -1,69 +1,69 @@
 resource "google_compute_firewall" "health-check" {
   provider = google.primary
-  project = var.gcp_project != "" ? var.gcp_project : null
+  project  = var.gcp_project != "" ? var.gcp_project : null
 
   name        = "${var.prefix}-polkadot-validator-hc"
   description = "A security group health checks"
   network     = google_compute_network.vpc_network.self_link
 
   allow {
-    ports           = ["8080"]
-    protocol        = "tcp"
+    ports    = ["8080"]
+    protocol = "tcp"
   }
- 
-  priority        = 1003
-  source_ranges   = ["35.191.0.0/16", "130.211.0.0/22"]
+
+  priority      = 1003
+  source_ranges = ["35.191.0.0/16", "130.211.0.0/22"]
 }
 
 
 resource "google_compute_firewall" "validator-node-internal" {
   provider = google.primary
-  project = var.gcp_project != "" ? var.gcp_project : null
+  project  = var.gcp_project != "" ? var.gcp_project : null
 
   name        = "${var.prefix}-polkadot-validator-internal"
   description = "Security for consul communications"
   network     = google_compute_network.vpc_network.self_link
 
   allow {
-    ports           = ["8500","8600","8300","8301","8302"]
-    protocol        = "tcp"
+    ports    = ["8500", "8600", "8300", "8301", "8302"]
+    protocol = "tcp"
   }
- 
+
   allow {
-    ports           = ["8500","8600","8301","8302"]
-    protocol        = "udp"
+    ports    = ["8500", "8600", "8301", "8302"]
+    protocol = "udp"
   }
-  
-  priority        = 1001
-  source_tags     = [var.prefix]
+
+  priority    = 1001
+  source_tags = [var.prefix]
 }
 
 resource "google_compute_firewall" "validator-node-external" {
   provider = google.primary
-  project = var.gcp_project != "" ? var.gcp_project : null
+  project  = var.gcp_project != "" ? var.gcp_project : null
 
   name        = "${var.prefix}-polkadot-validator-external"
   description = "For blockchain node to be accessible from outside, also for SSH access if configured"
-  network     = google_compute_network.vpc_network.self_link 
+  network     = google_compute_network.vpc_network.self_link
 
   dynamic "allow" {
     for_each = var.expose_ssh == "false" ? [] : [1]
     content {
-        ports         = ["22"]
-        protocol      = "tcp"
+      ports    = ["22"]
+      protocol = "tcp"
     }
   }
 
   allow {
-    ports           = ["30333"]
-    protocol        = "tcp"
+    ports    = ["30333"]
+    protocol = "tcp"
   }
 
   allow {
-    ports           = ["30333"]
-    protocol        = "udp"
+    ports    = ["30333"]
+    protocol = "udp"
   }
- 
+
   priority      = 1000
-  source_ranges = ["0.0.0.0/0"] 
+  source_ranges = ["0.0.0.0/0"]
 }
