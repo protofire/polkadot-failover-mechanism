@@ -1,4 +1,4 @@
-polcadot tests
+polkadot tests
 =================
 
     make aws

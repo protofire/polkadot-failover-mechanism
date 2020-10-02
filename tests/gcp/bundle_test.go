@@ -43,7 +43,7 @@ func TestBundle(t *testing.T) {
 
 		// Variables to pass to our Terraform code using -var options
 		Vars: map[string]interface{}{
-			"aws_regions":           helpers.BuildRegionsParam(gcpRegion...),
+			"gcp_regions":           helpers.BuildRegionsParam(gcpRegion...),
 			"gcp_project":           gcpProject,
 			"validator_keys":        "{key1={key=\"0x6ce96ae5c300096b09dbd4567b0574f6a1281ae0e5cfe4f6b0233d1821f6206b\",type=\"gran\",seed=\"favorite liar zebra assume hurt cage any damp inherit rescue delay panic\"},key2={key=\"0x3ff0766f9ebbbceee6c2f40d9323164d07e70c70994c9d00a9512be6680c2394\",type=\"aura\",seed=\"expire stage crawl shell boss any story swamp skull yellow bamboo copy\"}}",
 			"gcp_ssh_user":          "ubuntu",
