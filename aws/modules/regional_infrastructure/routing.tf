@@ -3,7 +3,7 @@ resource "aws_internet_gateway" "default" {
   vpc_id = var.vpc.id
 
   tags = {
-    Name = "${var.prefix}-polkadot-validator"
+    Name   = "${var.prefix}-polkadot-validator"
     prefix = var.prefix
   }
 }

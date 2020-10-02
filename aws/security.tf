@@ -1,18 +1,18 @@
 # MONITORING SECURITY
 resource "aws_iam_role_policy_attachment" "monitoring" {
-  provider   = aws.primary
+  provider = aws.primary
 
   role       = aws_iam_role.monitoring.name
   policy_arn = aws_iam_policy.monitoring.arn
 }
 
 resource "aws_iam_policy" "monitoring" {
-  provider    = aws.primary
+  provider = aws.primary
 
   name        = "${var.prefix}-polkadot-validator"
   description = "This is the policy that allows EC2 to send metrics to the CloudWatch"
 
-# AWS bug - there is no option to limit ec2:ModifyInstanceAttribute parameter. Should be fixed in later releases
+  # AWS bug - there is no option to limit ec2:ModifyInstanceAttribute parameter. Should be fixed in later releases
   policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -106,8 +106,8 @@ EOF
 resource "aws_iam_instance_profile" "monitoring" {
   provider = aws.primary
 
-  name     = "${var.prefix}-polkadot.validator"
-  role     = aws_iam_role.monitoring.name
+  name = "${var.prefix}-polkadot.validator"
+  role = aws_iam_role.monitoring.name
 
   depends_on = [aws_iam_policy.monitoring]
 }
@@ -115,8 +115,8 @@ resource "aws_iam_instance_profile" "monitoring" {
 resource "aws_iam_role" "monitoring" {
   provider = aws.primary
 
-  name     = "${var.prefix}-polkadot-validator"
-  path     = "/"
+  name = "${var.prefix}-polkadot-validator"
+  path = "/"
 
   assume_role_policy = <<EOF
 {
