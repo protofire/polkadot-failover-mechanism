@@ -20,18 +20,18 @@ variable "aws_secret_keys" {
 }
 
 variable "prefix" {
-  type = string
+  type        = string
   description = "Unique prefix for cloud resources at Terraform"
 }
 
 variable "vpc_cidrs" {
   description = "VPC CIDR for each region, must be different for VPC peering to work"
-  default = ["10.0.0.0/16","10.1.0.0/16","10.2.0.0/16"]
+  default     = ["10.0.0.0/16", "10.1.0.0/16", "10.2.0.0/16"]
 }
 
 variable "public_subnet_cidrs" {
   description = "Subnet CIDR for each region, must be different for VPC peering to work"
-  default = ["10.0.0.0/24","10.1.0.0/24","10.2.0.0/24"]
+  default     = ["10.0.0.0/24", "10.1.0.0/24", "10.2.0.0/24"]
 }
 
 variable "instance_type" {
@@ -39,12 +39,12 @@ variable "instance_type" {
 }
 
 variable "cpu_limit" {
-  default = "1.5"
+  default     = "1.5"
   description = "CPU limit in CPUs number that Polkadot node can use. Should never be greater than chosen instance type has."
 }
 
 variable "ram_limit" {
-  default = "3.5"
+  default     = "3.5"
   description = "RAM limit in GB that Polkadot node can use. Should never be greater than chosen instance type has."
 }
 
@@ -53,12 +53,12 @@ variable "disk_size" {
 }
 
 variable "delete_on_termination" {
-  default = "false"
+  default     = "false"
   description = "Defines whether or not to delete data disks on termination. Useful when using scripts with CI"
 }
 
 variable "validator_name" {
-  default = "Polkadot Failover validator"
+  default     = "Polkadot Failover validator"
   description = "A moniker of the validator"
 }
 
@@ -67,7 +67,7 @@ variable "node_key" {
 }
 
 variable "instance_count" {
-  default = [1, 1, 1]
+  default     = [1, 1, 1]
   description = "A number of instances to run in each region. Odd number of instances in total is a must have for proper work"
 }
 
@@ -79,7 +79,7 @@ variable "key_content" {
 }
 
 variable "chain" {
-  default = "kusama"
+  default     = "kusama"
   description = "A name of the chain to run Polkadot node at"
 }
 
@@ -98,7 +98,7 @@ variable "health_check_unhealthy_threshold" {
 variable "validator_keys" {
   type = map(object({
     seed = string
-    key = string
+    key  = string
     type = string
   }))
 }

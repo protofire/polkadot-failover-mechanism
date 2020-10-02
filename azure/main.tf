@@ -1,5 +1,5 @@
 module "primary_region" {
-  source = "./modules/regional_infrastructure" 
+  source = "./modules/regional_infrastructure"
 
   prefix        = var.prefix
   region_prefix = "primary"
@@ -17,20 +17,20 @@ module "primary_region" {
   subnet_cidr  = var.public_subnet_cidrs[0]
   subnet_cidrs = var.public_subnet_cidrs
 
-  expose_ssh   = var.expose_ssh
-  key_content  = var.key_content
+  expose_ssh  = var.expose_ssh
+  key_content = var.key_content
 
   disk_size             = var.disk_size
   sa_type               = var.sa_type
   delete_on_termination = var.delete_on_termination
 
-  validator_name  = var.validator_name
+  validator_name = var.validator_name
 
-  action_group_id = azurerm_monitor_action_group.main.id 
+  action_group_id = azurerm_monitor_action_group.main.id
 }
 
 module "secondary_region" {
-  source = "./modules/regional_infrastructure" 
+  source = "./modules/regional_infrastructure"
 
   region_prefix = "secondary"
   prefix        = var.prefix
@@ -48,14 +48,14 @@ module "secondary_region" {
   subnet_cidr  = var.public_subnet_cidrs[1]
   subnet_cidrs = var.public_subnet_cidrs
 
-  expose_ssh   = var.expose_ssh
-  key_content  = var.key_content
+  expose_ssh  = var.expose_ssh
+  key_content = var.key_content
 
   disk_size             = var.disk_size
   sa_type               = var.sa_type
   delete_on_termination = var.delete_on_termination
 
-  validator_name  = var.validator_name
+  validator_name = var.validator_name
 
   action_group_id = azurerm_monitor_action_group.main.id
 }
@@ -63,7 +63,7 @@ module "secondary_region" {
 
 
 module "tertiary_region" {
-  source = "./modules/regional_infrastructure" 
+  source = "./modules/regional_infrastructure"
 
   region_prefix = "tertiary"
   prefix        = var.prefix
@@ -81,14 +81,14 @@ module "tertiary_region" {
   subnet_cidr  = var.public_subnet_cidrs[2]
   subnet_cidrs = var.public_subnet_cidrs
 
-  expose_ssh   = var.expose_ssh
-  key_content  = var.key_content
+  expose_ssh  = var.expose_ssh
+  key_content = var.key_content
 
   disk_size             = var.disk_size
   sa_type               = var.sa_type
   delete_on_termination = var.delete_on_termination
 
-  validator_name  = var.validator_name
+  validator_name = var.validator_name
 
   action_group_id = azurerm_monitor_action_group.main.id
 }

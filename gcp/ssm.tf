@@ -15,11 +15,11 @@ resource "google_secret_manager_secret" "keys" {
 
   labels = {
     prefix = var.prefix
-    type = "key"
+    type   = "key"
   }
 
-  secret_id        = "${var.prefix}_${each.key}_key"
-  
+  secret_id = "${var.prefix}_${each.key}_key"
+
   replication {
     user_managed {
       replicas {
@@ -52,10 +52,10 @@ resource "google_secret_manager_secret" "seeds" {
 
   labels = {
     prefix = var.prefix
-    type = "key"
+    type   = "key"
   }
 
-  secret_id        = "${var.prefix}_${each.key}_seed"
+  secret_id = "${var.prefix}_${each.key}_seed"
 
   replication {
     user_managed {
@@ -89,10 +89,10 @@ resource "google_secret_manager_secret" "types" {
 
   labels = {
     prefix = var.prefix
-    type = "key"
+    type   = "key"
   }
 
-  secret_id        = "${var.prefix}_${each.key}_type"
+  secret_id = "${var.prefix}_${each.key}_type"
 
   replication {
     user_managed {
@@ -114,7 +114,7 @@ resource "google_secret_manager_secret_version" "name-version" {
 
   secret = google_secret_manager_secret.name.id
 
-  secret_data = var.validator_name 
+  secret_data = var.validator_name
 }
 
 resource "google_secret_manager_secret" "name" {

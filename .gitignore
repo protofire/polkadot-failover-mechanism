@@ -1,3 +1,5 @@
+.idea
+.vscode
 *.json
 *.tfvars
 *terraform.tf*

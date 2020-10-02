@@ -6,13 +6,13 @@ resource "aws_vpc_peering_connection_accepter" "tertiary-primary" {
   auto_accept               = true
 
   tags = {
-    Side = "Accepter"
+    Side   = "Accepter"
     prefix = var.prefix
   }
 }
 
 resource "aws_vpc_peering_connection_options" "tertiary-primary" {
-  provider = aws.tertiary
+  provider                  = aws.tertiary
   vpc_peering_connection_id = aws_vpc_peering_connection.primary-tertiary.id
 
   accepter {
@@ -41,13 +41,13 @@ resource "aws_vpc_peering_connection_accepter" "tertiary-secondary" {
   auto_accept               = true
 
   tags = {
-    Side = "Accepter"
+    Side   = "Accepter"
     prefix = var.prefix
   }
 }
 
 resource "aws_vpc_peering_connection_options" "tertiary-secondary" {
-  provider = aws.tertiary
+  provider                  = aws.tertiary
   vpc_peering_connection_id = aws_vpc_peering_connection.secondary-tertiary.id
 
   accepter {

@@ -6,9 +6,9 @@ data "template_file" "script" {
     prefix               = var.prefix
     chain                = var.chain
     total_instance_count = var.total_instance_count
-    lb-primary           = cidrhost(var.subnet_cidrs[0],10)
-    lb-secondary         = cidrhost(var.subnet_cidrs[1],10)
-    lb-tertiary          = cidrhost(var.subnet_cidrs[2],10)
+    lb-primary           = cidrhost(var.subnet_cidrs[0], 10)
+    lb-secondary         = cidrhost(var.subnet_cidrs[1], 10)
+    lb-tertiary          = cidrhost(var.subnet_cidrs[2], 10)
   }
 }
 
@@ -44,7 +44,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "polkadot" {
   automatic_instance_repair {
     enabled = true
   }
-  
+
 
   identity {
     type = "SystemAssigned"
@@ -80,8 +80,8 @@ resource "azurerm_linux_virtual_machine_scale_set" "polkadot" {
 
     ip_configuration {
       load_balancer_backend_address_pool_ids = [module.private_lb.azurerm_lb_backend_address_pool_id]
-      name      = "primary-${var.region_prefix}"
-      primary   = true
+      name                                   = "primary-${var.region_prefix}"
+      primary                                = true
       public_ip_address {
         name = "public-${var.region_prefix}"
       }

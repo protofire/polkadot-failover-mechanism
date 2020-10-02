@@ -1,16 +1,16 @@
 ### THIS BLOCK CREATES CONNECTIONS TO SECONDARY REGION
 
 resource "aws_vpc_peering_connection" "primary-secondary" {
-  provider      = aws.primary
-  peer_vpc_id   = module.secondary_network.vpc.id
-  peer_region   = var.aws_regions[1]
-  
-  vpc_id        = module.primary_network.vpc.id
+  provider    = aws.primary
+  peer_vpc_id = module.secondary_network.vpc.id
+  peer_region = var.aws_regions[1]
 
-  auto_accept   = false
+  vpc_id = module.primary_network.vpc.id
+
+  auto_accept = false
 
   tags = {
-    Side = "Requester"
+    Side   = "Requester"
     prefix = var.prefix
   }
 }
@@ -27,7 +27,7 @@ resource "aws_route" "primary-secondary" {
 }
 
 resource "aws_vpc_peering_connection_options" "primary-secondary" {
-  provider = aws.primary
+  provider                  = aws.primary
   vpc_peering_connection_id = aws_vpc_peering_connection.primary-secondary.id
 
   requester {
@@ -40,7 +40,7 @@ resource "aws_vpc_peering_connection_options" "primary-secondary" {
 ### THIS BLOCK CREATES CONNECTIONS TO TERTIARY REGION
 
 resource "aws_vpc_peering_connection_options" "primary-tertiary" {
-  provider = aws.primary
+  provider                  = aws.primary
   vpc_peering_connection_id = aws_vpc_peering_connection.primary-tertiary.id
 
   requester {
@@ -51,16 +51,16 @@ resource "aws_vpc_peering_connection_options" "primary-tertiary" {
 }
 
 resource "aws_vpc_peering_connection" "primary-tertiary" {
-  provider      = aws.primary
-  peer_vpc_id   = module.tertiary_network.vpc.id
-  peer_region   = var.aws_regions[2]
-  
-  vpc_id        = module.primary_network.vpc.id
+  provider    = aws.primary
+  peer_vpc_id = module.tertiary_network.vpc.id
+  peer_region = var.aws_regions[2]
 
-  auto_accept   = false
+  vpc_id = module.primary_network.vpc.id
+
+  auto_accept = false
 
   tags = {
-    Side = "Requester"
+    Side   = "Requester"
     prefix = var.prefix
   }
 }

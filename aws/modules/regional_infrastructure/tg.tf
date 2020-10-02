@@ -8,9 +8,9 @@ resource "aws_lb_target_group" "http" {
 
   health_check {
 
-    enabled  = true
-    protocol = "TCP"
-    interval = var.health_check_interval
+    enabled             = true
+    protocol            = "TCP"
+    interval            = var.health_check_interval
     healthy_threshold   = var.health_check_healthy_threshold
     unhealthy_threshold = var.health_check_unhealthy_threshold
 
@@ -26,10 +26,10 @@ resource "aws_lb_target_group" "dns" {
   deregistration_delay = 1
 
   health_check {
-  
-    enabled  = true
-    protocol = "TCP"
-    interval = var.health_check_interval
+
+    enabled             = true
+    protocol            = "TCP"
+    interval            = var.health_check_interval
     healthy_threshold   = var.health_check_healthy_threshold
     unhealthy_threshold = var.health_check_unhealthy_threshold
 
@@ -45,10 +45,10 @@ resource "aws_lb_target_group" "rpc" {
   deregistration_delay = 1
 
   health_check {
-  
-    enabled  = true
-    protocol = "TCP"
-    interval = var.health_check_interval
+
+    enabled             = true
+    protocol            = "TCP"
+    interval            = var.health_check_interval
     healthy_threshold   = var.health_check_healthy_threshold
     unhealthy_threshold = var.health_check_unhealthy_threshold
 
@@ -64,10 +64,10 @@ resource "aws_lb_target_group" "lan" {
   deregistration_delay = 1
 
   health_check {
-  
-    enabled  = true
-    protocol = "TCP"
-    interval = var.health_check_interval
+
+    enabled             = true
+    protocol            = "TCP"
+    interval            = var.health_check_interval
     healthy_threshold   = var.health_check_healthy_threshold
     unhealthy_threshold = var.health_check_unhealthy_threshold
 
@@ -84,9 +84,9 @@ resource "aws_lb_target_group" "wan" {
 
   health_check {
 
-    enabled  = true
-    protocol = "TCP"
-    interval = var.health_check_interval
+    enabled             = true
+    protocol            = "TCP"
+    interval            = var.health_check_interval
     healthy_threshold   = var.health_check_healthy_threshold
     unhealthy_threshold = var.health_check_unhealthy_threshold
 
@@ -103,9 +103,9 @@ resource "aws_lb_target_group" "polkadot" {
 
   health_check {
 
-    enabled  = true
-    protocol = "TCP"
-    interval = var.health_check_interval
+    enabled             = true
+    protocol            = "TCP"
+    interval            = var.health_check_interval
     healthy_threshold   = var.health_check_healthy_threshold
     unhealthy_threshold = var.health_check_unhealthy_threshold
 
