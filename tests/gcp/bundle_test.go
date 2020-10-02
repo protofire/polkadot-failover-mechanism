@@ -1,6 +1,17 @@
 package gcp
 
-// Set PREFIX, GCP_PROJECT, and GOOGLE_APPLICATION_CREDENTIALS credentials before running these scripts
+/*
+Set PREFIX, GCP_PROJECT, and GOOGLE_APPLICATION_CREDENTIALS credentials before running these scripts
+Add or ensure next roles are presents for google account member that is being used for terraform:
+
+* Editor
+* Role Administrator
+* Secret Manager Admin
+* Project IAM Admin
+* Monitoring Editor
+
+Visit https://console.cloud.google.com/monitoring/, it will create a new monitoring workspace
+*/
 
 import (
 	"fmt"
@@ -13,6 +24,7 @@ import (
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/protofire/polkadot-failover-mechanism/tests/helpers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 //Gather environmental variables and set reasonable defaults
@@ -33,6 +45,8 @@ func TestBundle(t *testing.T) {
 		prefix = "test"
 	}
 
+	require.NotEmpty(t, gcpProject, "GCP_PROJECT env required")
+
 	// Generate new SSH key for test virtual machines
 	sshKey := ssh.GenerateRSAKeyPair(t, 4096)
 
@@ -43,10 +57,10 @@ func TestBundle(t *testing.T) {
 
 		// Variables to pass to our Terraform code using -var options
 		Vars: map[string]interface{}{
-			"gcp_regions":           helpers.BuildRegionsParam(gcpRegion...),
+			"gcp_regions":           helpers.BuildRegionParams(gcpRegion...),
 			"gcp_project":           gcpProject,
 			"validator_keys":        "{key1={key=\"0x6ce96ae5c300096b09dbd4567b0574f6a1281ae0e5cfe4f6b0233d1821f6206b\",type=\"gran\",seed=\"favorite liar zebra assume hurt cage any damp inherit rescue delay panic\"},key2={key=\"0x3ff0766f9ebbbceee6c2f40d9323164d07e70c70994c9d00a9512be6680c2394\",type=\"aura\",seed=\"expire stage crawl shell boss any story swamp skull yellow bamboo copy\"}}",
-			"gcp_ssh_user":          "ubuntu",
+			"gcp_ssh_user":          sshUser,
 			"gcp_ssh_pub_key":       sshKey.PublicKey,
 			"prefix":                prefix,
 			"delete_on_termination": "true",
@@ -77,11 +91,8 @@ func TestBundle(t *testing.T) {
 	for _, value := range gcpRegion {
 		regionInstances := gcp.FetchRegionalInstanceGroup(t, gcpProject, value, fmt.Sprintf("%s-instance-group-manager", prefix)).GetPublicIps(t, gcpProject)
 
-		if len(regionInstances) < 1 {
-			t.Errorf("ERROR! No instances found in %s region.", value)
-		} else {
-			t.Logf("INFO. The following instances found in %s region: %s.", value, strings.Join(regionInstances, ","))
-		}
+		require.GreaterOrEqualf(t, len(regionInstances), 1, "ERROR! No instances found in %s region.", value)
+		t.Logf("INFO. The following instances found in %s region: %s.", value, strings.Join(regionInstances, ","))
 
 		instanceIPs = append(instanceIPs, regionInstances...)
 		// Fetching PublicIPs for the instances we have found
@@ -89,39 +100,28 @@ func TestBundle(t *testing.T) {
 
 	t.Logf("INFO. Instances IPs found in all regions: %s", strings.Join(instanceIPs, ","))
 
-	var test bool = false
 	// TEST 2: Veriy the number of existing EC2 instances - should be an odd number
 	t.Run("Instance count", func(t *testing.T) {
 
 		instanceCount := len(instanceIPs)
 
-		test = assert.Equal(t, instanceCount%2, 1)
-		if test {
-			t.Log("INFO. There are odd instances running")
-		} else {
-			t.Error("ERROR! There are even instances running")
-		}
+		require.Equal(t, instanceCount%2, 1, "ERROR! There are even instances running")
+		t.Log("INFO. There are odd instances running")
 
 		// TEST 3: Verify the number of existing EC2 instances - should be at least 3
-		test = assert.True(t, instanceCount > 2)
-		if test {
-			t.Logf("INFO. Minimum viable instance count (3) reached. There are %d instances running.", instanceCount)
-		} else {
-			t.Errorf("ERROR! Minimum viable instance count (3) not reached. There are %d instances running.", instanceCount)
-		}
+		require.Greaterf(t, instanceCount, 2, "ERROR! Minimum viable instance count (3) not reached. There are %d instances running.", instanceCount)
+		t.Logf("INFO. Minimum viable instance count (3) reached. There are %d instances running.", instanceCount)
 	})
 
 	// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
 	t.Run("Consul verifications", func(t *testing.T) {
 
-		test = assert.True(t, helpers.ConsulLockCheck(t, instanceIPs, sshKey, sshUser))
-		if test {
+		if assert.True(t, helpers.ConsulLockCheck(t, instanceIPs, sshKey, sshUser)) {
 			t.Log("INFO. Consul lock check passed. Each Consul node can see exactly 1 lock.")
 		}
 
 		// TEST 5: All of the Consul nodes should be healthy
-		test = assert.True(t, helpers.ConsulCheck(t, instanceIPs, sshKey, sshUser))
-		if test {
+		if assert.True(t, helpers.ConsulCheck(t, instanceIPs, sshKey, sshUser)) {
 			t.Log("INFO. Consul check passed. Each node can see full cluster, all nodes are healthy")
 		}
 
@@ -130,14 +130,11 @@ func TestBundle(t *testing.T) {
 	t.Run("Polkadot verifications", func(t *testing.T) {
 
 		// TEST 6: Verify that there is only one Polkadot node working in Validator mode at a time
-		test = assert.True(t, helpers.LeadersCheck(t, instanceIPs, sshKey, sshUser))
-		if test {
+		if assert.True(t, helpers.LeadersCheck(t, instanceIPs, sshKey, sshUser)) {
 			t.Log("INFO. Leaders check passed. Exactly 1 leader found")
 		}
-
 		// TEST 7: Verify that all Polkadot nodes are healthy
-		test = assert.True(t, helpers.PolkadotCheck(t, instanceIPs, sshKey, sshUser))
-		if test {
+		if assert.True(t, helpers.PolkadotCheck(t, instanceIPs, sshKey, sshUser)) {
 			t.Log("INFO. Polkadot node check passed. All instances are healthy")
 		}
 

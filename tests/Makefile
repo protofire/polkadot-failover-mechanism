@@ -30,6 +30,9 @@ cache:
 aws: check cache
 	go test -tags=aws $(TESTARGS) -timeout 0 -p 1  ./aws...
 
+gcp: check cache
+	go test -tags=gcp $(TESTARGS) -timeout 0 -p 1  ./gcp...
+
 fmt:
 	go fmt ./...
 
@@ -62,4 +65,4 @@ cover: work
 shell:
 	$(SHELL) -i
 
-.PHONY: cover work fmt test check
+.PHONY: cover work fmt test check aws gcp

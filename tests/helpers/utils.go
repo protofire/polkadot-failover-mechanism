@@ -9,8 +9,8 @@ import (
 	"github.com/gruntwork-io/terratest/modules/terraform"
 )
 
-// BuildRegionsParam build strings from regions slice
-func BuildRegionsParam(regions ...string) string {
+// BuildRegionParams build strings from regions slice
+func BuildRegionParams(regions ...string) string {
 	var res []string
 	for _, region := range regions {
 		res = append(res, fmt.Sprintf(`"%s"`, region))
