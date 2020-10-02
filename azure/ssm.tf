@@ -5,13 +5,13 @@ data "http" "my_public_ip" {
 }
 
 resource "azurerm_key_vault" "polkadot" {
-  name                        = "${var.prefix}-vault"
-  location                    = var.azure_regions[0]
-  resource_group_name         = var.azure_rg
-  enabled_for_deployment      = true
-  tenant_id                   = data.azurerm_client_config.current.tenant_id 
-  soft_delete_enabled         = false
-  purge_protection_enabled    = false
+  name                     = "${var.prefix}-vault"
+  location                 = var.azure_regions[0]
+  resource_group_name      = var.azure_rg
+  enabled_for_deployment   = true
+  tenant_id                = data.azurerm_client_config.current.tenant_id
+  soft_delete_enabled      = false
+  purge_protection_enabled = false
 
   sku_name = "standard"
 
@@ -27,7 +27,7 @@ resource "azurerm_key_vault" "polkadot" {
 
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_client_config.current.object_id 
+    object_id = data.azurerm_client_config.current.object_id
 
     secret_permissions = [
       "set",
@@ -65,14 +65,14 @@ resource "azurerm_key_vault" "polkadot" {
   }
 
   tags = {
-    prefix = var.prefix 
+    prefix = var.prefix
   }
 }
 
 resource "azurerm_key_vault_secret" "keys" {
   for_each = var.validator_keys
 
-  name        = "polkadot-${var.prefix}-keys-${each.key}-key" 
+  name         = "polkadot-${var.prefix}-keys-${each.key}-key"
   value        = each.value.key
   key_vault_id = azurerm_key_vault.polkadot.id
 
@@ -84,7 +84,7 @@ resource "azurerm_key_vault_secret" "keys" {
 resource "azurerm_key_vault_secret" "seeds" {
   for_each = var.validator_keys
 
-  name        = "polkadot-${var.prefix}-keys-${each.key}-seed" 
+  name         = "polkadot-${var.prefix}-keys-${each.key}-seed"
   value        = each.value.seed
   key_vault_id = azurerm_key_vault.polkadot.id
 
@@ -96,7 +96,7 @@ resource "azurerm_key_vault_secret" "seeds" {
 resource "azurerm_key_vault_secret" "types" {
   for_each = var.validator_keys
 
-  name        = "polkadot-${var.prefix}-keys-${each.key}-type" 
+  name         = "polkadot-${var.prefix}-keys-${each.key}-type"
   value        = each.value.type
   key_vault_id = azurerm_key_vault.polkadot.id
 
@@ -106,7 +106,7 @@ resource "azurerm_key_vault_secret" "types" {
 }
 
 resource "azurerm_key_vault_secret" "name" {
-  name         = "polkadot-${var.prefix}-name" 
+  name         = "polkadot-${var.prefix}-name"
   value        = var.validator_name
   key_vault_id = azurerm_key_vault.polkadot.id
 
@@ -116,7 +116,7 @@ resource "azurerm_key_vault_secret" "name" {
 }
 
 resource "azurerm_key_vault_secret" "ram_limit" {
-  name         = "polkadot-${var.prefix}-ramlimit" 
+  name         = "polkadot-${var.prefix}-ramlimit"
   value        = var.ram_limit
   key_vault_id = azurerm_key_vault.polkadot.id
 
@@ -126,7 +126,7 @@ resource "azurerm_key_vault_secret" "ram_limit" {
 }
 
 resource "azurerm_key_vault_secret" "cpu_limit" {
-  name         = "polkadot-${var.prefix}-cpulimit" 
+  name         = "polkadot-${var.prefix}-cpulimit"
   value        = var.cpu_limit
   key_vault_id = azurerm_key_vault.polkadot.id
 
@@ -136,7 +136,7 @@ resource "azurerm_key_vault_secret" "cpu_limit" {
 }
 
 resource "azurerm_key_vault_secret" "node_key" {
-  name         = "polkadot-${var.prefix}-nodekey" 
+  name         = "polkadot-${var.prefix}-nodekey"
   value        = var.node_key
   key_vault_id = azurerm_key_vault.polkadot.id
 

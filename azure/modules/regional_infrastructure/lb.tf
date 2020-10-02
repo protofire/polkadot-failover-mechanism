@@ -1,5 +1,5 @@
 module "private_lb" {
-  source                                 = "../load_balancer"
+  source = "../load_balancer"
 
   prefix        = var.prefix
   region_prefix = var.region_prefix
@@ -12,7 +12,7 @@ module "private_lb" {
   frontend_private_ip_address            = cidrhost(var.subnet_cidr, 10)
 
   lb_hc = {
-    combo    = ["Http", "8080","/verify/checks"]
+    combo = ["Http", "8080", "/verify/checks"]
   }
 
   lb_port = {

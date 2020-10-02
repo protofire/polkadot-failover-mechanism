@@ -58,7 +58,7 @@ resource "azurerm_network_security_rule" "consul-0" {
   access                      = "Allow"
   protocol                    = "*"
   source_port_range           = "*"
-  destination_port_ranges     = ["8300","8301","8302","8500","8600"]
+  destination_port_ranges     = ["8300", "8301", "8302", "8500", "8600"]
   source_address_prefix       = var.subnet_cidrs[0]
   destination_address_prefix  = "*"
   resource_group_name         = var.rg
@@ -72,7 +72,7 @@ resource "azurerm_network_security_rule" "consul-1" {
   access                      = "Allow"
   protocol                    = "*"
   source_port_range           = "*"
-  destination_port_ranges     = ["8300","8301","8302","8500","8600"]
+  destination_port_ranges     = ["8300", "8301", "8302", "8500", "8600"]
   source_address_prefix       = var.subnet_cidrs[1]
   destination_address_prefix  = "*"
   resource_group_name         = var.rg
@@ -86,7 +86,7 @@ resource "azurerm_network_security_rule" "consul-2" {
   access                      = "Allow"
   protocol                    = "*"
   source_port_range           = "*"
-  destination_port_ranges     = ["8300","8301","8302","8500","8600"]
+  destination_port_ranges     = ["8300", "8301", "8302", "8500", "8600"]
   source_address_prefix       = var.subnet_cidrs[2]
   destination_address_prefix  = "*"
   resource_group_name         = var.rg
