@@ -22,6 +22,7 @@ import (
 	"github.com/gruntwork-io/terratest/modules/gcp"
 	"github.com/gruntwork-io/terratest/modules/ssh"
 	"github.com/gruntwork-io/terratest/modules/terraform"
+	"github.com/protofire/polkadot-failover-mechanism/tests/gcp/utils"
 	"github.com/protofire/polkadot-failover-mechanism/tests/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,6 +47,10 @@ func TestBundle(t *testing.T) {
 	}
 
 	require.NotEmpty(t, gcpProject, "GCP_PROJECT env required")
+	require.NotEmpty(t, os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"), "GOOGLE_APPLICATION_CREDENTIALS env required")
+
+	err := utils.CleanResources(t, gcpProject, prefix)
+	require.NoError(t, err)
 
 	// Generate new SSH key for test virtual machines
 	sshKey := ssh.GenerateRSAKeyPair(t, 4096)
@@ -75,6 +80,7 @@ func TestBundle(t *testing.T) {
 	}
 
 	// At the end of the test, run `terraform destroy` to clean up any resources that were created
+
 	helpers.SetPostCleanUp(t, terraformOptions)
 
 	// Run `terraform init`
@@ -88,20 +94,21 @@ func TestBundle(t *testing.T) {
 	// TEST 1: Verify that there are healthy instances in each region with public ips assigned
 	var instanceIPs []string
 
-	for _, value := range gcpRegion {
-		regionInstances := gcp.FetchRegionalInstanceGroup(t, gcpProject, value, fmt.Sprintf("%s-instance-group-manager", prefix)).GetPublicIps(t, gcpProject)
+	t.Run("Instances", func(t *testing.T) {
+		for _, value := range gcpRegion {
+			regionInstanceIPs := gcp.FetchRegionalInstanceGroup(t, gcpProject, value, fmt.Sprintf("%s-instance-group-manager", prefix)).GetPublicIps(t, gcpProject)
 
-		require.GreaterOrEqualf(t, len(regionInstances), 1, "ERROR! No instances found in %s region.", value)
-		t.Logf("INFO. The following instances found in %s region: %s.", value, strings.Join(regionInstances, ","))
+			require.GreaterOrEqualf(t, len(regionInstanceIPs), 1, "ERROR! No instances found in %s region.", value)
+			t.Logf("INFO. The following instances found in %s region: %s.", value, strings.Join(regionInstanceIPs, ","))
 
-		instanceIPs = append(instanceIPs, regionInstances...)
-		// Fetching PublicIPs for the instances we have found
-	}
+			// Fetching PublicIPs for the instances we have found
+			instanceIPs = append(instanceIPs, regionInstanceIPs...)
+			t.Logf("INFO. Instances IPs found in all regions: %s", strings.Join(instanceIPs, ","))
+		}
+	})
 
-	t.Logf("INFO. Instances IPs found in all regions: %s", strings.Join(instanceIPs, ","))
-
-	// TEST 2: Veriy the number of existing EC2 instances - should be an odd number
-	t.Run("Instance count", func(t *testing.T) {
+	// TEST 2: Verify the number of existing GCP instances - should be an odd number
+	t.Run("InstanceCount", func(t *testing.T) {
 
 		instanceCount := len(instanceIPs)
 
@@ -114,7 +121,7 @@ func TestBundle(t *testing.T) {
 	})
 
 	// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
-	t.Run("Consul verifications", func(t *testing.T) {
+	t.Run("ConsulVerifications", func(t *testing.T) {
 
 		if assert.True(t, helpers.ConsulLockCheck(t, instanceIPs, sshKey, sshUser)) {
 			t.Log("INFO. Consul lock check passed. Each Consul node can see exactly 1 lock.")
@@ -127,7 +134,7 @@ func TestBundle(t *testing.T) {
 
 	})
 
-	t.Run("Polkadot verifications", func(t *testing.T) {
+	t.Run("PolkadotVerifications", func(t *testing.T) {
 
 		// TEST 6: Verify that there is only one Polkadot node working in Validator mode at a time
 		if assert.True(t, helpers.LeadersCheck(t, instanceIPs, sshKey, sshUser)) {
@@ -139,4 +146,12 @@ func TestBundle(t *testing.T) {
 		}
 
 	})
+
+	// TEST 8: All the validator keys were successfully uploaded to SM
+	t.Run("SMTests", func(t *testing.T) {
+		if assert.True(t, utils.SMCheck(t, prefix, gcpProject)) {
+			t.Log("INFO. All keys were uploaded. Private key is encrypted.")
+		}
+	})
+
 }
