@@ -3,16 +3,16 @@ package utils
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
-	"testing"
 
 	"github.com/hashicorp/go-multierror"
 	"google.golang.org/api/compute/v1"
 )
 
 // HealthCheckClean cleans all SM keys with prefix
-func HealthCheckClean(t *testing.T, project, prefix string) error {
+func HealthCheckClean(project, prefix string, dryRun bool) error {
 
 	ctx := context.Background()
 
@@ -39,11 +39,11 @@ func HealthCheckClean(t *testing.T, project, prefix string) error {
 	}
 
 	if len(healthCheckNames) == 0 {
-		t.Logf("Not found health checks to delete")
+		log.Println("Not found health checks to delete")
 		return nil
 	}
 
-	t.Logf("Prepared health checks to delete: %s", strings.Join(healthCheckNames, ", "))
+	log.Printf("Prepared health checks to delete: %s\n", strings.Join(healthCheckNames, ", "))
 
 	ch := make(chan error)
 	wg := &sync.WaitGroup{}
@@ -59,6 +59,12 @@ func HealthCheckClean(t *testing.T, project, prefix string) error {
 			var op *compute.Operation
 			var err error
 
+			log.Printf("Deleting health check: %s", healthCheckName)
+
+			if dryRun {
+				return
+			}
+
 			if op, err = client.HealthChecks.Delete(project, healthCheckName).Context(ctx).Do(); err != nil {
 				ch <- fmt.Errorf("Could not delete health check %s. %#w", healthCheckName, err)
 				return
@@ -71,11 +77,11 @@ func HealthCheckClean(t *testing.T, project, prefix string) error {
 				return
 			}
 
-			if err := waitForOperation(ctx, client, project, op); err != nil {
-				ch <- fmt.Errorf("Delete operations for health check %s has not finished in time", healthCheckName)
+			if err := waitForOperation(ctx, op, prepareGlobalGetOp(ctx, client, project, op.Name)); err != nil {
+				ch <- fmt.Errorf("Delete operations for health check %q has not finished in time: %w", healthCheckName, err)
 			}
 
-			t.Logf("Successfully deleted health check: %s", healthCheckName)
+			log.Printf("Successfully deleted health check: %s\n", healthCheckName)
 
 		}(healthCheckName, wg)
 

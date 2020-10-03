@@ -2,15 +2,26 @@ package gcp
 
 /*
 Set PREFIX, GCP_PROJECT, and GOOGLE_APPLICATION_CREDENTIALS credentials before running these scripts
-Add or ensure next roles are presents for google account member that is being used for terraform:
+Add or ensure next rpuoles are presents for google account member that is being used for terraform:
+Additional envs:
+	POLKADOT_TEST_NO_POST_TF_CLEANUP 	- no terraform destroy command after tests
+	POLKADOT_TEST_INITIAL_TF_CLEANUP 	- terraform destroy command before test
+	POLKADOT_TEST_CLEANUP				- clean gcp infrastructure finding all resources with test prefix
+	POLKADOT_TEST_EXIT_AFTER_CLEANUP	- exut after intension cleanup
+	DRY_RUN								- dry run force cleanup
 
 * Editor
-* Role Administrator
-* Secret Manager Admin
-* Project IAM Admin
+* Role Editor
+* Secret Manager Editor
+* Project IAM Editor
 * Monitoring Editor
 
-Visit https://console.cloud.google.com/monitoring/, it will create a new monitoring workspace
+POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_INITIAL_TF_CLEANUP=yes make gcp
+
+* Starts clean up without terrafrom apply, only GCP API
+POLKADOT_TEST_CLEANUP=yes POLKADOT_TEST_EXIT_AFTER_CLEANUP=yes DRY_RUN=yes make gcp
+
+
 */
 
 import (
@@ -30,9 +41,12 @@ import (
 
 //Gather environmental variables and set reasonable defaults
 var (
-	gcpRegion  = []string{"us-east1", "us-east4", "us-west1"}
-	gcpProject = os.Getenv("GCP_PROJECT")
-	sshUser    = "ubuntu"
+	gcpRegion     = []string{"us-east1", "us-east4", "us-west1"}
+	gcpProject    = os.Getenv("GCP_PROJECT")
+	force         = len(os.Getenv("POLKADOT_TEST_CLEANUP")) > 0
+	exitOnCleanup = len(os.Getenv("POLKADOT_TEST_EXIT_AFTER_CLEANUP")) > 0
+	dryRun        = len(os.Getenv("DRY_RUN")) > 0
+	sshUser       = "ubuntu"
 )
 
 func TestBundle(t *testing.T) {
@@ -57,8 +71,13 @@ func TestBundle(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("TF state bucket %q has been ensured", gcpBucket)
 
-	err = utils.CleanResources(t, gcpProject, prefix)
-	require.NoError(t, err)
+	if force {
+		err = utils.CleanResources(gcpProject, prefix, dryRun)
+		require.NoError(t, err)
+		if exitOnCleanup {
+			return
+		}
+	}
 
 	// Generate new SSH key for test virtual machines
 	sshKey := ssh.GenerateRSAKeyPair(t, 4096)
@@ -94,12 +113,12 @@ func TestBundle(t *testing.T) {
 
 	// At the end of the test, run `terraform destroy` to clean up any resources that were created
 
-	helpers.SetPostCleanUp(t, terraformOptions)
+	helpers.SetPostTFCleanUp(t, terraformOptions)
 
 	// Run `terraform init`
 	terraform.Init(t, terraformOptions)
 
-	helpers.SetInitialCleanUp(t, terraformOptions)
+	helpers.SetInitialTFCleanUp(t, terraformOptions)
 
 	// Run `terraform apply` and fail the test if there are any errors
 	terraform.Apply(t, terraformOptions)
@@ -160,10 +179,24 @@ func TestBundle(t *testing.T) {
 
 	})
 
-	// TEST 8: All the validator keys were successfully uploaded to SM
+	// TEST 8: All the validator keys were successfully uploaded
 	t.Run("SMTests", func(t *testing.T) {
 		if assert.True(t, utils.SMCheck(t, prefix, gcpProject)) {
 			t.Log("INFO. All keys were uploaded. Private key is encrypted.")
+		}
+	})
+
+	// TEST 9: All the firewalls were successfully created
+	t.Run("FirewallTests", func(t *testing.T) {
+		if assert.NoError(t, utils.FirewallCheck(t, prefix, gcpProject)) {
+			t.Log("INFO. All firewalls were successfully created")
+		}
+	})
+
+	// TEST 10: Check that all disks are being mounted
+	t.Run("VolumesTests", func(t *testing.T) {
+		if assert.NoError(t, utils.VolumesCheck(t, prefix, gcpProject)) {
+			t.Log("INFO. All volumes were successfully created and attached")
 		}
 	})
 

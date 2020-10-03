@@ -33,6 +33,8 @@ aws: check cache
 gcp: check cache
 	go test -tags=gcp $(TESTARGS) -timeout 0 -p 1  ./gcp...
 
+all: aws gcp
+
 fmt:
 	go fmt ./...
 
@@ -59,10 +61,7 @@ ifndef HAS_GOLANGCI
 endif
 	golangci-lint run ./...
 
-cover: work
-	go test $(TESTARGS) -tags=unit -cover -coverpkg=./ ./...
-
 shell:
 	$(SHELL) -i
 
-.PHONY: cover work fmt test check aws gcp
+.PHONY: work fmt test check aws gcp

@@ -1,7 +1,12 @@
 package aws
 
-// Set AWS_ACCESS_KEY, AWS_SECRET_KEY, PREFIX before running these scripts
-// POLKADOT_TEST_NO_POST_CLEANUP, POLKADOT_TEST_NO_INITIAL_CLEANUP
+/*
+Set AWS_ACCESS_KEY, AWS_SECRET_KEY, PREFIX before running these scripts
+
+Additional envs:
+	POLKADOT_TEST_NO_POST_TF_CLEANUP 	- no terraform destroy command after tests
+	POLKADOT_TEST_INITIAL_TF_CLEANUP 	- terraform destroy command before test
+*/
 
 import (
 	"os"
@@ -86,12 +91,12 @@ func TestBundle(t *testing.T) {
 	}
 
 	// At the end of the test, run `terraform destroy` to clean up any resources that were created
-	helpers.SetPostCleanUp(t, terraformOptions)
+	helpers.SetPostTFCleanUp(t, terraformOptions)
 
 	// Run `terraform init`
 	terraform.Init(t, terraformOptions)
 
-	helpers.SetInitialCleanUp(t, terraformOptions)
+	helpers.SetInitialTFCleanUp(t, terraformOptions)
 
 	// Run `terraform apply` and fail the test if there are any errors
 	terraform.Apply(t, terraformOptions)
@@ -203,5 +208,4 @@ func TestBundle(t *testing.T) {
 			t.Log("INFO. There are exactly 5 keys in the Keystore")
 		}
 	})
-
 }

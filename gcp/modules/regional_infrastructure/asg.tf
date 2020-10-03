@@ -111,7 +111,7 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
   wait_for_instances = true
 
   timeouts {
-    create = "10m"
+    create = "20m"
   }
 
   update_policy {

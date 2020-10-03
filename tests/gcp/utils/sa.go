@@ -3,46 +3,41 @@ package utils
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
-	"testing"
 
 	"github.com/hashicorp/go-multierror"
 	iam "google.golang.org/api/iam/v1"
 )
 
 // SAClean cleans service accounts
-func SAClean(t *testing.T, project, prefix string) error {
+func SAClean(project, prefix string, dryRun bool) error {
 	ctx := context.Background()
 	client, err := iam.NewService(ctx)
 	if err != nil {
-		return fmt.Errorf("Cannot initialize iam client: %#w", err)
+		return fmt.Errorf("Cannot initialize iam client: %w", err)
 	}
 
-	response, err := client.Projects.ServiceAccounts.List("projects/" + project).Do()
+	response, err := client.Projects.ServiceAccounts.List("projects/" + project).Context(ctx).Do()
 	if err != nil {
-		return fmt.Errorf("Cannot get service accounts list: %#w", err)
+		return fmt.Errorf("Cannot get service accounts list: %w", err)
 	}
 
 	var serviceAccounts []string
 
 	for _, account := range response.Accounts {
 
-		accountNames := strings.Split(account.Name, ":")
-		if len(accountNames) == 1 {
-			continue
-		}
-		if strings.HasPrefix(accountNames[1], getPrefix(prefix)) {
+		accountName := lastPartOnSplit(account.Name, "/")
+		if strings.HasPrefix(accountName, getPrefix(prefix)) {
 			serviceAccounts = append(serviceAccounts, account.Name)
 		}
 	}
 
 	if len(serviceAccounts) == 0 {
-		t.Logf("Not found service accounts to delete")
+		log.Println("Not found service accounts to delete")
 		return nil
 	}
-
-	t.Logf("Prepared service accounts to delete: %s", strings.Join(serviceAccounts, ", "))
 
 	ch := make(chan error)
 	wg := &sync.WaitGroup{}
@@ -57,12 +52,23 @@ func SAClean(t *testing.T, project, prefix string) error {
 
 			var err error
 
-			if _, err = client.Projects.ServiceAccounts.Delete(name).Context(ctx).Do(); err != nil {
-				ch <- fmt.Errorf("Could not delete service account %s. %#w", name, err)
+			log.Printf("Deleting service account: %q", name)
+
+			if dryRun {
 				return
 			}
 
-			t.Logf("Successfully deleted service account: %s", name)
+			if _, err = client.Projects.ServiceAccounts.Disable(name, &iam.DisableServiceAccountRequest{}).Context(ctx).Do(); err != nil {
+				ch <- fmt.Errorf("Could not disable service account %q. %w", name, err)
+				return
+			}
+
+			if _, err = client.Projects.ServiceAccounts.Delete(name).Context(ctx).Do(); err != nil {
+				ch <- fmt.Errorf("Could not delete service account %q. %w", name, err)
+				return
+			}
+
+			log.Printf("Successfully deleted service account: %q\n", name)
 
 		}(serviceAccount, wg)
 

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"testing"
@@ -69,7 +70,7 @@ func SMCheck(t *testing.T, prefix, project string) bool {
 }
 
 // SMClean cleans all SM keys with prefix
-func SMClean(t *testing.T, project, prefix string) error {
+func SMClean(project, prefix string, dryRun bool) error {
 
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
@@ -90,7 +91,7 @@ func SMClean(t *testing.T, project, prefix string) error {
 			}
 			break
 		}
-		t.Logf("got secret: %s", secret.Name)
+		log.Printf("got secret: %s\n", secret.Name)
 
 		secretName := lastPartOnSplit(secret.Name, "/")
 
@@ -100,11 +101,11 @@ func SMClean(t *testing.T, project, prefix string) error {
 	}
 
 	if len(secretNames) == 0 {
-		t.Logf("Not found secrets to delete")
+		log.Println("Not found secrets to delete")
 		return nil
 	}
 
-	t.Logf("Prepared keys to delete: %s", strings.Join(secretNames, ", "))
+	log.Printf("Prepared keys to delete:\n%s\n", strings.Join(secretNames, "\n"))
 	c := make(chan error)
 	wg := &sync.WaitGroup{}
 
@@ -119,11 +120,18 @@ func SMClean(t *testing.T, project, prefix string) error {
 			req := &secretmanagerpb.DeleteSecretRequest{
 				Name: key,
 			}
+
+			log.Printf("Deleting secret: %s", key)
+
+			if dryRun {
+				return
+			}
+
 			if err := client.DeleteSecret(ctx, req); err != nil {
 				c <- fmt.Errorf("Could not delete secret key %s. %#w", key, err)
 				return
 			}
-			t.Logf("Successfully deleted key: %s", key)
+			log.Printf("Successfully deleted key: %s\n", key)
 
 		}(key, wg)
 
