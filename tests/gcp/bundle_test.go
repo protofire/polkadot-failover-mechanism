@@ -38,18 +38,26 @@ var (
 func TestBundle(t *testing.T) {
 
 	var (
-		prefix string
-		ok     bool
+		prefix, gcpBucket string
+		ok                bool
 	)
 
 	if prefix, ok = os.LookupEnv("PREFIX"); !ok {
 		prefix = "test"
 	}
 
+	if gcpBucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
+		gcpBucket = "polkadot-validator-failover-tfstate"
+	}
+
 	require.NotEmpty(t, gcpProject, "GCP_PROJECT env required")
 	require.NotEmpty(t, os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"), "GOOGLE_APPLICATION_CREDENTIALS env required")
 
-	err := utils.CleanResources(t, gcpProject, prefix)
+	err := utils.EnsureTFBucket(gcpProject, gcpBucket)
+	require.NoError(t, err)
+	t.Logf("TF state bucket %q has been ensured", gcpBucket)
+
+	err = utils.CleanResources(t, gcpProject, prefix)
 	require.NoError(t, err)
 
 	// Generate new SSH key for test virtual machines
@@ -59,6 +67,11 @@ func TestBundle(t *testing.T) {
 	terraformOptions := &terraform.Options{
 		// The path to where our Terraform code is located
 		TerraformDir: "../../gcp/",
+
+		BackendConfig: map[string]interface{}{
+			"bucket": gcpBucket,
+			"prefix": prefix,
+		},
 
 		// Variables to pass to our Terraform code using -var options
 		Vars: map[string]interface{}{

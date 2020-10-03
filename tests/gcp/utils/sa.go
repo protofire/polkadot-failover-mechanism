@@ -27,7 +27,7 @@ func SAClean(t *testing.T, project, prefix string) error {
 	var serviceAccounts []string
 
 	for _, account := range response.Accounts {
-		t.Logf("Processing service account %s", account.Name)
+
 		accountNames := strings.Split(account.Name, ":")
 		if len(accountNames) == 1 {
 			continue

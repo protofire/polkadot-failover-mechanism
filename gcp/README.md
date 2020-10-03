@@ -45,7 +45,7 @@ To run these scripts you will need to have a number of API services enabled:
 - Compute Engine API (`gcloud services enable compute.googleapis.com`)
 - IAM API (`gcloud services enable iam.googleapis.com`)
 - Cloud Resource Manager API (`gcloud services enable cloudresourcemanager.googleapis.com`)
-
+- Cloud Storage API (`gcloud services enable storage.googleapis.com`)
 
 To enable APIs simply visit the GCP Console page of each of the services above and press "Enable API" if needed. If you don't have an access - you can enable the very same using the `gcloud` CLI (see the [instructions](https://cloud.google.com/sdk/gcloud/reference/services/enable)). 
 
