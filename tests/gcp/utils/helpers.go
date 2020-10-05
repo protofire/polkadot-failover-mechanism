@@ -24,6 +24,13 @@ func contains(slice []string, val string) (int, bool) {
 	return -1, false
 }
 
+func removeFromSlice(slice []string, i int) []string {
+	slice[i] = slice[len(slice)-1]
+	slice[len(slice)-1] = ""
+	slice = slice[:len(slice)-1]
+	return slice
+}
+
 func lastPartOnSplit(s, delimiter string) string {
 	return s[strings.LastIndex(s, delimiter)+1:]
 }

@@ -14,7 +14,7 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
-func listAlerts(ctx context.Context, client *monitoring.AlertPolicyClient, project, prefix string) ([]string, error) {
+func listAlertPolicies(ctx context.Context, client *monitoring.AlertPolicyClient, project, prefix string) ([]*monitoringpb.AlertPolicy, error) {
 
 	fullPrefix := getPrefix(prefix)
 
@@ -24,65 +24,64 @@ func listAlerts(ctx context.Context, client *monitoring.AlertPolicyClient, proje
 		// Filter:  "", // See https://cloud.google.com/monitoring/api/v3/sorting-and-filtering.
 		// OrderBy: "", // See https://cloud.google.com/monitoring/api/v3/sorting-and-filtering.
 	}
-	alertIt := client.ListAlertPolicies(ctx, alertsReq)
+	alertPolicyIterator := client.ListAlertPolicies(ctx, alertsReq)
 
-	var alerts []string
+	var alertPolicies []*monitoringpb.AlertPolicy
 
 	for {
-		alert, err := alertIt.Next()
+		alertPolicy, err := alertPolicyIterator.Next()
 		if err == iterator.Done {
 			break
 		}
 		if err != nil {
-			return alerts, err
+			return alertPolicies, err
 		}
 
-		shortName := lastPartOnSplit(alert.Name, "/")
-		shortDisplayName := lastPartOnSplit(alert.Name, "/")
+		shortName := lastPartOnSplit(alertPolicy.Name, "/")
+		shortDisplayName := lastPartOnSplit(alertPolicy.Name, "/")
 
 		if strings.HasPrefix(shortName, fullPrefix) || strings.HasPrefix(shortDisplayName, fullPrefix) {
-			alerts = append(alerts, alert.Name)
+			alertPolicies = append(alertPolicies, alertPolicy)
 		}
-		alerts = append(alerts, alert.Name)
 	}
-	return alerts, nil
+	return alertPolicies, nil
 }
 
-func deleteAlerts(ctx context.Context, client *monitoring.AlertPolicyClient, project, prefix string, alertNames []string, dryRun bool) error {
+func deleteAlertPolicies(ctx context.Context, client *monitoring.AlertPolicyClient, project, prefix string, alertPolicies []*monitoringpb.AlertPolicy, dryRun bool) error {
 
 	ch := make(chan error)
 	wg := &sync.WaitGroup{}
 
-	for _, alertName := range alertNames {
+	for _, alertPolicy := range alertPolicies {
 
 		wg.Add(1)
 
-		go func(alert string, wg *sync.WaitGroup) {
+		go func(alertPolicy *monitoringpb.AlertPolicy, wg *sync.WaitGroup) {
 
 			defer wg.Done()
 
-			log.Printf("Deleting alert: %s", alert)
+			log.Printf("Deleting alert policy: %q", alertPolicy.Name)
 
 			if dryRun {
 				return
 			}
 
 			req := &monitoringpb.DeleteAlertPolicyRequest{
-				Name: alert,
+				Name: alertPolicy.Name,
 			}
 
 			if err := client.DeleteAlertPolicy(ctx, req); err != nil {
 				if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
-					log.Printf("Cannot delete alert: %q. Status: %d\n", alert, gErr.Code)
+					log.Printf("Cannot delete alert: %q. Status: %d\n", alertPolicy.Name, gErr.Code)
 					return
 				}
-				ch <- fmt.Errorf("Could not delete alert %q. %w", alert, err)
+				ch <- fmt.Errorf("Could not delete alert %q. %w", alertPolicy.Name, err)
 				return
 			}
 
-			log.Printf("Successfully deleted alert: %q\n", alert)
+			log.Printf("Successfully deleted alert: %q\n", alertPolicy.Name)
 
-		}(alertName, wg)
+		}(alertPolicy, wg)
 
 	}
 
@@ -109,17 +108,61 @@ func AlertPolicyClean(project, prefix string, dryRun bool) error {
 	if err != nil {
 		return fmt.Errorf("Cannot create notification alerts client: %w", err)
 	}
-	alerts, err := listAlerts(ctx, client, project, prefix)
+	alertPolicies, err := listAlertPolicies(ctx, client, project, prefix)
 
 	if err != nil {
 		return fmt.Errorf("Cannot get notification alerts list: %w", err)
 	}
 
-	if len(alerts) == 0 {
+	if len(alertPolicies) == 0 {
 		log.Println("Not found alerts to delete")
 		return nil
 	}
 
-	return deleteAlerts(ctx, client, project, prefix, alerts, dryRun)
+	return deleteAlertPolicies(ctx, client, project, prefix, alertPolicies, dryRun)
+
+}
+
+// AlertsPoliciesCheck checks created alert policies
+func AlertsPoliciesCheck(prefix, project string) error {
+
+	ctx := context.Background()
+	client, err := monitoring.NewAlertPolicyClient(ctx)
+	if err != nil {
+		return fmt.Errorf("Cannot create notification alerts client: %w", err)
+	}
+	alertPolicies, err := listAlertPolicies(ctx, client, project, prefix)
+
+	if err != nil {
+		return fmt.Errorf("Cannot get notification alerts list: %w", err)
+	}
+
+	if len(alertPolicies) != 1 {
+		return fmt.Errorf("Wrong alert policies count: %d", len(alertPolicies))
+	}
+
+	alertPolicyConditions := alertPolicies[0].Conditions
+
+	if len(alertPolicyConditions) != 4 {
+		return fmt.Errorf("Wrong alert policy conditions count: %d", len(alertPolicyConditions))
+	}
+
+	conditionNames := []string{
+		"Health not OK",
+		"Health not OK",
+		"Validator less than 1",
+		"Validator more than 1",
+	}
+
+	var idx int
+	var ok bool
+	for _, condition := range alertPolicyConditions {
+		if idx, ok = contains(conditionNames, condition.DisplayName); !ok {
+			return fmt.Errorf("Cannot find alert policy condition with name: %q", condition.DisplayName)
+		}
+		removeFromSlice(conditionNames, idx)
+	}
+
+	return nil
 
 }

@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"testing"
 
 	"github.com/hashicorp/go-multierror"
 	"google.golang.org/api/compute/v1"
 )
 
 // VolumesCheck checl that we do not have unattached volumes
-func VolumesCheck(t *testing.T, prefix, project string) error {
+func VolumesCheck(prefix, project string) error {
 
 	ctx := context.Background()
 	client, err := compute.NewService(ctx)

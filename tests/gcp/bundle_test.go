@@ -188,15 +188,22 @@ func TestBundle(t *testing.T) {
 
 	// TEST 9: All the firewalls were successfully created
 	t.Run("FirewallTests", func(t *testing.T) {
-		if assert.NoError(t, utils.FirewallCheck(t, prefix, gcpProject)) {
+		if assert.NoError(t, utils.FirewallCheck(prefix, gcpProject)) {
 			t.Log("INFO. All firewalls were successfully created")
 		}
 	})
 
 	// TEST 10: Check that all disks are being mounted
 	t.Run("VolumesTests", func(t *testing.T) {
-		if assert.NoError(t, utils.VolumesCheck(t, prefix, gcpProject)) {
+		if assert.NoError(t, utils.VolumesCheck(prefix, gcpProject)) {
 			t.Log("INFO. All volumes were successfully created and attached")
+		}
+	})
+
+	// TEST 11: Check that all alert policies have been created
+	t.Run("AlertsTests", func(t *testing.T) {
+		if assert.NoError(t, utils.AlertsPoliciesCheck(prefix, gcpProject)) {
+			t.Log("INFO. All alerts policies were successfully created")
 		}
 	})
 

@@ -8,11 +8,9 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-multierror"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -407,14 +405,19 @@ func prepareTestFirewalls() []*compute.Firewall {
 }
 
 // FirewallCheck checks created firewalls
-func FirewallCheck(t *testing.T, prefix, project string) error {
+func FirewallCheck(prefix, project string) error {
 
 	ctx := context.Background()
 	client, err := compute.NewService(ctx)
-	require.NoError(t, err)
+
+	if err != nil {
+		return fmt.Errorf("Cannot create compute client: %w", err)
+	}
 
 	firewalls, err := getFirewalls(ctx, client, project, prefix)
-	require.NoError(t, err)
+	if err != nil {
+		return fmt.Errorf("Cannot get list of firewalls: %w", err)
+	}
 	for _, f := range firewalls {
 		adjustFirewall(f)
 	}

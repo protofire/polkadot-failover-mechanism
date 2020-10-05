@@ -115,7 +115,7 @@ func NotificationChannelsClean(project, prefix string, dryRun bool) error {
 	}
 
 	if len(channels) == 0 {
-		log.Println("Not found channels to delete")
+		log.Println("Not found notification channels to delete")
 		return nil
 	}
 
