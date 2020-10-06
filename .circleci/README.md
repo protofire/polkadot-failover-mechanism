@@ -16,6 +16,18 @@ Please configure following Environment Variables in the Project setting to allow
 - `TF_STATE_BUCKET` & `TF_STATE_KEY` - For all cloud providers
 - `AWS_ACCESS_KEY` & `AWS_SECRET_KEY` - To deploy solution to AWS
 - `GCP_PROJECT` & `GOOGLE_APPLICATION_CREDENTIALS_CONTENT` & `GOOGLE_APPLICATION_CREDENTIALS` - To deploy solution to GCP 
+-   `ARM_SUBSCRIPTION_ID` & 
+    `ARM_TENANT_ID` &
+    `ARM_CLIENT_ID` &
+    `ARM_CLIENT_SECRET` &
+    `AZURE_TENANT_ID` &
+    `AZURE_CLIENT_ID` &
+    `AZURE_CLIENT_SECRET` &
+    `ARM_RES_GROUP_NAME` &
+    `ARM_STORAGE_ACCOUNT` &
+    `ARM_STORAGE_ACCESS_KEY` &
+    `ARM_PROVIDER_VMSS_EXTENSIONS_BETA` - To deploy solution to Azure
+
 - `SLACK_WEBHOOK` - To post CI status notifications
 - `dockerhub_repo` - Your DockerHub repository to push the image
 - `dockerhub_user` - Your DockerHub user

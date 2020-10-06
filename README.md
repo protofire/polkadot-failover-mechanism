@@ -58,7 +58,7 @@ This folder contains the Dockerfile for the Docker image that is published on Do
 
 ### [Tests](tests/)
 
-This folder contains a set of tests to be run through CI mechanism. These tests can be launched manually. Simply go to the tests folder, then select provider to check solution at, open scripts and read the set of environment variables you need to export. Export these variables, install [GoLang](https://golang.org/doc/install) and execute the `go mod init project` and then `go test` commands to run the CI tests manually.
+This folder contains a set of tests to be run through CI mechanism. These tests can be launched manually. Simply go to the tests folder, and set up environment as described [README.md](tests/README.md)
 
 ### [Init helpers](init-helpers/)
 

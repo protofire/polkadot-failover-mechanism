@@ -10,15 +10,18 @@ variable "prefix" {
 }
 
 variable "instance_type" {
+  type = string
 }
 
 variable "disk_size" {
+  type    = number
   default = 80
 }
 
 variable "delete_on_termination" {
-  default     = "false"
+  default     = false
   description = "Defines whether or not to delete data disks on termination. Useful when using scripts with CI. Must be lowercase"
+  type        = bool
 }
 
 variable "validator_name" {
@@ -45,6 +48,7 @@ variable "total_instance_count" {
 }
 
 variable "region" {
+  type = string
 }
 
 variable "chain" {
@@ -53,22 +57,39 @@ variable "chain" {
 }
 
 variable "vnet_cidr" {
+  type = string
 }
 
 variable "subnet_cidr" {
+  type = string
 }
 
 variable "subnet_cidrs" {
+  type = list(string)
 }
 
 variable "rg" {
+  type = string
+}
+
+variable "subscription" {
+  type = string
 }
 
 variable "expose_ssh" {
   default = "False"
 }
 
-variable "key_content" {
+variable "ssh_key_content" {
+  type = string
+}
+
+variable "ssh_user" {
+  type = string
+}
+
+variable "admin_user" {
+  type = string
 }
 
 variable "sa_type" {
@@ -80,4 +101,15 @@ variable "tenant" {
 }
 
 variable "action_group_id" {
+  type = string
+}
+
+variable "key_vault_name" {
+  type = string
+}
+
+variable "wait_vmss" {
+  description = "Should we wait until vmss is being ready. Required set az console utility"
+  type        = bool
+  default     = false
 }

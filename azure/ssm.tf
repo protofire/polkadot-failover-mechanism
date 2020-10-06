@@ -5,41 +5,88 @@ data "http" "my_public_ip" {
 }
 
 resource "azurerm_key_vault" "polkadot" {
-  name                     = "${var.prefix}-vault"
-  location                 = var.azure_regions[0]
-  resource_group_name      = var.azure_rg
-  enabled_for_deployment   = true
-  tenant_id                = data.azurerm_client_config.current.tenant_id
-  soft_delete_enabled      = false
-  purge_protection_enabled = false
-
-  sku_name = "standard"
+  name                       = local.key_vault_name
+  location                   = var.azure_regions[0]
+  resource_group_name        = var.azure_rg
+  enabled_for_deployment     = true
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  soft_delete_enabled        = false
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = false
+  enable_rbac_authorization  = false
+  sku_name                   = "standard"
 
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = module.primary_region.principal_id
 
+    storage_permissions = [
+      "get",
+      "list",
+    ]
+
+    key_permissions = [
+      "get",
+      "list",
+    ]
+
     secret_permissions = [
       "get",
       "list",
     ]
+
   }
 
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
 
+    storage_permissions = [
+      "get",
+      "list",
+      "delete",
+      "purge",
+      "recover",
+      "restore",
+    ]
+    key_permissions = [
+      "create",
+      "get",
+      "list",
+      "delete",
+      "purge",
+      "recover",
+    ]
     secret_permissions = [
       "set",
       "get",
       "list",
       "delete",
+      "purge",
+      "recover",
+    ]
+    certificate_permissions = [
+      "get",
+      "list",
+      "delete",
+      "purge",
+      "recover",
     ]
   }
 
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = module.secondary_region.principal_id
+
+    storage_permissions = [
+      "get",
+      "list",
+    ]
+
+    key_permissions = [
+      "get",
+      "list",
+    ]
 
     secret_permissions = [
       "get",
@@ -50,6 +97,16 @@ resource "azurerm_key_vault" "polkadot" {
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = module.tertiary_region.principal_id
+
+    storage_permissions = [
+      "get",
+      "list",
+    ]
+
+    key_permissions = [
+      "get",
+      "list",
+    ]
 
     secret_permissions = [
       "get",

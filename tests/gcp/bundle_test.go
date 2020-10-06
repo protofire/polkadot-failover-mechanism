@@ -3,12 +3,12 @@ package gcp
 /*
 Set PREFIX, GCP_PROJECT, and GOOGLE_APPLICATION_CREDENTIALS credentials before running these scripts
 
-Additional envs:
+Additional environments:
 	POLKADOT_TEST_NO_POST_TF_CLEANUP    - no terraform destroy command after tests
 	POLKADOT_TEST_INITIAL_TF_CLEANUP    - terraform destroy command before test
 	POLKADOT_TEST_NO_INITIAL_TF_APPLY   - no terraform apply command before test
 	POLKADOT_TEST_CLEANUP               - clean gcp infrastructure finding all resources with test prefix, it uses GCP API requests
-	POLKADOT_TEST_EXIT_AFTER_CLEANUP    - exut after intension cleanup
+	POLKADOT_TEST_EXIT_AFTER_CLEANUP    - exit after intension cleanup
 	DRY_RUN                             - dry run force cleanup
 
 IAM Rules for tests:
@@ -122,19 +122,21 @@ func TestBundle(t *testing.T) {
 	helpers.SetPostTFCleanUp(t, func() {
 		if _, ok := os.LookupEnv("POLKADOT_TEST_NO_POST_TF_CLEANUP"); !ok {
 			terraform.Destroy(t, terraformOptions)
+			if bucketCreated {
+				require.NoError(t, utils.DeleteTFBucket(gcpProject, gcpBucket))
+			} else {
+				require.NoError(t, utils.ClearTFBucket(gcpProject, gcpBucket))
+			}
 		} else {
 			t.Log("Skipping terrafrom deferred cleanup...")
-		}
-		if bucketCreated {
-			require.NoError(t, utils.DeleteTFBucket(gcpProject, gcpBucket))
-		} else {
-			require.NoError(t, utils.ClearTFBucket(gcpProject, gcpBucket))
 		}
 	})
 
 	if !noApply {
 		// Run `terraform init`
 		terraform.Init(t, terraformOptions)
+
+		terraform.RunTerraformCommand(t, terraformOptions, terraform.FormatArgs(terraformOptions, "validate")...)
 
 		helpers.SetInitialTFCleanUp(t, terraformOptions)
 
@@ -170,7 +172,7 @@ func TestBundle(t *testing.T) {
 		t.Logf("INFO. Minimum viable instance count (3) reached. There are %d instances running.", instanceCount)
 	})
 
-	// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
+	// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnance
 	t.Run("ConsulVerifications", func(t *testing.T) {
 
 		if assert.True(t, helpers.ConsulLockCheck(t, instanceIPs, sshKey, sshUser)) {

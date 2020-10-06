@@ -5,8 +5,8 @@ resource "azurerm_monitor_metric_alert" "health" {
   description         = "Action will be triggered when instance health is no OK."
 
   criteria {
-    metric_namespace = "${var.prefix}/health"
-    metric_name      = "Value"
+    metric_namespace = local.metric_namespaces.health.namespace
+    metric_name      = local.metric_namespaces.health.metric
     aggregation      = "Minimum"
     operator         = "GreaterThan"
     threshold        = 0
@@ -16,7 +16,7 @@ resource "azurerm_monitor_metric_alert" "health" {
     action_group_id = var.action_group_id
   }
 
-  depends_on = [null_resource.delay]
+  depends_on = [null_resource.monitoring_namespaces]
 }
 
 resource "azurerm_monitor_metric_alert" "health-status" {
@@ -26,8 +26,8 @@ resource "azurerm_monitor_metric_alert" "health-status" {
   description         = "Action will be triggered when instance health is no OK."
 
   criteria {
-    metric_namespace = "${var.prefix}/consul_health_checks"
-    metric_name      = "critical"
+    metric_namespace = local.metric_namespaces.health_checks.namespace
+    metric_name      = local.metric_namespaces.health_checks.metric
     aggregation      = "Minimum"
     operator         = "GreaterThan"
     threshold        = 0
@@ -37,7 +37,8 @@ resource "azurerm_monitor_metric_alert" "health-status" {
     action_group_id = var.action_group_id
   }
 
-  depends_on = [null_resource.delay]
+  depends_on = [null_resource.monitoring_namespaces]
+
 }
 
 resource "azurerm_monitor_metric_alert" "disk" {
@@ -47,8 +48,8 @@ resource "azurerm_monitor_metric_alert" "disk" {
   description         = "Action will be triggered when instance disk has no sufficient space."
 
   criteria {
-    metric_namespace = "${var.prefix}/disk"
-    metric_name      = "used_percent"
+    metric_namespace = local.metric_namespaces.disk.namespace
+    metric_name      = local.metric_namespaces.disk.metric
     aggregation      = "Maximum"
     operator         = "GreaterThan"
     threshold        = 90
@@ -58,14 +59,16 @@ resource "azurerm_monitor_metric_alert" "disk" {
     action_group_id = var.action_group_id
   }
 
-  depends_on = [null_resource.delay]
+  depends_on = [null_resource.monitoring_namespaces]
+
 }
 
-resource "null_resource" "delay" {
+resource "null_resource" "monitoring_namespaces" {
+
+  depends_on = [azurerm_linux_virtual_machine_scale_set.polkadot]
+
   provisioner "local-exec" {
-    command = "sleep 1000"
+    command = "bash ${path.module}/../../../init-helpers/azure/wait_monitoring_namespace.sh ${join(" ", local.monitoring_command_parameters)}"
   }
-  triggers = {
-    before = azurerm_linux_virtual_machine_scale_set.polkadot.id
-  }
+
 }
