@@ -64,6 +64,7 @@ resource "google_compute_instance_template" "instance_template" {
     email = var.sa_email
     scopes = [
       "compute-ro",
+      "monitoring-write",
     "https://www.googleapis.com/auth/cloud-platform"]
   }
 

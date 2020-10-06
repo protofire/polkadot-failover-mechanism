@@ -11,6 +11,29 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
+func getHealthChecks(ctx context.Context, client *compute.Service, project, prefix string) ([]*compute.HealthCheck, error) {
+
+	var healthChecks []*compute.HealthCheck
+
+	healthChecksList, err := client.HealthChecks.AggregatedList(project).Context(ctx).Do()
+	if err != nil {
+		return healthChecks, fmt.Errorf("Cannot get health checks list: %#w", err)
+	}
+
+	items := healthChecksList.Items
+
+	for _, item := range items {
+		for _, check := range item.HealthChecks {
+			if strings.HasPrefix(lastPartOnSplit(check.Name, "/"), getPrefix(prefix)) {
+				healthChecks = append(healthChecks, check)
+			}
+		}
+	}
+
+	return healthChecks, nil
+
+}
+
 // HealthCheckClean cleans all SM keys with prefix
 func HealthCheckClean(project, prefix string, dryRun bool) error {
 
@@ -21,34 +44,21 @@ func HealthCheckClean(project, prefix string, dryRun bool) error {
 		return fmt.Errorf("Cannot initialize compute client: %#w", err)
 	}
 
-	var healthCheckNames []string
+	healthChecks, err := getHealthChecks(ctx, client, project, prefix)
 
-	healthChecksList, err := client.HealthChecks.AggregatedList(project).Context(ctx).Do()
 	if err != nil {
 		return fmt.Errorf("Cannot get health checks list: %#w", err)
 	}
 
-	items := healthChecksList.Items
-
-	for _, item := range items {
-		for _, check := range item.HealthChecks {
-			if strings.HasPrefix(lastPartOnSplit(check.Name, "/"), getPrefix(prefix)) {
-				healthCheckNames = append(healthCheckNames, check.Name)
-			}
-		}
-	}
-
-	if len(healthCheckNames) == 0 {
+	if len(healthChecks) == 0 {
 		log.Println("Not found health checks to delete")
 		return nil
 	}
 
-	log.Printf("Prepared health checks to delete: %s\n", strings.Join(healthCheckNames, ", "))
-
 	ch := make(chan error)
 	wg := &sync.WaitGroup{}
 
-	for _, healthCheckName := range healthCheckNames {
+	for _, healthCheck := range healthChecks {
 
 		wg.Add(1)
 
@@ -59,20 +69,20 @@ func HealthCheckClean(project, prefix string, dryRun bool) error {
 			var op *compute.Operation
 			var err error
 
-			log.Printf("Deleting health check: %s", healthCheckName)
+			log.Printf("Deleting health check: %q", healthCheckName)
 
 			if dryRun {
 				return
 			}
 
 			if op, err = client.HealthChecks.Delete(project, healthCheckName).Context(ctx).Do(); err != nil {
-				ch <- fmt.Errorf("Could not delete health check %s. %#w", healthCheckName, err)
+				ch <- fmt.Errorf("Could not delete health check %q. %w", healthCheckName, err)
 				return
 			}
 
 			if op.Error != nil {
 				for _, err := range op.Error.Errors {
-					ch <- fmt.Errorf("Could not delete health check %s. %s", healthCheckName, err.Message)
+					ch <- fmt.Errorf("Could not delete health check %q. %q", healthCheckName, err.Message)
 				}
 				return
 			}
@@ -81,9 +91,9 @@ func HealthCheckClean(project, prefix string, dryRun bool) error {
 				ch <- fmt.Errorf("Delete operations for health check %q has not finished in time: %w", healthCheckName, err)
 			}
 
-			log.Printf("Successfully deleted health check: %s\n", healthCheckName)
+			log.Printf("Successfully deleted health check: %q\n", healthCheckName)
 
-		}(healthCheckName, wg)
+		}(healthCheck.Name, wg)
 
 	}
 

@@ -4,11 +4,12 @@ package gcp
 Set PREFIX, GCP_PROJECT, and GOOGLE_APPLICATION_CREDENTIALS credentials before running these scripts
 Add or ensure next rpuoles are presents for google account member that is being used for terraform:
 Additional envs:
-	POLKADOT_TEST_NO_POST_TF_CLEANUP 	- no terraform destroy command after tests
-	POLKADOT_TEST_INITIAL_TF_CLEANUP 	- terraform destroy command before test
-	POLKADOT_TEST_CLEANUP				- clean gcp infrastructure finding all resources with test prefix
-	POLKADOT_TEST_EXIT_AFTER_CLEANUP	- exut after intension cleanup
-	DRY_RUN								- dry run force cleanup
+	POLKADOT_TEST_NO_POST_TF_CLEANUP    - no terraform destroy command after tests
+	POLKADOT_TEST_INITIAL_TF_CLEANUP    - terraform destroy command before test
+	POLKADOT_TEST_NO_INITIAL_TF_APPLY   - no terraform apply command before test
+	POLKADOT_TEST_CLEANUP               - clean gcp infrastructure finding all resources with test prefix, it uses GCP API requests
+	POLKADOT_TEST_EXIT_AFTER_CLEANUP    - exut after intension cleanup
+	DRY_RUN                             - dry run force cleanup
 
 * Editor
 * Role Editor
@@ -45,15 +46,20 @@ var (
 	gcpProject    = os.Getenv("GCP_PROJECT")
 	force         = len(os.Getenv("POLKADOT_TEST_CLEANUP")) > 0
 	exitOnCleanup = len(os.Getenv("POLKADOT_TEST_EXIT_AFTER_CLEANUP")) > 0
+	noApply       = len(os.Getenv("POLKADOT_TEST_NO_INITIAL_TF_APPLY")) > 0
 	dryRun        = len(os.Getenv("DRY_RUN")) > 0
 	sshUser       = "ubuntu"
 )
 
 func TestBundle(t *testing.T) {
 
+	require.NotEmpty(t, gcpProject, "GCP_PROJECT env required")
+	require.NotEmpty(t, os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"), "GOOGLE_APPLICATION_CREDENTIALS env required")
+
 	var (
-		prefix, gcpBucket string
-		ok                bool
+		prefix    string
+		gcpBucket string
+		ok        bool
 	)
 
 	if prefix, ok = os.LookupEnv("PREFIX"); !ok {
@@ -63,9 +69,6 @@ func TestBundle(t *testing.T) {
 	if gcpBucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
 		gcpBucket = "polkadot-validator-failover-tfstate"
 	}
-
-	require.NotEmpty(t, gcpProject, "GCP_PROJECT env required")
-	require.NotEmpty(t, os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"), "GOOGLE_APPLICATION_CREDENTIALS env required")
 
 	err := utils.EnsureTFBucket(gcpProject, gcpBucket)
 	require.NoError(t, err)
@@ -115,14 +118,15 @@ func TestBundle(t *testing.T) {
 
 	helpers.SetPostTFCleanUp(t, terraformOptions)
 
-	// Run `terraform init`
-	terraform.Init(t, terraformOptions)
+	if !noApply {
+		// Run `terraform init`
+		terraform.Init(t, terraformOptions)
 
-	helpers.SetInitialTFCleanUp(t, terraformOptions)
+		helpers.SetInitialTFCleanUp(t, terraformOptions)
 
-	// Run `terraform apply` and fail the test if there are any errors
-	terraform.Apply(t, terraformOptions)
-
+		// Run `terraform apply` and fail the test if there are any errors
+		terraform.Apply(t, terraformOptions)
+	}
 	// TEST 1: Verify that there are healthy instances in each region with public ips assigned
 	var instanceIPs []string
 
@@ -204,6 +208,20 @@ func TestBundle(t *testing.T) {
 	t.Run("AlertsTests", func(t *testing.T) {
 		if assert.NoError(t, utils.AlertsPoliciesCheck(prefix, gcpProject)) {
 			t.Log("INFO. All alerts policies were successfully created")
+		}
+	})
+
+	// TEST 12: Instances health check
+	t.Run("HealthCheckTests", func(t *testing.T) {
+		if assert.NoError(t, utils.HealthStatusCheck(prefix, gcpProject)) {
+			t.Log("INFO. There are all healthy instances")
+		}
+	})
+
+	// TEST 13: Check that there are exactly 5 keys in the keystore
+	t.Run("KeystoreTests", func(t *testing.T) {
+		if assert.True(t, helpers.KeystoreCheck(t, instanceIPs, sshKey, sshUser)) {
+			t.Log("INFO. There are exactly 5 keys in the Keystore")
 		}
 	})
 

@@ -64,7 +64,8 @@ set -eE
 chown 1000:1000 /data
 
 # Run docker with regular polkadot container inside of it
-/usr/bin/systemctl start docker
+/bin/systemctl enable docker
+/bin/systemctl start docker
 
 # Fetch validator instance parameters from Secret Manager
 NAME_NAME=$(gcloud secrets list --format=json --filter="name ~ ${prefix}_name AND labels.prefix=${prefix} AND labels.type != key" | jq -r .[0].name)

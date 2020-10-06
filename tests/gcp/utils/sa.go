@@ -58,10 +58,14 @@ func SAClean(project, prefix string, dryRun bool) error {
 				return
 			}
 
+			log.Printf("Disabling service account: %q", name)
+
 			if _, err = client.Projects.ServiceAccounts.Disable(name, &iam.DisableServiceAccountRequest{}).Context(ctx).Do(); err != nil {
 				ch <- fmt.Errorf("Could not disable service account %q. %w", name, err)
 				return
 			}
+
+			log.Printf("Deleting service account: %q", name)
 
 			if _, err = client.Projects.ServiceAccounts.Delete(name).Context(ctx).Do(); err != nil {
 				ch <- fmt.Errorf("Could not delete service account %q. %w", name, err)

@@ -37,10 +37,9 @@ func listAlertPolicies(ctx context.Context, client *monitoring.AlertPolicyClient
 			return alertPolicies, err
 		}
 
-		shortName := lastPartOnSplit(alertPolicy.Name, "/")
-		shortDisplayName := lastPartOnSplit(alertPolicy.Name, "/")
+		shortDisplayName := lastPartOnSplit(alertPolicy.DisplayName, "/")
 
-		if strings.HasPrefix(shortName, fullPrefix) || strings.HasPrefix(shortDisplayName, fullPrefix) {
+		if strings.HasPrefix(shortDisplayName, fullPrefix) {
 			alertPolicies = append(alertPolicies, alertPolicy)
 		}
 	}
