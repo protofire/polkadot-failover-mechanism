@@ -16,13 +16,13 @@ func VolumesCheck(prefix, project string) error {
 	client, err := compute.NewService(ctx)
 
 	if err != nil {
-		return fmt.Errorf("Cannot initialize compute client: %#w", err)
+		return fmt.Errorf("Cannot initialize compute client: %w", err)
 	}
 
 	volumes, err := client.Disks.AggregatedList(project).Context(ctx).Do()
 
 	if err != nil {
-		return fmt.Errorf("Cannot get volumes: %#w", err)
+		return fmt.Errorf("Cannot get volumes: %w", err)
 	}
 
 	var diskErrors []*compute.Disk

@@ -12,7 +12,7 @@ func getRegionZones(ctx context.Context, client *compute.Service, project string
 	zonesList, err := client.Zones.List(project).Context(ctx).Do()
 
 	if err != nil {
-		return nil, fmt.Errorf("Cannot get zones: %#w", err)
+		return nil, fmt.Errorf("Cannot get zones: %w", err)
 	}
 
 	regionZones := make(map[string][]string)

@@ -72,7 +72,7 @@ func DeleteBucketObjects(project, name string) error {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("Cannot create stogage client: %#w", err)
+		return fmt.Errorf("Cannot create stogage client: %w", err)
 	}
 	defer client.Close()
 
@@ -85,21 +85,21 @@ func EnsureTFBucket(project, name string) error {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("Cannot create stogage client: %#w", err)
+		return fmt.Errorf("Cannot create stogage client: %w", err)
 	}
 	defer client.Close()
 	bucket := client.Bucket(name)
 
 	if err := bucket.Create(ctx, project, &storage.BucketAttrs{Name: name}); err != nil {
 		if gErr, ok := err.(*googleapi.Error); !(ok && gErr.Code == 409) {
-			return fmt.Errorf("Cannot create bucket %s. %#w", name, err)
+			return fmt.Errorf("Cannot create bucket %s. %w", name, err)
 		}
 	}
 
 	buckets, err := listBuckets(ctx, client, project)
 
 	if err != nil {
-		return fmt.Errorf("Cannot get list of GCS buckets: %#w", err)
+		return fmt.Errorf("Cannot get list of GCS buckets: %w", err)
 	}
 
 	if _, ok := contains(buckets, name); !ok {

@@ -15,3 +15,4 @@
 !aws/terraform.tfvars.example
 !gcp/terraform.tfvars.example
 !azure/terraform.tfvars.example
+.envrc

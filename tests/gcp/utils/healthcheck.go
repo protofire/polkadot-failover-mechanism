@@ -17,7 +17,7 @@ func getHealthChecks(ctx context.Context, client *compute.Service, project, pref
 
 	healthChecksList, err := client.HealthChecks.AggregatedList(project).Context(ctx).Do()
 	if err != nil {
-		return healthChecks, fmt.Errorf("Cannot get health checks list: %#w", err)
+		return healthChecks, fmt.Errorf("Cannot get health checks list: %w", err)
 	}
 
 	items := healthChecksList.Items
@@ -41,13 +41,13 @@ func HealthCheckClean(project, prefix string, dryRun bool) error {
 
 	client, err := compute.NewService(ctx)
 	if err != nil {
-		return fmt.Errorf("Cannot initialize compute client: %#w", err)
+		return fmt.Errorf("Cannot initialize compute client: %w", err)
 	}
 
 	healthChecks, err := getHealthChecks(ctx, client, project, prefix)
 
 	if err != nil {
-		return fmt.Errorf("Cannot get health checks list: %#w", err)
+		return fmt.Errorf("Cannot get health checks list: %w", err)
 	}
 
 	if len(healthChecks) == 0 {

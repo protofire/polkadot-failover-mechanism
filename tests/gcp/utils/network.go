@@ -26,7 +26,7 @@ func getNetworks(ctx context.Context, client *compute.Service, project, prefix s
 
 	networksList, err := client.Networks.List(project).Context(ctx).Do()
 	if err != nil {
-		return nil, fmt.Errorf("Cannot get networks list: %#w", err)
+		return nil, fmt.Errorf("Cannot get networks list: %w", err)
 	}
 
 	networks := networksList.Items
@@ -48,7 +48,7 @@ func deleteNetworkSubnets(ctx context.Context, client *compute.Service, project,
 	subnetsList, err := client.Subnetworks.AggregatedList(project).Context(ctx).Do()
 
 	if err != nil {
-		return fmt.Errorf("Cannot get network subnets: %#w", err)
+		return fmt.Errorf("Cannot get network subnets: %w", err)
 	}
 
 	var subnets []subnetItem
@@ -128,7 +128,7 @@ func getFirewalls(ctx context.Context, client *compute.Service, project, prefix 
 	firewallsList, err := client.Firewalls.List(project).Context(ctx).Do()
 
 	if err != nil {
-		return nil, fmt.Errorf("Cannot get firewalls: %#w", err)
+		return nil, fmt.Errorf("Cannot get firewalls: %w", err)
 	}
 
 	var firewalls []*compute.Firewall
@@ -290,7 +290,7 @@ func NetworkClean(project, prefix string, dryRun bool) error {
 
 	client, err := compute.NewService(ctx)
 	if err != nil {
-		return fmt.Errorf("Cannot initialize compute client: %#w", err)
+		return fmt.Errorf("Cannot initialize compute client: %w", err)
 	}
 
 	networkNames, err := getNetworks(ctx, client, project, prefix)

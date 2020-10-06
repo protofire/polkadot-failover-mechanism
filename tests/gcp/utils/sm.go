@@ -75,7 +75,7 @@ func SMClean(project, prefix string, dryRun bool) error {
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("Cannot initialize secrets client: %#w", err)
+		return fmt.Errorf("Cannot initialize secrets client: %w", err)
 	}
 
 	var secretNames []string
@@ -87,7 +87,7 @@ func SMClean(project, prefix string, dryRun bool) error {
 		secret, err := secretIterator.Next()
 		if err != nil {
 			if !errors.Is(err, iterator.Done) {
-				return fmt.Errorf("Got secret API error: %#w", err)
+				return fmt.Errorf("Got secret API error: %w", err)
 			}
 			break
 		}
@@ -128,7 +128,7 @@ func SMClean(project, prefix string, dryRun bool) error {
 			}
 
 			if err := client.DeleteSecret(ctx, req); err != nil {
-				c <- fmt.Errorf("Could not delete secret key %s. %#w", key, err)
+				c <- fmt.Errorf("Could not delete secret key %s. %w", key, err)
 				return
 			}
 			log.Printf("Successfully deleted key: %s\n", key)
