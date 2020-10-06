@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/terraform"
+	"github.com/hashicorp/go-multierror"
 )
 
 // BuildRegionParams build strings from regions slice
@@ -38,4 +40,22 @@ func SetInitialTFCleanUp(t *testing.T, opts *terraform.Options) {
 	} else {
 		t.Log("Skipping terrafrom cleanup...")
 	}
+}
+
+// WaitOnErrorChannel waits till channel closed
+func WaitOnErrorChannel(ch chan error, wg *sync.WaitGroup) error {
+
+	go func() {
+		defer close(ch)
+		wg.Wait()
+	}()
+
+	var result *multierror.Error
+
+	for err := range ch {
+		result = multierror.Append(result, err)
+	}
+
+	return result.ErrorOrNil()
+
 }

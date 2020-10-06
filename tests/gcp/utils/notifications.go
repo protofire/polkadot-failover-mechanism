@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
-	"github.com/hashicorp/go-multierror"
+	"github.com/protofire/polkadot-failover-mechanism/tests/helpers"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
@@ -85,18 +85,7 @@ func deleteNotificationChannels(ctx context.Context, client *monitoring.Notifica
 
 	}
 
-	go func() {
-		defer close(ch)
-		wg.Wait()
-	}()
-
-	var result *multierror.Error
-
-	for err := range ch {
-		result = multierror.Append(result, err)
-	}
-
-	return result.ErrorOrNil()
+	return helpers.WaitOnErrorChannel(ch, wg)
 
 }
 

@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	"github.com/hashicorp/go-multierror"
+	"github.com/protofire/polkadot-failover-mechanism/tests/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/api/iterator"
@@ -106,7 +106,7 @@ func SMClean(project, prefix string, dryRun bool) error {
 	}
 
 	log.Printf("Prepared keys to delete:\n%s\n", strings.Join(secretNames, "\n"))
-	c := make(chan error)
+	ch := make(chan error)
 	wg := &sync.WaitGroup{}
 
 	for _, key := range secretNames {
@@ -128,7 +128,7 @@ func SMClean(project, prefix string, dryRun bool) error {
 			}
 
 			if err := client.DeleteSecret(ctx, req); err != nil {
-				c <- fmt.Errorf("Could not delete secret key %s. %w", key, err)
+				ch <- fmt.Errorf("Could not delete secret key %s. %w", key, err)
 				return
 			}
 			log.Printf("Successfully deleted key: %s\n", key)
@@ -137,17 +137,6 @@ func SMClean(project, prefix string, dryRun bool) error {
 
 	}
 
-	go func() {
-		defer close(c)
-		wg.Wait()
-	}()
-
-	var result *multierror.Error
-
-	for err := range c {
-		result = multierror.Append(result, err)
-	}
-
-	return result.ErrorOrNil()
+	return helpers.WaitOnErrorChannel(ch, wg)
 
 }

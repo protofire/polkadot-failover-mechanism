@@ -10,7 +10,16 @@ type cleanFunc func(project, prefix string, dryRun bool) error
 func CleanResources(project, prefix string, dryRun bool) error {
 	var result *multierror.Error
 
-	funcs := []cleanFunc{InstanceGroupsClean, SMClean, HealthCheckClean, SAClean, NetworkClean, NotificationChannelsClean, AlertPolicyClean}
+	funcs := []cleanFunc{
+		InstanceGroupsClean,
+		SMClean,
+		HealthCheckClean,
+		SAClean,
+		NetworkClean,
+		NotificationChannelsClean,
+		AlertPolicyClean,
+		InstanceTemplatesClean,
+	}
 
 	for _, fnc := range funcs {
 		err := fnc(project, prefix, dryRun)

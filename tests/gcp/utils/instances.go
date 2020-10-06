@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/protofire/polkadot-failover-mechanism/tests/helpers"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -93,6 +94,96 @@ func getInstances(ctx context.Context, client *compute.Service, project, prefix 
 		}
 	}
 	return instances, nil
+}
+
+// nolint
+func getInstanceTemplates(ctx context.Context, client *compute.Service, project, prefix string) ([]*compute.InstanceTemplate, error) {
+
+	var instanceTemplates []*compute.InstanceTemplate
+	instanceTemplatesList, err := client.InstanceTemplates.List(project).Context(ctx).Do()
+	if err != nil {
+		return nil, fmt.Errorf("Cannot get instance templates: %w", err)
+	}
+
+	for _, instanceTemplate := range instanceTemplatesList.Items {
+		if len(prefix) > 0 && !strings.HasPrefix(instanceTemplate.Name, getPrefix(prefix)) {
+			continue
+		}
+		instanceTemplates = append(instanceTemplates, instanceTemplate)
+	}
+	return instanceTemplates, nil
+}
+
+// InstanceTemplatesClean cleans instance templates
+func InstanceTemplatesClean(project, prefix string, dryRun bool) error {
+
+	ctx := context.Background()
+	client, err := compute.NewService(ctx)
+
+	if err != nil {
+		return fmt.Errorf("Cannot initialize compute client: %w", err)
+	}
+
+	instanceTemplates, err := getInstanceTemplates(ctx, client, project, prefix)
+	if err != nil {
+		return err
+	}
+
+	if len(instanceTemplates) == 0 {
+		log.Println("Not found instance templates to delete")
+		return nil
+	}
+
+	ch := make(chan error)
+	wg := &sync.WaitGroup{}
+
+	for _, instanceTemplate := range instanceTemplates {
+
+		wg.Add(1)
+
+		go func(name string) {
+
+			defer wg.Done()
+
+			var op *compute.Operation
+			var err error
+
+			log.Printf("Deleting instance template: %q\n", name)
+
+			if dryRun {
+				return
+			}
+
+			if op, err = client.InstanceTemplates.Delete(project, name).Context(ctx).Do(); err != nil {
+				if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
+					log.Printf("Cannot delete instance template: %s. Status: %d\n", name, gErr.Code)
+					return
+				}
+
+				ch <- fmt.Errorf("Could not delete instance template: %s. %w", name, err)
+				return
+			}
+
+			if op.Error != nil {
+				for _, err := range op.Error.Errors {
+					ch <- fmt.Errorf("Could not delete instance template: %s. %s", name, err.Message)
+				}
+				return
+			}
+
+			log.Printf("Waiting till deleting operation is being processed")
+
+			if err := waitForOperation(ctx, op, prepareGlobalGetOp(ctx, client, project, op.Name)); err != nil {
+				ch <- fmt.Errorf("Delete operations for instance template %q has not finished in time: %w", name, err)
+			}
+
+			log.Printf("Successfully deleted instance template: %s.", name)
+
+		}(instanceTemplate.Name)
+	}
+
+	return helpers.WaitOnErrorChannel(ch, wg)
+
 }
 
 // HealthStatusCheck checks instances health status
@@ -208,17 +299,6 @@ func InstanceGroupsClean(project, prefix string, dryRun bool) error {
 		}(instanceGroup, wg)
 	}
 
-	go func() {
-		defer close(ch)
-		wg.Wait()
-	}()
-
-	var result *multierror.Error
-
-	for err := range ch {
-		result = multierror.Append(result, err)
-	}
-
-	return result.ErrorOrNil()
+	return helpers.WaitOnErrorChannel(ch, wg)
 
 }

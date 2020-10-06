@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/protofire/polkadot-failover-mechanism/tests/helpers"
 	iam "google.golang.org/api/iam/v1"
 )
 
@@ -78,17 +78,6 @@ func SAClean(project, prefix string, dryRun bool) error {
 
 	}
 
-	go func() {
-		defer close(ch)
-		wg.Wait()
-	}()
-
-	var result *multierror.Error
-
-	for err := range ch {
-		result = multierror.Append(result, err)
-	}
-
-	return result.ErrorOrNil()
+	return helpers.WaitOnErrorChannel(ch, wg)
 
 }
