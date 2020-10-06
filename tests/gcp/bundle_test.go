@@ -2,7 +2,7 @@ package gcp
 
 /*
 Set PREFIX, GCP_PROJECT, and GOOGLE_APPLICATION_CREDENTIALS credentials before running these scripts
-Add or ensure next rpuoles are presents for google account member that is being used for terraform:
+
 Additional envs:
 	POLKADOT_TEST_NO_POST_TF_CLEANUP    - no terraform destroy command after tests
 	POLKADOT_TEST_INITIAL_TF_CLEANUP    - terraform destroy command before test
@@ -10,6 +10,8 @@ Additional envs:
 	POLKADOT_TEST_CLEANUP               - clean gcp infrastructure finding all resources with test prefix, it uses GCP API requests
 	POLKADOT_TEST_EXIT_AFTER_CLEANUP    - exut after intension cleanup
 	DRY_RUN                             - dry run force cleanup
+
+IAM Rules for tests:
 
 * Editor
 * Role Editor
@@ -21,7 +23,6 @@ POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_INITIAL_TF_CLEANUP=yes make g
 
 * Starts clean up without terrafrom apply, only GCP API
 POLKADOT_TEST_CLEANUP=yes POLKADOT_TEST_EXIT_AFTER_CLEANUP=yes DRY_RUN=yes make gcp
-
 
 */
 
@@ -76,6 +77,8 @@ func TestBundle(t *testing.T) {
 
 	if force {
 		err = utils.CleanResources(gcpProject, prefix, dryRun)
+		require.NoError(t, err)
+		err = utils.DeleteBucketObjects(gcpProject, gcpBucket)
 		require.NoError(t, err)
 		if exitOnCleanup {
 			return
