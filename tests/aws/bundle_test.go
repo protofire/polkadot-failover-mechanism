@@ -4,8 +4,9 @@ package aws
 Set AWS_ACCESS_KEY, AWS_SECRET_KEY, PREFIX before running these scripts
 
 Additional envs:
-	POLKADOT_TEST_NO_POST_TF_CLEANUP 	- no terraform destroy command after tests
-	POLKADOT_TEST_INITIAL_TF_CLEANUP 	- terraform destroy command before test
+	POLKADOT_TEST_NO_POST_TF_CLEANUP    - no terraform destroy command after tests
+	POLKADOT_TEST_INITIAL_TF_CLEANUP    - terraform destroy command before test
+	POLKADOT_TEST_NO_INITIAL_TF_APPLY   - no terraform apply command before test
 */
 
 import (
@@ -56,6 +57,9 @@ func TestBundle(t *testing.T) {
 	if s3region, ok = os.LookupEnv("TF_STATE_REGION"); !ok {
 		s3region = "us-east-1"
 	}
+
+	err := utils.EnsureTFBucket(s3bucket, s3region)
+	require.NoError(t, err)
 
 	// Generate new SSH key for test virtual machines
 	sshKey := ssh.GenerateRSAKeyPair(t, 4096)
