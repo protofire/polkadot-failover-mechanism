@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 )
 
+// nolint
 func listBuckets(ctx context.Context, client *storage.Client, projectID string) ([]string, error) {
 
 	var buckets []string
@@ -29,6 +29,7 @@ func listBuckets(ctx context.Context, client *storage.Client, projectID string) 
 	return buckets, nil
 }
 
+// nolint
 func listBucketObjects(ctx context.Context, client *storage.Client, projectID, bucket string) ([]*storage.ObjectAttrs, error) {
 	it := client.Bucket(bucket).Objects(ctx, nil)
 	var objects []*storage.ObjectAttrs
@@ -67,8 +68,8 @@ func deleteBucketObjects(ctx context.Context, client *storage.Client, projectID,
 	return nil
 }
 
-//DeleteBucketObjects deletes all objects from bucket
-func DeleteBucketObjects(project, name string) error {
+//ClearTFBucket deletes all objects from bucket
+func ClearTFBucket(project, name string) error {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -80,31 +81,65 @@ func DeleteBucketObjects(project, name string) error {
 
 }
 
-// EnsureTFBucket ebsure TF bucket exists
-func EnsureTFBucket(project, name string) error {
+//DeleteTFBucket deletes a bucket
+func DeleteTFBucket(project, name string) error {
+
+	log.Printf("Deleting bucket %q...", name)
+
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("Cannot create stogage client: %w", err)
 	}
 	defer client.Close()
+
+	err = deleteBucketObjects(ctx, client, project, name)
+
+	if err != nil {
+		return err
+	}
+
 	bucket := client.Bucket(name)
 
-	if err := bucket.Create(ctx, project, &storage.BucketAttrs{Name: name}); err != nil {
-		if gErr, ok := err.(*googleapi.Error); !(ok && gErr.Code == 409) {
-			return fmt.Errorf("Cannot create bucket %s. %w", name, err)
+	if err := bucket.Delete(ctx); err != nil {
+		gErr, ok := err.(*googleapi.Error)
+		if !ok {
+			return err
+		}
+		switch {
+		case gErr.Code == 404:
+			return nil
+		default:
+			return gErr
 		}
 	}
 
-	buckets, err := listBuckets(ctx, client, project)
-
-	if err != nil {
-		return fmt.Errorf("Cannot get list of GCS buckets: %w", err)
-	}
-
-	if _, ok := contains(buckets, name); !ok {
-		return fmt.Errorf("Required bucket %s not in buckets list: %s", name, strings.Join(buckets, ", "))
-	}
+	log.Printf("Deleted bucket %q", name)
 
 	return nil
+}
+
+// EnsureTFBucket ebsure TF bucket exists
+func EnsureTFBucket(project, name string) (bool, error) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return false, fmt.Errorf("Cannot create stogage client: %w", err)
+	}
+	defer client.Close()
+	bucket := client.Bucket(name)
+
+	if err := bucket.Create(ctx, project, &storage.BucketAttrs{Name: name}); err != nil {
+		gErr, ok := err.(*googleapi.Error)
+		if !ok {
+			return false, err
+		}
+		if gErr.Code == 409 {
+			// bucket exists
+			return false, nil
+		}
+		return false, fmt.Errorf("Cannot create bucket %s. %w", name, err)
+	}
+
+	return true, nil
 }

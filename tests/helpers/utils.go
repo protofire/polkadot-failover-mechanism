@@ -21,15 +21,11 @@ func BuildRegionParams(regions ...string) string {
 }
 
 // SetPostTFCleanUp schedule final terraform clean up
-func SetPostTFCleanUp(t *testing.T, opts *terraform.Options) {
-	if _, ok := os.LookupEnv("POLKADOT_TEST_NO_POST_TF_CLEANUP"); !ok {
-		t.Log("Setting terrafrom deferred cleanup...")
-		t.Cleanup(func() {
-			terraform.Destroy(t, opts)
-		})
-	} else {
-		t.Log("Skipping terrafrom deferred cleanup...")
-	}
+func SetPostTFCleanUp(t *testing.T, cleanup func()) {
+	t.Log("Setting terrafrom deferred cleanup...")
+	t.Cleanup(func() {
+		cleanup()
+	})
 }
 
 // SetInitialTFCleanUp schedule initial terraform clean up

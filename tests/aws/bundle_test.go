@@ -26,7 +26,7 @@ import (
 
 // Gather environmental variables and set reasonable defaults
 var (
-	awsRegions    = []string{"us-east-1", "us-east-2", "us-west-1"}
+	awsRegions    = []string{"us-east-1", "eu-central-1", "us-west-1"}
 	awsAccessKeys = []string{os.Getenv("AWS_ACCESS_KEY")}
 	awsSecretKeys = []string{os.Getenv("AWS_SECRET_KEY")}
 	sshUser       = "ec2-user"
@@ -58,7 +58,7 @@ func TestBundle(t *testing.T) {
 		s3region = "us-east-1"
 	}
 
-	err := utils.EnsureTFBucket(s3bucket, s3region)
+	bucketCreated, err := utils.EnsureTFBucket(s3bucket, s3region)
 	require.NoError(t, err)
 
 	// Generate new SSH key for test virtual machines
@@ -95,7 +95,18 @@ func TestBundle(t *testing.T) {
 	}
 
 	// At the end of the test, run `terraform destroy` to clean up any resources that were created
-	helpers.SetPostTFCleanUp(t, terraformOptions)
+	helpers.SetPostTFCleanUp(t, func() {
+		if _, ok := os.LookupEnv("POLKADOT_TEST_NO_POST_TF_CLEANUP"); !ok {
+			terraform.Destroy(t, terraformOptions)
+		} else {
+			t.Log("Skipping terrafrom deferred cleanup...")
+		}
+		if bucketCreated {
+			require.NoError(t, utils.DeleteTFBucket(s3bucket, s3region))
+		} else {
+			require.NoError(t, utils.ClearTFBucket(s3bucket, s3region))
+		}
+	})
 
 	// Run `terraform init`
 	terraform.Init(t, terraformOptions)

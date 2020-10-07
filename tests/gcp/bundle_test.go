@@ -45,7 +45,7 @@ import (
 var (
 	gcpRegion     = []string{"us-east1", "us-east4", "us-west1"}
 	gcpProject    = os.Getenv("GCP_PROJECT")
-	force         = len(os.Getenv("POLKADOT_TEST_CLEANUP")) > 0
+	forceCleanup  = len(os.Getenv("POLKADOT_TEST_CLEANUP")) > 0
 	exitOnCleanup = len(os.Getenv("POLKADOT_TEST_EXIT_AFTER_CLEANUP")) > 0
 	noApply       = len(os.Getenv("POLKADOT_TEST_NO_INITIAL_TF_APPLY")) > 0
 	dryRun        = len(os.Getenv("DRY_RUN")) > 0
@@ -71,14 +71,14 @@ func TestBundle(t *testing.T) {
 		gcpBucket = "polkadot-validator-failover-tfstate"
 	}
 
-	err := utils.EnsureTFBucket(gcpProject, gcpBucket)
+	bucketCreated, err := utils.EnsureTFBucket(gcpProject, gcpBucket)
 	require.NoError(t, err)
 	t.Logf("TF state bucket %q has been ensured", gcpBucket)
 
-	if force {
+	if forceCleanup {
 		err = utils.CleanResources(gcpProject, prefix, dryRun)
 		require.NoError(t, err)
-		err = utils.DeleteBucketObjects(gcpProject, gcpBucket)
+		err = utils.ClearTFBucket(gcpProject, gcpBucket)
 		require.NoError(t, err)
 		if exitOnCleanup {
 			return
@@ -119,7 +119,18 @@ func TestBundle(t *testing.T) {
 
 	// At the end of the test, run `terraform destroy` to clean up any resources that were created
 
-	helpers.SetPostTFCleanUp(t, terraformOptions)
+	helpers.SetPostTFCleanUp(t, func() {
+		if _, ok := os.LookupEnv("POLKADOT_TEST_NO_POST_TF_CLEANUP"); !ok {
+			terraform.Destroy(t, terraformOptions)
+		} else {
+			t.Log("Skipping terrafrom deferred cleanup...")
+		}
+		if bucketCreated {
+			require.NoError(t, utils.DeleteTFBucket(gcpProject, gcpBucket))
+		} else {
+			require.NoError(t, utils.ClearTFBucket(gcpProject, gcpBucket))
+		}
+	})
 
 	if !noApply {
 		// Run `terraform init`
