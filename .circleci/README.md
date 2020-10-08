@@ -13,10 +13,10 @@ Upon successful testing the Build phase is triggered. It does:
 
 Please configure following Environment Variables in the Project setting to allow CI tasks to run:
 
+- `TF_STATE_BUCKET` & `TF_STATE_KEY` - For all cloud providers
 - `AWS_ACCESS_KEY` & `AWS_SECRET_KEY` - To deploy solution to AWS
+- `GCP_PROJECT` & `GOOGLE_APPLICATION_CREDENTIALS_CONTENT` & `GOOGLE_APPLICATION_CREDENTIALS` - To deploy solution to GCP 
 - `SLACK_WEBHOOK` - To post CI status notifications
 - `dockerhub_repo` - Your DockerHub repository to push the image
 - `dockerhub_user` - Your DockerHub user
 - `dockerhub_token` - Your DockerHub token
-
-Also, since solution is using AWS S3 service to keep Terraform state, you'll need to create a bucket specified in [backends](../aws/backends/s3.tf) config file.

@@ -11,7 +11,8 @@ resource "google_compute_instance_template" "instance_template" {
   region       = var.region
   description  = "This template is used to create Polkadot failover nodes."
 
-  tags = [var.prefix]
+  tags = [
+  var.prefix]
 
   labels = {
     prefix       = var.prefix
@@ -47,7 +48,11 @@ resource "google_compute_instance_template" "instance_template" {
     }
   }
 
-  metadata_startup_script = templatefile("${path.module}/files/init.sh.tpl", { prefix = var.prefix, chain = var.chain, total_instance_count = var.total_instance_count })
+  metadata_startup_script = templatefile("${path.module}/files/init.sh.tpl", {
+    prefix               = var.prefix,
+    chain                = var.chain,
+    total_instance_count = var.total_instance_count
+  })
 
   metadata = {
     shutdown-script = templatefile("${path.module}/files/shutdown.sh.tpl", {})
@@ -56,8 +61,11 @@ resource "google_compute_instance_template" "instance_template" {
   }
 
   service_account {
-    email  = var.sa_email
-    scopes = ["compute-ro", "https://www.googleapis.com/auth/cloud-platform"]
+    email = var.sa_email
+    scopes = [
+      "compute-ro",
+      "monitoring-write",
+    "https://www.googleapis.com/auth/cloud-platform"]
   }
 
   lifecycle {
@@ -101,6 +109,11 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
   base_instance_name = "${var.prefix}-polkadot-failover-instance"
   region             = var.region
   target_size        = var.instance_count
+  wait_for_instances = true
+
+  timeouts {
+    create = "20m"
+  }
 
   update_policy {
     type                         = "PROACTIVE"

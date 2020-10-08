@@ -94,14 +94,4 @@ resource "google_monitoring_alert_policy" "validator" {
 
   notification_channels = [google_monitoring_notification_channel.polkadot.name]
 
-  depends_on = [null_resource.delay]
-}
-
-resource "null_resource" "delay" {
-  provisioner "local-exec" {
-    command = "sleep 800"
-  }
-  triggers = {
-    before = google_monitoring_notification_channel.polkadot.name
-  }
 }

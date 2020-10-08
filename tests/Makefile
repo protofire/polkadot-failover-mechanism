@@ -30,20 +30,25 @@ cache:
 aws: check cache
 	go test -tags=aws $(TESTARGS) -timeout 0 -p 1  ./aws...
 
+gcp: check cache
+	go test -tags=gcp $(TESTARGS) -timeout 0 -p 1  ./gcp...
+
+all: aws gcp
+
 fmt:
 	go fmt ./...
 
 goimports:
 ifndef HAS_GOIMPORTS
 	echo "installing goimports"
-	GO111MODULE=off go get golang.org/x/tools/cmd/goimports
+	GO111MODULE=off go get -u golang.org/x/tools/cmd/goimports
 endif
 	goimports -d $(shell find . -iname "*.go")
 
 golint:
 ifndef HAS_GOLINT
 	echo "installing golint"
-	GO111MODULE=off go get go get -u golang.org/x/lint/golint
+	GO111MODULE=off go get -u golang.org/x/lint/golint
 endif
 	golint ./...
 
@@ -56,10 +61,7 @@ ifndef HAS_GOLANGCI
 endif
 	golangci-lint run ./...
 
-cover: work
-	go test $(TESTARGS) -tags=unit -cover -coverpkg=./ ./...
-
 shell:
 	$(SHELL) -i
 
-.PHONY: cover work fmt test check
+.PHONY: work fmt test check aws gcp
