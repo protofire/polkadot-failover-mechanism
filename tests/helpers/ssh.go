@@ -1,47 +1,40 @@
 package helpers
 
 import (
-	"fmt"
-	"strings"
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
-	"time"
 
-	"github.com/gruntwork-io/terratest/modules/retry"
 	"github.com/gruntwork-io/terratest/modules/ssh"
+	"github.com/stretchr/testify/require"
 )
 
-// NodeQuery Supplementary function: perform given SSH query on the node
-func NodeQuery(t *testing.T, publicIPs []string, key *ssh.KeyPair, command, user string) []string {
+// GenerateSSHKeys generate ot read ssh keys
+func GenerateSSHKeys(t *testing.T) *ssh.KeyPair {
 
-	var resultArray []string
+	sshPrivateKeyFile := os.Getenv("SSH_PRIVATE_KEY_FILE")
+	sshPublicKeyFile := os.Getenv("SSH_PUBLIC_KEY_FILE")
+	sshPrivateKey := os.Getenv("SSH_PRIVATE_KEY")
+	sshPublicKey := os.Getenv("SSH_PUBLIC_KEY")
 
-	for _, publicInstanceIP := range publicIPs {
+	keyPair := &ssh.KeyPair{}
 
-		publicHost := ssh.Host{
-			Hostname:    publicInstanceIP,
-			SshKeyPair:  key,
-			SshUserName: user,
-		}
-
-		// It can take a minute or so for the Instance to boot up, so retry a few times
-		maxRetries := 10
-		timeBetweenRetries := 5 * time.Second
-		description := fmt.Sprintf("SSH to public host %s", publicInstanceIP)
-
-		t.Log("DEBUG. Querying instance " + publicInstanceIP + " with command `" + command + "`")
-		// Verify that we can SSH to the Instance and run commands
-		result := retry.DoWithRetry(t, description, maxRetries, timeBetweenRetries, func() (string, error) {
-			result, err := ssh.CheckSshCommandE(t, publicHost, command)
-
-			if err != nil {
-				return "", err
-			}
-
-			return strings.TrimSpace(result), nil
-		})
-
-		t.Log("DEBUG. Command output: " + result)
-		resultArray = append(resultArray, result)
+	if len(sshPrivateKeyFile) > 0 && len(sshPublicKeyFile) > 0 {
+		log.Print("Using ssh keys from SSH_PRIVATE_KEY_FILE and SSH_PUBLIC_KEY_FILE environment variables")
+		content, err := ioutil.ReadFile(sshPrivateKeyFile)
+		require.NoErrorf(t, err, "Path %s from SSH_PRIVATE_KEY_FILE does not exist: %w", sshPrivateKeyFile, err)
+		keyPair.PrivateKey = string(content)
+		content, err = ioutil.ReadFile(sshPublicKeyFile)
+		require.NoErrorf(t, err, "Path %s from SSH_PUBLIC_KEY_FILE does not exist: %w", sshPublicKeyFile, err)
+		keyPair.PublicKey = string(content)
+		return keyPair
+	} else if len(sshPrivateKey) > 0 && len(sshPublicKey) > 0 {
+		log.Print("Using ssh keys from SSH_PRIVATE_KEY and SSH_PUBLIC_KEY environment variables")
+		keyPair.PrivateKey = sshPrivateKey
+		keyPair.PublicKey = sshPublicKey
+		return keyPair
 	}
-	return resultArray
+	log.Print("Generating new ssh key pair")
+	return ssh.GenerateRSAKeyPair(t, 4096)
 }

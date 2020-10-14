@@ -31,13 +31,34 @@ Also you will need a set of keys known as `NODE KEY`, `STASH`, `CONTROLLER` and 
 1. Download [Terraform](https://www.terraform.io/downloads.html).
 2. Unpack Terraform using `unzip terraform*` command.
 3. Move the `terraform` binary to the one of the folders specified at the `PATH` variable. For example: `sudo mv terraform /usr/local/bin/`
-
+****
 ### Create Azure resource group
 
 It is highly recommended to run these scripts at the dedicated resource group. 
 1. Login to [Azure Portal](https://portal.azure.com)
 2. Type "Resource groups" in the search bar to navigate to the Resource Group management section
 3. Click "Add" to create a new Resource group. Note down the name of the created resource group as you will need it further.
+
+### Install Azure az utility
+
+#### YUM based
+
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sudo sh -c 'echo -e "[azure-cli]
+    name=Azure CLI
+    baseurl=https://packages.microsoft.com/yumrepos/azure-cli
+    enabled=1
+    gpgcheck=1
+    gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo'
+    sudo yum install -y azure-cli
+    
+#### Ubuntu/Debian
+
+    curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+#### Login
+
+    az login
 
 ### Get Azure credentials
 
@@ -48,6 +69,11 @@ To get the [service account credentials](https://docs.microsoft.com/en-us/azure/
 4. Create new application. Type any recognizable name you want.
 5. Save tenant id and client id after creation in your notes. You will need it later.
 6. Go to the "Certificates & Secrets" tab inside of the application management pane. Create new client secret and save it. You will need this later as well.
+
+### Get Azure storage account
+
+    az storage account create -n account -g MyResourceGroup
+    az storage account keys list -n account -g MyResourceGroup
 
 ### Clone the repo
 

@@ -10,6 +10,7 @@ Additional envs:
 */
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -47,7 +48,7 @@ func TestBundle(t *testing.T) {
 	}
 
 	if s3bucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
-		s3bucket = "polkadot-validator-failover-tfstate"
+		s3bucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", helpers.RandStringBytes(4))
 	}
 
 	if s3key, ok = os.LookupEnv("TF_STATE_KEY"); !ok {
@@ -98,18 +99,20 @@ func TestBundle(t *testing.T) {
 	helpers.SetPostTFCleanUp(t, func() {
 		if _, ok := os.LookupEnv("POLKADOT_TEST_NO_POST_TF_CLEANUP"); !ok {
 			terraform.Destroy(t, terraformOptions)
+			if bucketCreated {
+				require.NoError(t, utils.DeleteTFBucket(s3bucket, s3region))
+			} else {
+				require.NoError(t, utils.ClearTFBucket(s3bucket, s3region))
+			}
 		} else {
 			t.Log("Skipping terrafrom deferred cleanup...")
-		}
-		if bucketCreated {
-			require.NoError(t, utils.DeleteTFBucket(s3bucket, s3region))
-		} else {
-			require.NoError(t, utils.ClearTFBucket(s3bucket, s3region))
 		}
 	})
 
 	// Run `terraform init`
 	terraform.Init(t, terraformOptions)
+
+	terraform.RunTerraformCommand(t, terraformOptions, terraform.FormatArgs(terraformOptions, "validate")...)
 
 	helpers.SetInitialTFCleanUp(t, terraformOptions)
 

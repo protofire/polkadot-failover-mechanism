@@ -21,13 +21,13 @@ curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/prot
 
 ### Start of main script
 # Install unzip, docker, jq, awscli
-/usr/bin/yum update -y
-/usr/bin/yum check-update -y
+# /usr/bin/yum update -y
+# /usr/bin/yum check-update -y
 /usr/bin/rpm --import https://packages.microsoft.com/keys/microsoft.asc
 set +eE
 /usr/bin/rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 set -eE
-/usr/bin/yum install telegraf unzip docker jq azure-cli git -y
+/usr/bin/yum install telegraf unzip docker jq azure-cli git nc -y
 /usr/bin/az login --identity --allow-no-subscriptions
 
 # Make file system on a disk without force. Allow error. Error will be thrown if the disk already has filesystem. This will prevent data erasing.
@@ -47,17 +47,16 @@ trap default_trap ERR EXIT
 /usr/bin/grep -qxF "/dev/sdc /data xfs defaults 0 0" /etc/fstab || /usr/bin/echo "/dev/sdc /data xfs defaults 0 0" >> /etc/fstab
 
 # Run docker with regular polkadot container inside of it
+/usr/bin/systemctl enable docker
 /usr/bin/systemctl start docker
 
 # Fetch validator instance parameters from Secret Manager
 exit_code=1
-az keyvault secret show --name "polkadot-${prefix}-name" --vault-name "${prefix}-vault"
-exit_code=$?
 until [ $exit_code -eq 0 ]; do
 
   trap - ERR
   set +eE
-  az keyvault secret show --name "polkadot-${prefix}-name" --vault-name "${prefix}-vault"
+  az keyvault secret show --name "polkadot-${prefix}-name" --vault-name "${key_vault_name}"
   exit_code=$?
   set -eE
   trap default_trap ERR
@@ -66,10 +65,10 @@ until [ $exit_code -eq 0 ]; do
 
 done
 
-NAME=$(az keyvault secret show --name "polkadot-${prefix}-name" --vault-name "${prefix}-vault" | jq .value -r)
-CPU=$(az keyvault secret show --name "polkadot-${prefix}-cpulimit" --vault-name "${prefix}-vault" | jq .value -r)
-RAM=$(az keyvault secret show --name "polkadot-${prefix}-ramlimit" --vault-name "${prefix}-vault" | jq .value -r)
-NODEKEY=$(az keyvault secret show --name "polkadot-${prefix}-nodekey" --vault-name "${prefix}-vault" | jq .value -r)
+NAME=$(az keyvault secret show --name "polkadot-${prefix}-name" --vault-name "${key_vault_name}" | jq .value -r)
+CPU=$(az keyvault secret show --name "polkadot-${prefix}-cpulimit" --vault-name "${key_vault_name}" | jq .value -r)
+RAM=$(az keyvault secret show --name "polkadot-${prefix}-ramlimit" --vault-name "${key_vault_name}" | jq .value -r)
+NODEKEY=$(az keyvault secret show --name "polkadot-${prefix}-nodekey" --vault-name "${key_vault_name}" | jq .value -r)
 
 set +eE
 trap - ERR
@@ -151,7 +150,8 @@ until [ $n -ge 6 ]; do
   trap - ERR
   set +eE
 
-  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh ${prefix} && consul kv delete blocks/.lock && (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY'" 
+  /usr/local/bin/consul lock prefix \
+  "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh '${key_vault_name}' '${prefix}' && consul kv delete blocks/.lock && (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY'"
 
   /usr/bin/docker stop polkadot || true
   /usr/bin/docker rm polkadot || true

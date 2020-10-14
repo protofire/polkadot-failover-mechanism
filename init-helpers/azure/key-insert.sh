@@ -1,17 +1,21 @@
 #!/bin/bash
 
 set -x -e -E
+set -o pipefail
 
-key_names=$(az keyvault secret list --vault-name ${1}-vault | jq .[].name -r | grep '\-keys\-' | cut -d '-' -f4 | uniq)
+KEY_VAULT_NAME="${1}"
+PREFIX="${2}"
 
-for key_name in ${key_names[@]} ; do
+readarray -t key_names < <(az keyvault secret list --vault-name "${KEY_VAULT_NAME}" | jq '.[].name' -r | grep '\-keys\-' | cut -d '-' -f4 | uniq)
 
-  echo "Adding key $key_name"
+for key_name in "${key_names[@]}"; do
 
-  SEED=$(az keyvault secret show --vault-name ${1}-vault --name polkadot-${1}-keys-${key_name}-seed | jq .value -r)
-  KEY=$(az keyvault secret show --vault-name ${1}-vault --name polkadot-${1}-keys-${key_name}-key | jq .value -r)
-  TYPE=$(az keyvault secret show --vault-name ${1}-vault --name polkadot-${1}-keys-${key_name}-type| jq .value -r)
-   
-  curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_insertKey", "params":["'"$TYPE"'","'"$SEED"'","'"$KEY"'"]}' http://localhost:9933
+    echo "Adding key $key_name"
+
+    SEED=$(az keyvault secret show --vault-name "${KEY_VAULT_NAME}" --name "polkadot-${PREFIX}-keys-${key_name}-seed" | jq .value -r)
+    KEY=$(az keyvault secret show --vault-name "${KEY_VAULT_NAME}" --name "polkadot-${PREFIX}-keys-${key_name}-key" | jq .value -r)
+    TYPE=$(az keyvault secret show --vault-name "${KEY_VAULT_NAME}" --name "polkadot-${PREFIX}-keys-${key_name}-type" | jq .value -r)
+
+    curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_insertKey", "params":["'"$TYPE"'","'"$SEED"'","'"$KEY"'"]}' http://localhost:9933
 
 done

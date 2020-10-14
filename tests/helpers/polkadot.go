@@ -95,7 +95,7 @@ func KeystoreCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair, user stri
 	return false
 }
 
-// ConsulCheck check consule members
+// ConsulCheck check consul members
 func ConsulCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair, user string) bool {
 
 	command := "consul members --status alive | wc -l"
@@ -131,28 +131,48 @@ func ConsulCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair, user string
 
 }
 
-// ConsulLockCheck check consule locking
+// ConsulLockCheck check consul locking
 func ConsulLockCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair, user string) bool {
 
 	command := "consul kv export | grep \"prefix/.lock\" | wc -l"
-	array := NodeQuery(t, publicIPs, key, command, user)
 
-	if len(array) == 0 {
-		return false
-	}
+	for retry := 1; retry <= 5; retry++ {
 
-	for _, value := range array {
+		array := NodeQuery(t, publicIPs, key, command, user)
 
-		intValue, err := strconv.Atoi(value)
-
-		if err != nil {
-			t.Error("ERROR! " + err.Error())
-			return false
+		if len(array) == 0 {
+			if retry == 5 {
+				return false
+			}
+			t.Log("Cannot get node results. Blank slice. Waiting...")
+			time.Sleep(60 * time.Second)
+			continue
 		}
 
-		if intValue != 1 {
-			t.Errorf("ERROR! Error while retrieving Consul lock. Got: %d locks, should be exactly 1 lock.", intValue)
-			return false
+		for _, value := range array {
+
+			intValue, err := strconv.Atoi(value)
+
+			if err != nil {
+				if retry == 5 {
+					t.Error("ERROR! " + err.Error())
+					return false
+				}
+				t.Logf("Cannot parse consul response: %s", err)
+				time.Sleep(60 * time.Second)
+				break
+			}
+
+			if intValue != 1 {
+				if retry == 5 {
+					t.Errorf("ERROR! Error while retrieving Consul lock. Got: %d locks, should be exactly 1 lock.", intValue)
+					return false
+				}
+				t.Logf("Got wrong lock value %d. Retry...", intValue)
+				time.Sleep(60 * time.Second)
+				break
+			}
+
 		}
 	}
 
@@ -177,8 +197,8 @@ func PolkadotCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair, user stri
 
 		type resultHealth struct {
 			Peers           int  `json:"peers,omitempty"`
-			ShouldHavePeers bool `json:"should_have_peers,omitempty"`
-			IsSyncing       bool `json:"is_syncing,omitempty"`
+			ShouldHavePeers bool `json:"shouldHavePeers,omitempty"`
+			IsSyncing       bool `json:"isSyncing,omitempty"`
 		}
 
 		type Health struct {

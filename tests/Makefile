@@ -8,7 +8,7 @@ export GOPATH ?= $(GOPATH_DEFAULT)
 GOBIN_DEFAULT := $(GOPATH)/bin
 export GOBIN ?= $(GOBIN_DEFAULT)
 export GO111MODULE := on
-TESTARGS_DEFAULT := -v
+TESTARGS_DEFAULT := -v -p 1 -timeout 0
 TESTARGS ?= $(TESTARGS_DEFAULT)
 HAS_GOLANGCI := $(shell command -v golangci-lint;)
 HAS_GOIMPORTS := $(shell command -v goimports;)
@@ -28,12 +28,15 @@ cache:
 	go clean -testcache
 
 aws: check cache
-	go test -tags=aws $(TESTARGS) -timeout 0 -p 1  ./aws...
+	go test -tags=aws $(TESTARGS) ./aws...
 
 gcp: check cache
-	go test -tags=gcp $(TESTARGS) -timeout 0 -p 1  ./gcp...
+	go test -tags=gcp $(TESTARGS) ./gcp...
 
-all: aws gcp
+azure: check cache
+	go test -tags=azure $(TESTARGS) ./azure...
+
+all: aws gcp azure
 
 fmt:
 	go fmt ./...
@@ -64,4 +67,4 @@ endif
 shell:
 	$(SHELL) -i
 
-.PHONY: work fmt test check aws gcp
+.PHONY: work fmt test check aws gcp azure all

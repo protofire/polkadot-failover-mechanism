@@ -11,4 +11,10 @@ resource "azurerm_subnet" "polkadot" {
   virtual_network_name = azurerm_virtual_network.polkadot.name
   address_prefixes     = [var.subnet_cidr]
   service_endpoints    = ["Microsoft.KeyVault"]
+
+  /*
+  provisioner "local-exec" {
+    command = "az keyvault network-rule add --name ${var.key_vault_name} --subnet ${azurerm_subnet.polkadot.id}"
+  }
+*/
 }
