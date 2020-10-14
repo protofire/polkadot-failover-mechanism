@@ -10,6 +10,7 @@ Additional envs:
 */
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -47,7 +48,7 @@ func TestBundle(t *testing.T) {
 	}
 
 	if s3bucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
-		s3bucket = "polkadot-validator-failover-tfstate"
+		s3bucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", helpers.RandStringBytes(4))
 	}
 
 	if s3key, ok = os.LookupEnv("TF_STATE_KEY"); !ok {

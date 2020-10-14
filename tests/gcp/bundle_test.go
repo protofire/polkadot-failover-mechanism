@@ -68,7 +68,7 @@ func TestBundle(t *testing.T) {
 	}
 
 	if gcpBucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
-		gcpBucket = "polkadot-validator-failover-tfstate"
+		gcpBucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", helpers.RandStringBytes(4))
 	}
 
 	bucketCreated, err := utils.EnsureTFBucket(gcpProject, gcpBucket)

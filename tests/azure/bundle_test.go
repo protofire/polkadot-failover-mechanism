@@ -24,6 +24,7 @@ POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_NO_INITIAL_TF_APPLY=yes make 
 */
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -73,7 +74,7 @@ func TestBundle(t *testing.T) {
 	}
 
 	if azureBucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
-		azureBucket = "polkadot-validator-failover-tfstate"
+		azureBucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", helpers.RandStringBytes(4))
 	}
 
 	if azureBucketKey, ok = os.LookupEnv("TF_STATE_KEY"); !ok {
