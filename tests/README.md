@@ -7,6 +7,12 @@ polkadot tests
 * Install **go** >= 1.15.2
 * Install **jq** utility 
 
+### Common non-mandatory environment variables
+
+    `PREFIX`            - prefix for TF resources
+    `TF_STATE_BUCKET`   - TF state backet name
+    `TF_STATE_KEY`      - TF state backet key
+
 ### By provider
 
 #### AWS
@@ -58,23 +64,13 @@ or set next environment variables:
 
 **Set environment variables**
 
-`ARM_STORAGE_ACCOUNT`
+`AZURE_STORAGE_ACCOUNT`
 
-`ARM_STORAGE_ACCESS_KEY`
+`AZURE_STORAGE_ACCESS_KEY`
 
-`ARM_SUBSCRIPTION_ID`
+`AZURE_SUBSCRIPTION_ID`
 
-`ARM_RES_GROUP_NAME`
-
-`ARM_PROVIDER_VMSS_EXTENSIONS_BETA=true`
-
-**In case you use service principal set next environment variables**:
-
-`ARM_TENANT_ID`
-
-`ARM_CLIENT_ID`
-
-`ARM_CLIENT_SECRET`
+`AZURE_RES_GROUP_NAME`
 
 `AZURE_TENANT_ID`
 
