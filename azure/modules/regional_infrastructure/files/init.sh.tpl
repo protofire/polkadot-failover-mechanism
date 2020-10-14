@@ -122,8 +122,8 @@ done
 
 curl -o /usr/local/bin/double-signing-control.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/double-signing-control.sh
 curl -o /usr/local/bin/best-grep.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/best-grep.sh
-curl -o /usr/local/bin/key-insert.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/azure-tests/init-helpers/azure/key-insert.sh
-curl -o /usr/local/bin/watcher.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/azure-tests/init-helpers/azure/watcher.sh
+curl -o /usr/local/bin/key-insert.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/key-insert.sh
+curl -o /usr/local/bin/watcher.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/watcher.sh
 
 chmod 700 /usr/local/bin/double-signing-control.sh
 chmod 700 /usr/local/bin/best-grep.sh
