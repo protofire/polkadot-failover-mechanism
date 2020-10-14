@@ -67,4 +67,4 @@ endif
 shell:
 	$(SHELL) -i
 
-.PHONY: work fmt test check aws gcp azure
+.PHONY: work fmt test check aws gcp azure all
