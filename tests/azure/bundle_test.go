@@ -3,12 +3,12 @@ package azure
 /*
 Set
 	* PREFIX
-	* ARM_SUBSCRIPTION_ID
-	* ARM_CLIENT_ID
-	* ARM_TENANT_ID
-	* ARM_RES_GROUP_NAME
-	* ARM_STORAGE_ACCOUNT
-	* ARM_STORAGE_ACCESS_KEY
+	* AZURE_SUBSCRIPTION_ID
+	* AZURE_CLIENT_ID
+	* AZURE_TENANT_ID
+	* AZURE_RES_GROUP_NAME
+	* AZURE_STORAGE_ACCOUNT
+	* AZURE_STORAGE_ACCESS_KEY
 
 before running these scripts
 
@@ -42,25 +42,25 @@ var (
 	noPostTFCleanUp       = len(os.Getenv("POLKADOT_TEST_NO_POST_TF_CLEANUP")) > 0
 	noDeleteOnTermination = len(os.Getenv("POLKADOT_TEST_NO_DELETE_ON_TERMINATION")) > 0
 	azureRegions          = []string{"Central US", "East US", "West US"}
-	azureSubscriptionID   = os.Getenv("ARM_SUBSCRIPTION_ID")
-	azureClientID         = os.Getenv("ARM_CLIENT_ID")
-	azureClientSecret     = os.Getenv("ARM_CLIENT_SECRET")
-	azureTenantID         = os.Getenv("ARM_TENANT_ID")
-	azureResourceGroup    = os.Getenv("ARM_RES_GROUP_NAME")
-	azureStorageAccount   = os.Getenv("ARM_STORAGE_ACCOUNT")
-	azureStorageAccessKey = os.Getenv("ARM_STORAGE_ACCESS_KEY")
+	azureSubscriptionID   = os.Getenv("AZURE_SUBSCRIPTION_ID")
+	azureClientID         = os.Getenv("AZURE_CLIENT_ID")
+	azureClientSecret     = os.Getenv("AZURE_CLIENT_SECRET")
+	azureTenantID         = os.Getenv("AZURE_TENANT_ID")
+	azureResourceGroup    = os.Getenv("AZURE_RES_GROUP_NAME")
+	azureStorageAccount   = os.Getenv("AZURE_STORAGE_ACCOUNT")
+	azureStorageAccessKey = os.Getenv("AZURE_STORAGE_ACCESS_KEY")
 	sshUser               = "polkadot"
 )
 
 func TestBundle(t *testing.T) {
 
-	require.NotEmpty(t, azureSubscriptionID, "ARM_SUBSCRIPTION_ID env required")
-	require.NotEmpty(t, azureClientID, "ARM_CLIENT_ID env required")
-	require.NotEmpty(t, azureClientSecret, "ARM_CLIENT_SECRET env required")
-	require.NotEmpty(t, azureTenantID, "ARM_TENANT_ID env required")
-	require.NotEmpty(t, azureResourceGroup, "ARM_RES_GROUP_NAME env required")
-	require.NotEmpty(t, azureStorageAccount, "ARM_STORAGE_ACCOUNT env required")
-	require.NotEmpty(t, azureStorageAccessKey, "ARM_STORAGE_ACCESS_KEY env required")
+	require.NotEmpty(t, azureSubscriptionID, "AZURE_SUBSCRIPTION_ID env required")
+	require.NotEmpty(t, azureClientID, "AZURE_CLIENT_ID env required")
+	require.NotEmpty(t, azureClientSecret, "AZURE_CLIENT_SECRET env required")
+	require.NotEmpty(t, azureTenantID, "AZURE_TENANT_ID env required")
+	require.NotEmpty(t, azureResourceGroup, "AZURE_RES_GROUP_NAME env required")
+	require.NotEmpty(t, azureStorageAccount, "AZURE_STORAGE_ACCOUNT env required")
+	require.NotEmpty(t, azureStorageAccessKey, "AZURE_STORAGE_ACCESS_KEY env required")
 
 	var (
 		prefix         string
