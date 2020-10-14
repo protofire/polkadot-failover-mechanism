@@ -15,13 +15,13 @@ variable "gcp_project" {
 }
 
 variable "prefix" {
-  type = string
+  type        = string
   description = "Unique prefix for cloud resources at Terraform"
 }
 
 variable "public_subnet_cidrs" {
   description = "Subnet CIDR for each region, must be different for VPC peering to work"
-  default = ["10.0.0.0/24","10.1.0.0/24","10.2.0.0/24"]
+  default     = ["10.0.0.0/24", "10.1.0.0/24", "10.2.0.0/24"]
 }
 
 variable "instance_type" {
@@ -29,12 +29,12 @@ variable "instance_type" {
 }
 
 variable "cpu_limit" {
-  default = "0.75"
+  default     = "0.75"
   description = "CPU limit in CPUs number that Polkadot node can use. Should never be greater than chosen instance type has."
 }
 
 variable "ram_limit" {
-  default = "3.5"
+  default     = "3.5"
   description = "RAM limit in GB that Polkadot node can use. Should never be greater than chosen instance type has."
 }
 
@@ -43,22 +43,22 @@ variable "disk_size" {
 }
 
 variable "delete_on_termination" {
-  default = "false"
+  default     = "false"
   description = "Defines whether or not to delete data disks on termination. Useful when using scripts with CI"
 }
 
 variable "validator_name" {
-  default = "Polkadot Failover validator"
+  default     = "Polkadot Failover validator"
   description = "A moniker of the validator"
 }
 
 variable "instance_count" {
-  default = [1, 1, 1]
+  default     = [1, 1, 1]
   description = "A number of instances to run in each region. Odd number of instances in total is a must have for proper work"
 }
 
 variable "chain" {
-  default = "kusama"
+  default     = "kusama"
   description = "A name of the chain to run Polkadot node at"
 }
 
@@ -77,7 +77,7 @@ variable "health_check_unhealthy_threshold" {
 variable "validator_keys" {
   type = map(object({
     seed = string
-    key = string
+    key  = string
     type = string
   }))
 }
@@ -92,4 +92,12 @@ variable "node_key" {
 
 variable "admin_email" {
   description = "An Admin email to send alerts to"
+}
+
+variable "gcp_ssh_user" {
+  default = ""
+}
+
+variable "gcp_ssh_pub_key" {
+  default = ""
 }

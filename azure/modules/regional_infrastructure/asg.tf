@@ -1,14 +1,16 @@
 # Render a part using a `template_file`
+
 data "template_file" "script" {
-  template = "${file("${path.module}/files/init.sh.tpl")}"
+  template = file("${path.module}/files/init.sh.tpl")
 
   vars = {
     prefix               = var.prefix
     chain                = var.chain
     total_instance_count = var.total_instance_count
-    lb-primary           = cidrhost(var.subnet_cidrs[0],10)
-    lb-secondary         = cidrhost(var.subnet_cidrs[1],10)
-    lb-tertiary          = cidrhost(var.subnet_cidrs[2],10)
+    key_vault_name       = var.key_vault_name
+    lb-primary           = cidrhost(var.subnet_cidrs[0], 10)
+    lb-secondary         = cidrhost(var.subnet_cidrs[1], 10)
+    lb-tertiary          = cidrhost(var.subnet_cidrs[2], 10)
   }
 }
 
@@ -41,18 +43,21 @@ resource "azurerm_linux_virtual_machine_scale_set" "polkadot" {
   custom_data          = data.template_cloudinit_config.config.rendered
   health_probe_id      = length(module.private_lb.azurerm_lb_hc) > 0 ? module.private_lb.azurerm_lb_hc[0] : null
 
+  timeouts {
+    create = "30m"
+  }
+
   automatic_instance_repair {
     enabled = true
   }
-  
 
   identity {
     type = "SystemAssigned"
   }
 
   admin_ssh_key {
-    username   = "polkadot"
-    public_key = var.key_content
+    username   = var.ssh_user
+    public_key = var.ssh_key_content
   }
 
   source_image_reference {
@@ -80,8 +85,8 @@ resource "azurerm_linux_virtual_machine_scale_set" "polkadot" {
 
     ip_configuration {
       load_balancer_backend_address_pool_ids = [module.private_lb.azurerm_lb_backend_address_pool_id]
-      name      = "primary-${var.region_prefix}"
-      primary   = true
+      name                                   = "primary-${var.region_prefix}"
+      primary                                = true
       public_ip_address {
         name = "public-${var.region_prefix}"
       }
@@ -89,7 +94,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "polkadot" {
     }
   }
 
-  admin_username = "polkadot"
+  admin_username = var.admin_user
 
   tags = {
     prefix = var.prefix
