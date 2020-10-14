@@ -21,8 +21,8 @@ curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/prot
 
 ### Start of main script
 # Install unzip, docker, jq, awscli
-/usr/bin/yum update -y
-/usr/bin/yum check-update -y
+# /usr/bin/yum update -y
+# /usr/bin/yum check-update -y
 /usr/bin/rpm --import https://packages.microsoft.com/keys/microsoft.asc
 set +eE
 /usr/bin/rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm

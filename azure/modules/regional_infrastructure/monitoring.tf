@@ -6,7 +6,7 @@ resource "azurerm_monitor_metric_alert" "health" {
 
   criteria {
     metric_namespace = local.metric_namespaces.health.namespace
-    metric_name      = local.metric_namespaces.health.metric
+    metric_name      = data.external.monitoring_namespaces.result[local.metric_namespaces.health.namespace]
     aggregation      = "Minimum"
     operator         = "GreaterThan"
     threshold        = 0
@@ -16,7 +16,7 @@ resource "azurerm_monitor_metric_alert" "health" {
     action_group_id = var.action_group_id
   }
 
-  depends_on = [null_resource.monitoring_namespaces]
+  depends_on = [data.external.monitoring_namespaces]
 }
 
 resource "azurerm_monitor_metric_alert" "health-status" {
@@ -27,7 +27,7 @@ resource "azurerm_monitor_metric_alert" "health-status" {
 
   criteria {
     metric_namespace = local.metric_namespaces.health_checks.namespace
-    metric_name      = local.metric_namespaces.health_checks.metric
+    metric_name      = data.external.monitoring_namespaces.result[local.metric_namespaces.health_checks.namespace]
     aggregation      = "Minimum"
     operator         = "GreaterThan"
     threshold        = 0
@@ -37,7 +37,7 @@ resource "azurerm_monitor_metric_alert" "health-status" {
     action_group_id = var.action_group_id
   }
 
-  depends_on = [null_resource.monitoring_namespaces]
+  depends_on = [data.external.monitoring_namespaces]
 
 }
 
@@ -49,7 +49,7 @@ resource "azurerm_monitor_metric_alert" "disk" {
 
   criteria {
     metric_namespace = local.metric_namespaces.disk.namespace
-    metric_name      = local.metric_namespaces.disk.metric
+    metric_name      = data.external.monitoring_namespaces.result[local.metric_namespaces.disk.namespace]
     aggregation      = "Maximum"
     operator         = "GreaterThan"
     threshold        = 90
@@ -59,16 +59,18 @@ resource "azurerm_monitor_metric_alert" "disk" {
     action_group_id = var.action_group_id
   }
 
-  depends_on = [null_resource.monitoring_namespaces]
+  depends_on = [data.external.monitoring_namespaces]
 
 }
 
-resource "null_resource" "monitoring_namespaces" {
+data "external" "monitoring_namespaces" {
 
   depends_on = [azurerm_linux_virtual_machine_scale_set.polkadot]
 
-  provisioner "local-exec" {
-    command = "bash ${path.module}/../../../init-helpers/azure/wait_monitoring_namespace.sh ${join(" ", local.monitoring_command_parameters)}"
-  }
+  program = flatten([
+    "bash",
+    "${path.module}/../../../init-helpers/azure/wait_monitoring_namespace.sh",
+    flatten(local.monitoring_command_parameters)
+  ])
 
 }
