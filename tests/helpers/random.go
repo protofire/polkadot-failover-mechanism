@@ -2,7 +2,7 @@ package helpers
 
 import "math/rand"
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
 // RandStringBytes generates random string with defined length
 func RandStringBytes(n int) string {

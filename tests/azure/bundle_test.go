@@ -94,13 +94,11 @@ func TestBundle(t *testing.T) {
 		TerraformDir: "../../azure/",
 
 		BackendConfig: map[string]interface{}{
-			"tenant_id":            azureTenantID,
 			"resource_group_name":  azureResourceGroup,
-			"subscription_id":      azureSubscriptionID,
-			"use_msi":              false,
 			"container_name":       azureBucket,
 			"key":                  azureBucketKey,
 			"storage_account_name": azureStorageAccount,
+			"access_key":           azureStorageAccessKey,
 		},
 
 		// Variables to pass to our Terraform code using -var options
