@@ -143,7 +143,7 @@ func TestBundle(t *testing.T) {
 
 	t.Logf("INFO. Instances IDs found in all regions: %s", strings.Join(instanceIDs, ","))
 
-	// TEST 2: Veriy the number of existing EC2 instances - should be an odd number
+	// TEST 2: Verify the number of existing EC2 instances - should be an odd number
 	t.Run("Instance count", func(t *testing.T) {
 
 		instanceCount := len(instanceIDs)
@@ -156,7 +156,7 @@ func TestBundle(t *testing.T) {
 		t.Logf("INFO. Minimum viable instance count (3) reached. There are %d instances running.", instanceCount)
 	})
 
-	// TEST 4: Veriy the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
+	// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
 	t.Run("Consul verifications", func(t *testing.T) {
 
 		if assert.True(t, helpers.ConsulLockCheck(t, publicIPs, sshKey, sshUser)) {

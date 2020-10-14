@@ -68,9 +68,9 @@ jobs:
       - run:
           name: Login AZ
           command: |
-            az login --service-principal --username ${ARM_CLIENT_ID} --password ${ARM_CLIENT_SECRET} --tenant ${ARM_TENANT_ID}
-            az account set --subscription ${ARM_SUBSCRIPTION_ID}
-            az configure --defaults group=${ARM_RES_GROUP_NAME}
+            az login --service-principal --username ${AZURE_CLIENT_ID} --password ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID}
+            az account set --subscription ${AZURE_SUBSCRIPTION_ID}
+            az configure --defaults group=${AZURE_RES_GROUP_NAME}
       - run:
           name: Run Go Azure tests
           command: |
