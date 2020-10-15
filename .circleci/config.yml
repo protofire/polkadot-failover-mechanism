@@ -4,26 +4,11 @@ orbs:
   slack: circleci/slack@3.4.2
 
 jobs:
-  test:
+  test_aws:
     docker:
       - image: circleci/golang:1.15
     steps:
       - checkout
-      - run:
-          name: "Pull Submodules"
-          command: |
-            git submodule init
-            git submodule update --remote
-      - run:
-          name: Get az
-          command: |
-            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-      - run:
-          name: Login AZ
-          command: |
-            az login --service-principal --username ${ARM_CLIENT_ID} --password ${ARM_CLIENT_SECRET} --tenant ${ARM_TENANT_ID}
-            az account set --subscription ${ARM_SUBSCRIPTION_ID}
-            az configure --defaults group=${ARM_RES_GROUP_NAME}
       - run:
           name: Get Terraform
           command: |
@@ -40,6 +25,17 @@ jobs:
             cd ..
           environment:
             - TF_STATE_REGION: us-east-1
+  test_gcp:
+    docker:
+      - image: circleci/golang:1.15
+    steps:
+      - checkout
+      - run:
+          name: Get Terraform
+          command: |
+            wget https://releases.hashicorp.com/terraform/0.13.4/terraform_0.13.4_linux_amd64.zip
+            unzip terraform*.zip
+            sudo mv terraform /usr/local/bin
       - run:
           name: Run Go GCP tests
           command: |
@@ -49,6 +45,32 @@ jobs:
             cd tests
             make gcp
             cd ..
+  test_azure:
+    docker:
+      - image: circleci/golang:1.15
+    steps:
+      - checkout
+      - run:
+          name: Get Terraform
+          command: |
+            wget https://releases.hashicorp.com/terraform/0.13.4/terraform_0.13.4_linux_amd64.zip
+            unzip terraform*.zip
+            sudo mv terraform /usr/local/bin
+      - run:
+          name: "Pull Submodules"
+          command: |
+            git submodule init
+            git submodule update --remote
+      - run:
+          name: Get az
+          command: |
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+      - run:
+          name: Login AZ
+          command: |
+            az login --service-principal --username ${AZURE_CLIENT_ID} --password ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID}
+            az account set --subscription ${AZURE_SUBSCRIPTION_ID}
+            az configure --defaults group=${AZURE_RES_GROUP_NAME}
       - run:
           name: Run Go Azure tests
           command: |
@@ -80,19 +102,42 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - approve_test:
+      - approve_test_azure:
           type: approval
           filters:
             branches:
               only:
                 - master
-      - test:
+                - dev
+      - test_azure:
           requires:
-            - approve_test
+            - approve_test_azure
+      - approve_test_gcp:
+          type: approval
+          filters:
+            branches:
+              only:
+                - master
+                - dev
+      - test_gcp:
+          requires:
+            - approve_test_gcp
+      - approve_test_aws:
+          type: approval
+          filters:
+            branches:
+              only:
+                - master
+                - dev
+      - test_aws:
+          requires:
+            - approve_test_aws
       - approve_build:
           type: approval
           requires:
-            - test
+            - test_azure
+            - test_aws
+            - test_gcp
       - build:
           requires:
             - approve_build
