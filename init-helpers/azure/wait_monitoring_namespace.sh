@@ -21,7 +21,7 @@ shift 3
 
 max_attempts=500
 attempts=0
-recheck_metrics_count=5
+recheck_metrics_count=10
 success_metric_checks=0
 
 declare -A metrics=()
