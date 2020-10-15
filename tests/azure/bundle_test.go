@@ -41,6 +41,7 @@ var (
 	noTFApply             = len(os.Getenv("POLKADOT_TEST_NO_INITIAL_TF_APPLY")) > 0
 	noPostTFCleanUp       = len(os.Getenv("POLKADOT_TEST_NO_POST_TF_CLEANUP")) > 0
 	noDeleteOnTermination = len(os.Getenv("POLKADOT_TEST_NO_DELETE_ON_TERMINATION")) > 0
+	forceDeleteBucket     = len(os.Getenv("POLKADOT_TEST_FORCE_DELETE_TF_BUCKET")) > 0
 	azureRegions          = []string{"Central US", "East US", "West US"}
 	azureSubscriptionID   = os.Getenv("AZURE_SUBSCRIPTION_ID")
 	azureClientID         = os.Getenv("AZURE_CLIENT_ID")
@@ -69,19 +70,19 @@ func TestBundle(t *testing.T) {
 		ok             bool
 	)
 
-	if prefix, ok = os.LookupEnv("PREFIX"); !ok {
+	if prefix, ok = os.LookupEnv("PREFIX"); !ok || len(prefix) == 0 {
 		prefix = helpers.RandStringBytes(4)
 	}
 
 	if azureBucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
-		azureBucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", helpers.RandStringBytes(4))
+		azureBucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", prefix)
 	}
 
 	if azureBucketKey, ok = os.LookupEnv("TF_STATE_KEY"); !ok {
 		azureBucketKey = "terraform.tfstate"
 	}
 
-	bucketCreated, err := utils.EnsureTFBucket(azureStorageAccount, azureStorageAccessKey, azureBucket)
+	bucketCreated, err := utils.EnsureTFBucket(azureStorageAccount, azureStorageAccessKey, azureBucket, forceDeleteBucket)
 	require.NoError(t, err)
 	t.Logf("TF state bucket %q has been ensured", azureBucket)
 

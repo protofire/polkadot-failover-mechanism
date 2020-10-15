@@ -17,7 +17,7 @@ func getStorageURL(storageAccount, containerName string) *url.URL {
 }
 
 // EnsureTFBucket creates azure blob storage
-func EnsureTFBucket(storageAccount, storageAccessKey, containerName string) (bool, error) {
+func EnsureTFBucket(storageAccount, storageAccessKey, containerName string, forceDelete bool) (bool, error) {
 
 	credentials, err := azblob.NewSharedKeyCredential(storageAccount, storageAccessKey)
 	if err != nil {
@@ -40,7 +40,13 @@ func EnsureTFBucket(storageAccount, storageAccessKey, containerName string) (boo
 				switch serr.ServiceCode() {
 				case azblob.ServiceCodeContainerAlreadyExists:
 					log.Printf("Container %q already exists", containerName)
-					return false, nil
+					if !forceDelete {
+						return false, nil
+					}
+					err := DeleteTFBucket(storageAccount, storageAccessKey, containerName)
+					if err != nil {
+						return false, fmt.Errorf("Cannot delete container %q: %w", containerName, err)
+					}
 				case azblob.ServiceCodeContainerBeingDeleted:
 					log.Printf("Container %q is being deleted. Waiting...", containerName)
 					time.Sleep(1 * time.Second)

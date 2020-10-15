@@ -44,11 +44,11 @@ func TestBundle(t *testing.T) {
 	var ok bool
 
 	if prefix, ok = os.LookupEnv("PREFIX"); !ok {
-		prefix = "test"
+		prefix = helpers.RandStringBytes(4)
 	}
 
 	if s3bucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
-		s3bucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", helpers.RandStringBytes(4))
+		s3bucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", prefix)
 	}
 
 	if s3key, ok = os.LookupEnv("TF_STATE_KEY"); !ok {
