@@ -64,11 +64,11 @@ func TestBundle(t *testing.T) {
 	)
 
 	if prefix, ok = os.LookupEnv("PREFIX"); !ok {
-		prefix = "test"
+		prefix = helpers.RandStringBytes(4)
 	}
 
 	if gcpBucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
-		gcpBucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", helpers.RandStringBytes(4))
+		gcpBucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", prefix)
 	}
 
 	bucketCreated, err := utils.EnsureTFBucket(gcpProject, gcpBucket)
