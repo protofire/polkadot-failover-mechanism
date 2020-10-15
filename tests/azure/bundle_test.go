@@ -69,19 +69,19 @@ func TestBundle(t *testing.T) {
 		ok             bool
 	)
 
-	if prefix, ok = os.LookupEnv("PREFIX"); !ok {
+	if prefix, ok = os.LookupEnv("PREFIX"); !ok || len(prefix) == 0 {
 		prefix = helpers.RandStringBytes(4)
 	}
 
 	if azureBucket, ok = os.LookupEnv("TF_STATE_BUCKET"); !ok {
-		azureBucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", helpers.RandStringBytes(4))
+		azureBucket = fmt.Sprintf("%s-polkadot-validator-failover-tfstate", prefix)
 	}
 
 	if azureBucketKey, ok = os.LookupEnv("TF_STATE_KEY"); !ok {
 		azureBucketKey = "terraform.tfstate"
 	}
 
-	bucketCreated, err := utils.EnsureTFBucket(azureStorageAccount, azureStorageAccessKey, azureBucket)
+	bucketCreated, err := utils.EnsureTFBucket(azureStorageAccount, azureStorageAccessKey, azureBucket, true)
 	require.NoError(t, err)
 	t.Logf("TF state bucket %q has been ensured", azureBucket)
 
