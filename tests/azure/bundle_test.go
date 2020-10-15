@@ -41,6 +41,7 @@ var (
 	noTFApply             = len(os.Getenv("POLKADOT_TEST_NO_INITIAL_TF_APPLY")) > 0
 	noPostTFCleanUp       = len(os.Getenv("POLKADOT_TEST_NO_POST_TF_CLEANUP")) > 0
 	noDeleteOnTermination = len(os.Getenv("POLKADOT_TEST_NO_DELETE_ON_TERMINATION")) > 0
+	forceDeleteBucket     = len(os.Getenv("POLKADOT_TEST_FORCE_DELETE_TF_BUCKET")) > 0
 	azureRegions          = []string{"Central US", "East US", "West US"}
 	azureSubscriptionID   = os.Getenv("AZURE_SUBSCRIPTION_ID")
 	azureClientID         = os.Getenv("AZURE_CLIENT_ID")
@@ -81,7 +82,7 @@ func TestBundle(t *testing.T) {
 		azureBucketKey = "terraform.tfstate"
 	}
 
-	bucketCreated, err := utils.EnsureTFBucket(azureStorageAccount, azureStorageAccessKey, azureBucket, true)
+	bucketCreated, err := utils.EnsureTFBucket(azureStorageAccount, azureStorageAccessKey, azureBucket, forceDeleteBucket)
 	require.NoError(t, err)
 	t.Logf("TF state bucket %q has been ensured", azureBucket)
 
