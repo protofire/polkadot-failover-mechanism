@@ -63,7 +63,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "polkadot" {
   source_image_reference {
     publisher = "OpenLogic"
     offer     = "CentOS"
-    sku       = "7_7-gen2"
+    sku       = "7.7"
     version   = "latest"
   }
 
