@@ -94,25 +94,37 @@ until [ $exit_code -eq 0 ]; do
 
 done
 
-curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/install_consul.sh
+curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/azure-provider/init-helpers/azure/install_consul.sh
 curl -o /usr/local/bin/install_consulate.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/install_consulate.sh
 curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/telegraf.sh
 
 source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh  
-source /usr/local/bin/telegraf.sh ${prefix} $INSTANCE_ID
+source /usr/local/bin/telegraf.sh "${prefix}" "$INSTANCE_ID"
 /usr/bin/systemctl restart telegraf
 
-install_consul ${prefix} ${total_instance_count} ${lb-primary} ${lb-secondary} ${lb-tertiary}
+install_consul "${prefix}" "${total_instance_count}" "${lb-primary}" "${lb-secondary}" "${lb-tertiary}"
+
 install_consulate
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
+lbs=()
+
+[ -n "${lb-primary}" ] && lbs+=( "${lb-primary}" )
+[ -n "${lb-secondary}" ] && lbs+=( "${lb-secondary}" )
+[ -n "${lb-tertiary}" ] && lbs+=( "${lb-tertiary}" )
+
+lbs_str=$(join_by ", ", "$${lbs[@]}")
+echo "LoadBalancers: $lbs_str"
 
 # Join to the created cluster
 cluster_members=0
-until [ $cluster_members -gt ${total_instance_count} ]; do
+until [ $cluster_members -gt "${total_instance_count}" ]; do
 
   set +eE
   trap - ERR EXIT
-  /usr/local/bin/consul join ${lb-primary} ${lb-secondary} ${lb-tertiary}
+  /usr/local/bin/consul join "$${lbs_str}"
   trap default_trap ERR EXIT
   set -eE
   cluster_members=$(/usr/local/bin/consul members --status alive | wc -l)

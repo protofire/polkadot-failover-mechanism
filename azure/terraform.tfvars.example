@@ -56,3 +56,5 @@ node_key      = "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 # The email address to send alerts to
 admin_email = "admin@protofire.io"
+# Failover mode (single|distributed)
+failover_mode = distributed

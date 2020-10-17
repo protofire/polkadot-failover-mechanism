@@ -86,6 +86,8 @@ You will need to clone this repo and it's submodules. Use `git clone --recurse-s
 3. Create `terraform.tfvars` file inside of the `azure` folder of the cloned repo, where `terraform.tfvars.example` is located.
 4. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
 5. Run `terraform init`.
+In case you use azure service principal, copy backend/azurerm.tf.example into backend/azurerm.tf,
+fill variables and run `terraform init -backend-config=backend/azurerm.tf`
 6. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
 7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
 8. After the deployment is complete you can open Azure Portal to check that the instances were deployed successfully.

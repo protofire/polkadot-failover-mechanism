@@ -10,7 +10,7 @@ resource "azurerm_key_vault" "polkadot" {
   resource_group_name        = var.azure_rg
   enabled_for_deployment     = true
   tenant_id                  = data.azurerm_client_config.current.tenant_id
-  soft_delete_enabled        = false
+  soft_delete_enabled        = var.vault_soft_delete_enabled
   soft_delete_retention_days = 7
   purge_protection_enabled   = false
   enable_rbac_authorization  = false
