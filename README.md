@@ -2,7 +2,7 @@
 
 ![Web3 Grant](web3_badge.svg "Web3 Grant")
 
-[![CircleCI](https://circleci.com/gh/protofire/polkadot-failover-mechanism/tree/dev.svg?style=shield)](https://circleci.com/gh/protofire/polkadot-failover-mechanism)
+[![CircleCI](https://circleci.com/gh/protofire/polkadot-failover-mechanism/tree/dev.svg?style=shield)](https://circleci.com/gh/protofire/polkadot-failover-mechanism/tree/dev)
 
 
 This repository contains a set of [Terraform](https://www.terraform.io/) scripts that automatically installs a set of minimum 3 [Polkadot](https://polkadot.network/) nodes to the chosen cloud. Currently, scripts support only AWS provider, GCP and Azure scripts are in active development phase.
