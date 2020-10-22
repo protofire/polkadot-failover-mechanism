@@ -94,7 +94,7 @@ until [ $exit_code -eq 0 ]; do
 
 done
 
-curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/azure-provider/init-helpers/azure/install_consul.sh
+curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/install_consul.sh
 curl -o /usr/local/bin/install_consulate.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/install_consulate.sh
 curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/telegraf.sh
 
