@@ -34,7 +34,7 @@ Also you will need a set of keys known as `NODE KEY`, `STASH`, `CONTROLLER` and 
 ****
 ### Create Azure resource group
 
-It is highly recommended to run these scripts at the dedicated resource group. 
+It is highly recommended running these scripts at the dedicated resource group.
 1. Login to [Azure Portal](https://portal.azure.com)
 2. Type "Resource groups" in the search bar to navigate to the Resource Group management section
 3. Click "Add" to create a new Resource group. Note down the name of the created resource group as you will need it further.
@@ -77,7 +77,7 @@ To get the [service account credentials](https://docs.microsoft.com/en-us/azure/
 
 ### Clone the repo
 
-You will need to clone this repo and it's submodules. Use `git clone --recurse-submodules` command, `--recurse-submodules` is mandatory to make scripts work.
+You will need to clone this repository and its submodules. Use `git clone --recurse-submodules` command, `--recurse-submodules` is mandatory to make scripts work.
 
 ### Run the Terraform scripts
 
@@ -91,6 +91,20 @@ fill variables and run `terraform init -backend-config=backend/azurerm.tf`
 6. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
 7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
 8. After the deployment is complete you can open Azure Portal to check that the instances were deployed successfully.
+
+### Switch into / from standalone (single) mode
+
+1. Into standalone mode
+
+
+    terraform plan -var failover_mode=single
+    terraform apply -auto-approve -var delete_vms_with_api_in_single_mode=true -var failover_mode=single
+
+2. Into distributed mode
+
+
+    terraform plan
+    terraform apply -auto-approve
 
 ### Validate
 
