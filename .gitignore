@@ -14,3 +14,6 @@
 !gcp/terraform.tfvars.example
 !azure/terraform.tfvars.example
 .envrc
+pkg/polkadot_failover
+azure/backend/azurerm.tf
+.pytest_cache

@@ -30,6 +30,22 @@ variable "validator_name" {
 }
 
 variable "instance_count" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_primary" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_secondary" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_tertiary" {
+  type    = number
   default = 1
 }
 
