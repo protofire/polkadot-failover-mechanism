@@ -79,6 +79,10 @@ To get the [service account credentials](https://docs.microsoft.com/en-us/azure/
 
 You will need to clone this repository and its submodules. Use `git clone --recurse-submodules` command, `--recurse-submodules` is mandatory to make scripts work.
 
+### Prepare terraform polkadot provider
+
+    make install-azure-provider
+
 ### Run the Terraform scripts
 
 1. Login to Azure CLI. Run `az login` command and follow the instructions on the screen.
