@@ -31,7 +31,7 @@ Also you will need a set of keys known as `NODE KEY`, `STASH`, `CONTROLLER` and 
 
 ### Create project
 
-It is highly recommended to run these scripts at the dedicated project. Despite the fact that security rules are configured to limit deployed service accounts as much as possible there are some CLI requests like secrets listing that can't be constrained. For better security and logical distribution.
+It is highly recommended running these scripts at the dedicated project. Despite the fact that security rules configured to limit deployed service accounts as much as possible there are some CLI requests like secrets listing that can't be constrained. For better security and logical distribution.
 
 ### Clone the repo
 
@@ -53,11 +53,21 @@ To enable APIs simply visit the GCP Console page of each of the services above a
 
 Note that you will have to wait some time before running the scripts, so the API enablement can propagate.
 
+### Prepare terraform polkadot provider
+
+    VERSION=0.1.0 make install-gcp-provider
+    
 ### Run the Terraform scripts
 
 1. Open `gcp` folder of the cloned (downloaded) repo.
 2. Create `terraform.tfvars` file inside of the `gcp` folder of the cloned repo, where `terraform.tfvars.example` is located.
 3. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
+4. (Optional) You can either place a Terraform state file on Google storage bucket or on your local machine. 
+   * To place it on the local machine rename the `remote_state.tf` file to `remote_state.tf.stop`. 
+   * To place it on Google storage bucket - create google storage bucket.
+   * Rename `backend/gcp.tf.example` file to `backend/gcp.tf`. 
+   * Run `terraform init -backend-config=backend/gcp.tf --reconfigure`.
+   * Skip the step `5`.
 5. Run `terraform init`.
 6. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
 7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.

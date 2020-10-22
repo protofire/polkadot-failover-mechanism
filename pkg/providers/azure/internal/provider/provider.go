@@ -251,7 +251,7 @@ func providerConfigure(p *schema.Provider) schema.ConfigureContextFunc {
 			TenantID:           d.Get("tenant_id").(string),
 			AuxiliaryTenantIDs: auxTenants,
 			Environment:        d.Get("environment").(string),
-			MetadataURL:        metadataHost, // TODO: rename this in Helpers too
+			MetadataHost:       metadataHost, // TODO: rename this in Helpers too
 			MsiEndpoint:        d.Get("msi_endpoint").(string),
 			ClientCertPassword: d.Get("client_certificate_password").(string),
 			ClientCertPath:     d.Get("client_certificate_path").(string),

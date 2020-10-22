@@ -59,12 +59,6 @@ variable "validator_name" {
   description = "A moniker of the validator"
 }
 
-variable "instance_count" {
-  type        = list(number)
-  default     = [1, 1, 1]
-  description = "A number of instances to run in each region. Odd number of instances in total is a must have for proper work"
-}
-
 variable "chain" {
   type        = string
   default     = "kusama"
@@ -119,13 +113,51 @@ variable "gcp_ssh_pub_key" {
   default = ""
 }
 
+variable "instance_count" {
+  type        = list(number)
+  default     = [1, 1, 1]
+  description = "A number of instances to run in each region. Odd number of instances in total is a must have for proper work"
+  validation {
+    condition     = sum(var.instance_count) % 2 == 1 && length(var.instance_count) == 3
+    error_message = "The sum of instance_count elements must be odd. Number of instance_count elements must be 3."
+  }
+}
+
+variable "failover_mode" {
+  description = "Failover mode. Either 'single' or 'distributed'"
+  type        = string
+  default     = "distributed"
+  validation {
+    condition     = var.failover_mode == "single" || var.failover_mode == "distributed"
+    error_message = "The failover_mode must be one of 'single', 'distributed'."
+  }
+}
+
+variable "delete_vms_with_api_in_single_mode" {
+  description = "Delete vms in single mode with API call preserving current active validator"
+  type        = bool
+  default     = true
+}
+
 variable "docker_image" {
   description = "Polkadot docker image"
   type        = string
   default     = "parity/polkadot:master-0.8.26-80e3a7e-5d52c096"
 }
 
-variable "metrics_namespace" {
+variable "metric_namespace" {
   type    = string
   default = "polkadot"
+}
+
+variable "metric_name" {
+  description = "Name of telegraf validate metric"
+  type        = string
+  default     = "value"
+}
+
+variable "metric_family" {
+  description = "Name of telegraf validate metrics family"
+  type        = string
+  default     = "validator"
 }

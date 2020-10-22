@@ -11,7 +11,7 @@ import (
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/azure"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-30/compute"
 )
 
 func getVmsToDelete(
@@ -66,6 +66,9 @@ func getValidatorLocations(vmScaleSetVMs azure.VMSMap, locations []string, valid
 	for _, vm := range vmScaleSetVMs[validatorScaleSetName] {
 		validatorLocation = *vm.Location
 		locationIdx = helpers.FindStrIndex(validatorLocation, locations)
+		if locationIdx != -1 {
+			break
+		}
 	}
 
 	return validatorLocation, locationIdx

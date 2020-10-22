@@ -1,6 +1,11 @@
 terraform {
   required_version = ">= 0.13"
 
-  backend "gcs" {
+  required_providers {
+    polkadot = {
+      versions = ["0.1"]
+      source   = "polkadot-failover-mechanism/gcp/polkadot"
+    }
   }
+
 }

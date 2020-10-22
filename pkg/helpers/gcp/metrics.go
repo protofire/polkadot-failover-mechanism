@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/api/iterator"
+
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-
-	"google.golang.org/api/iterator"
 
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 
@@ -32,7 +32,7 @@ func getMetricsClient() (*monitoring.MetricClient, error) {
 	return client, nil
 }
 
-func prepareFilter(prefix, project, resourceType, metricsNamespace, metricsFamily, metricName string, instanceNames ...string) string {
+func prepareFilter(prefix, project, resourceType, metricsNamespace, metricName string, instanceNames ...string) string {
 
 	var instanceFilters []string
 
@@ -43,11 +43,10 @@ func prepareFilter(prefix, project, resourceType, metricsNamespace, metricsFamil
 	instancesFilter := strings.Join(instanceFilters, " OR ")
 
 	mainFilter := fmt.Sprintf(
-		`resource.type = "%s" AND resource.label.project_id = "%s" AND metric.type = "custom.googleapis.com/%s/%s/%s" AND metric.label.prefix = "%s"`,
+		`resource.type = "%s" AND resource.label.project_id = "%s" AND metric.type = "custom.googleapis.com/%s/%s" AND metric.label.prefix = "%s"`,
 		resourceType,
 		project,
 		metricsNamespace,
-		metricsFamily,
 		metricName,
 		prefix,
 	)
@@ -66,7 +65,6 @@ func listMetrics(
 	prefix,
 	resourceType,
 	metricsNamespace,
-	metricsFamily,
 	metricName string,
 	interval int,
 	alignmentPeriod int,
@@ -78,7 +76,6 @@ func listMetrics(
 		project,
 		resourceType,
 		metricsNamespace,
-		metricsFamily,
 		metricName,
 		instanceNames...,
 	)
@@ -117,14 +114,16 @@ func listMetrics(
 
 	for {
 		timeSeries, err := timeSeriesIterator.Next()
-		if err == iterator.Done {
-			break
-		}
+
 		if err != nil {
+			if err == iterator.Done {
+				break
+			}
 			return results, err
 		}
 
 		resource := timeSeries.Resource
+		// this is from instance hostname. It should coincide with names in other API responses
 		instanceID := resource.Labels["instance_id"]
 		projectID := resource.Labels["project_id"]
 
@@ -143,7 +142,9 @@ func GetValidatorMetrics(
 	ctx context.Context,
 	client *monitoring.MetricClient,
 	project,
-	prefix string,
+	prefix,
+	metricNamespace,
+	metricName string,
 	instanceNames ...string,
 ) (InstanceMetricPoints, error) {
 	return listMetrics(
@@ -151,10 +152,9 @@ func GetValidatorMetrics(
 		client,
 		project,
 		prefix,
-		"gce_instance",
-		"polkadot",
-		"validator",
-		"value",
+		resourceType,
+		metricNamespace,
+		metricName,
 		5,
 		60,
 		instanceNames...,

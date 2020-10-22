@@ -13,7 +13,7 @@ import (
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/failover/tags"
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/validate"
 
-	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/resource"
+	"github.com/protofire/polkadot-failover-mechanism/pkg/providers/resource"
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/azure"
 	"github.com/protofire/polkadot-failover-mechanism/pkg/providers/azure/internal/timeouts"
@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/protofire/polkadot-failover-mechanism/pkg/providers/common"
 )
 
 func dataSourcePolkadotFailOver() *schema.Resource {
@@ -93,8 +92,8 @@ func dataSourcePolkadotFailOver() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 				ValidateDiagFunc: validate.DiagFunc(validation.StringInSlice([]string{
-					string(common.FailOverModeDistributed),
-					string(common.FailOverModeSingle),
+					string(resource.FailOverModeDistributed),
+					string(resource.FailOverModeSingle),
 				}, false)),
 			},
 
@@ -129,7 +128,7 @@ func dataSourcePolkadotFailOver() *schema.Resource {
 
 func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
-	failoverMode := common.FailOverMode(d.Get("failover_mode").(string))
+	failoverMode := resource.FailOverMode(d.Get("failover_mode").(string))
 	log.Printf("[DEBUG]. Failover mode: %s", failoverMode)
 
 	instanceLocationsRaw := d.Get("locations").([]interface{})
@@ -151,7 +150,7 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 
 	d.SetId(resource.PrepareID(resourceGroup, prefix, string(failoverMode), metricName, metricNameSpace))
 
-	if failoverMode == common.FailOverModeDistributed {
+	if failoverMode == resource.FailOverModeDistributed {
 		log.Printf("[DEBUG]. Failover mode is %q. Using predefined number of nstances", failoverMode)
 		return resource.SetSchemaValues(d, diagnostics, instances[0], instances[1], instances[2])
 	}

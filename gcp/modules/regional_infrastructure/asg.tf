@@ -114,13 +114,13 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
   wait_for_instances = true
 
   timeouts {
-    create = "30m"
+    create = "20m"
   }
 
   update_policy {
     type                         = "PROACTIVE"
     instance_redistribution_type = "PROACTIVE"
-    minimal_action               = "REPLACE"
+    minimal_action               = "RESTART"
     max_surge_fixed              = 0
     max_unavailable_fixed        = length(data.google_compute_zones.available.names)
     min_ready_sec                = 150

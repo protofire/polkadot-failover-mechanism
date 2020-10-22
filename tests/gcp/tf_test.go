@@ -118,6 +118,7 @@ func TestBundle(t *testing.T) {
 			"node_key":              "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
 			"chain":                 "westend",
 			"admin_email":           "1627_DEV@altoros.com",
+			"failover_mode":         "distributed",
 		},
 	}
 
@@ -250,10 +251,32 @@ func TestBundle(t *testing.T) {
 
 	})
 
+	validatorBefore, err := gcpHelpers.WaitForValidator(gcpProject, prefix, 1, 600)
+	require.NoError(t, err)
+	require.NotEmpty(t, validatorBefore.InstanceName)
+
+	terraformOptions.Vars["failover_mode"] = "single"
+	terraformOptions.Vars["delete_vms_with_api_in_single_mode"] = true
+	terraform.Apply(t, terraformOptions)
+
 	t.Run("SingleMode", func(t *testing.T) {
-		validator, err := gcpHelpers.WaitForValidator(gcpProject, prefix, 1, 600)
-		require.NoError(t, err)
-		require.NotEmpty(t, validator.InstanceName)
+
+		t.Run("CheckValidator", func(t *testing.T) {
+			validatorAfter, err := gcpHelpers.WaitForValidator(gcpProject, prefix, 1, 600)
+			require.NoError(t, err)
+			require.NotEmpty(t, validatorAfter.InstanceName)
+			require.Equal(t, validatorBefore.InstanceName, validatorAfter.InstanceName)
+		})
+
+		t.Run("CheckVirtualMachines", func(t *testing.T) {
+			instanceGroups, err := gcpHelpers.GetInstanceGroupManagersForRegionsInnerClient(
+				gcpProject,
+				prefix,
+				gcpRegion...,
+			)
+			require.NoError(t, err)
+			require.Equal(t, 1, instanceGroups.InstancesCount())
+		})
 	})
 
 }

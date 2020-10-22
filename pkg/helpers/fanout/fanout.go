@@ -14,7 +14,10 @@ type Item struct {
 }
 
 // ConcurrentResponseItems process with items channel
-func ConcurrentResponseItems(ctx context.Context, worker func(ctx context.Context, value interface{}) (interface{}, error), parameters ...interface{}) chan Item {
+func ConcurrentResponseItems(ctx context.Context, worker func(
+	ctx context.Context,
+	value interface{},
+) (interface{}, error), parameters ...interface{}) chan Item {
 
 	var wg sync.WaitGroup
 
