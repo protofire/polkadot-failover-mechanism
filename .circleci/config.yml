@@ -20,9 +20,7 @@ jobs:
           command: |
             export PREFIX="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1 | sed -E 's/^([0-9]+)(.*)/\2\1/g')"
             echo "PREFIX=${PREFIX}"
-            cd tests
-            make aws
-            cd ..
+            make test-aws
           environment:
             - TF_STATE_REGION: us-east-1
   test_gcp:
@@ -42,9 +40,7 @@ jobs:
             echo -n "${GOOGLE_APPLICATION_CREDENTIALS_CONTENT}" > "${GOOGLE_APPLICATION_CREDENTIALS}"
             export PREFIX="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1 | sed -E 's/^([0-9]+)(.*)/\2\1/g')"
             echo "PREFIX=${PREFIX}"
-            cd tests
-            make gcp
-            cd ..
+            make test-gcp
   test_azure:
     docker:
       - image: circleci/golang:1.15
@@ -76,9 +72,7 @@ jobs:
           command: |
             export PREFIX="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1 | sed -E 's/^([0-9]+)(.*)/\2\1/g')"
             echo "PREFIX=${PREFIX}"
-            cd tests
-            make azure
-            cd ..
+            make test-azure
       - slack/status:
           fail_only: true
 
