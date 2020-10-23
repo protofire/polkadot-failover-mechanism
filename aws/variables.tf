@@ -106,3 +106,9 @@ variable "validator_keys" {
 variable "expose_ssh" {
   default = false
 }
+
+variable "docker_image" {
+  description = "Polkadot docker image"
+  type        = string
+  default     = "parity/polkadot:master"
+}

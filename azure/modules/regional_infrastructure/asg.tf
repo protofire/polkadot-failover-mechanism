@@ -11,6 +11,7 @@ data "template_file" "script" {
     lb-primary           = var.instance_count_primary > 0 ? cidrhost(var.subnet_cidrs[0], 10) : ""
     lb-secondary         = var.instance_count_secondary > 0 ? cidrhost(var.subnet_cidrs[1], 10) : ""
     lb-tertiary          = var.instance_count_tertiary > 0 ? cidrhost(var.subnet_cidrs[2], 10) : ""
+    docker_image         = var.docker_image
   }
 }
 

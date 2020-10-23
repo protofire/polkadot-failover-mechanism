@@ -77,7 +77,18 @@ trap - ERR
 set -eE
 trap default_trap ERR
 
-/usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+/usr/bin/docker run \
+  --cpus "$CPU" \
+  --memory $${RAM}GB \
+  --kernel-memory $${RAM}GB \
+  --network=host \
+  --name polkadot \
+  --restart unless-stopped \
+  -d \
+  -p 127.0.0.1:9933:9933 \
+  -p 30333:30333 \
+  -v /data:/data:z \
+  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
 
 # Since polkadot container does not have curl inside - port it from host instance
 
@@ -86,7 +97,7 @@ until [ $exit_code -eq 0 ]; do
 
   trap - ERR
   set +eE
-  curl localhost:9933
+  curl -X OPTIONS localhost:9933
   exit_code=$?
   set -eE
   trap default_trap ERR
@@ -107,16 +118,13 @@ install_consul "${prefix}" "${total_instance_count}" "${lb-primary}" "${lb-secon
 
 install_consulate
 
-function join_by { local IFS="$1"; shift; echo "$*"; }
-
 lbs=()
 
 [ -n "${lb-primary}" ] && lbs+=( "${lb-primary}" )
 [ -n "${lb-secondary}" ] && lbs+=( "${lb-secondary}" )
 [ -n "${lb-tertiary}" ] && lbs+=( "${lb-tertiary}" )
 
-lbs_str=$(join_by ", ", "$${lbs[@]}")
-echo "LoadBalancers: $lbs_str"
+echo "LoadBalancers: $${lbs[@]}"
 
 # Join to the created cluster
 cluster_members=0
@@ -124,13 +132,14 @@ until [ $cluster_members -gt "${total_instance_count}" ]; do
 
   set +eE
   trap - ERR EXIT
-  /usr/local/bin/consul join "$${lbs_str}"
+  /usr/local/bin/consul join "$${lbs[@]}"
   trap default_trap ERR EXIT
   set -eE
   cluster_members=$(/usr/local/bin/consul members --status alive | wc -l)
   sleep 1s
 
 done
+
 
 curl -o /usr/local/bin/double-signing-control.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/double-signing-control.sh
 curl -o /usr/local/bin/best-grep.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/best-grep.sh
@@ -154,7 +163,7 @@ until [ $n -ge 6 ]; do
 
   set -eE
   trap default_trap ERR
-  node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep Full | wc -l)
+  node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep -c Full)
   if [ "$node" != 1 ]; then 
     echo "ERROR! Node either does not work or work in not correct way"
     default_trap
@@ -163,14 +172,39 @@ until [ $n -ge 6 ]; do
   set +eE
 
   /usr/local/bin/consul lock prefix \
-  "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh '${key_vault_name}' '${prefix}' && consul kv delete blocks/.lock && (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY'"
+    "/usr/local/bin/double-signing-control.sh && \
+    /usr/local/bin/key-insert.sh '${key_vault_name}' '${prefix}' && \
+    consul kv delete blocks/.lock && \
+    (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
+    docker stop polkadot && \
+    docker rm polkadot && \
+    /usr/bin/docker run \
+    --cpus $${CPU} \
+    --memory $${RAM}GB \
+    --kernel-memory $${RAM}GB \
+    --network=host --name polkadot \
+    --restart unless-stopped \
+    -p 127.0.0.1:9933:9933 -p 30333:30333 \
+    -v /data:/data:z \
+    ${docker_image} --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY' -d /data"
 
   /usr/bin/docker stop polkadot || true
   /usr/bin/docker rm polkadot || true
-  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+  /usr/bin/docker run \
+  --cpus "$CPU" \
+  --memory $${RAM}GB \
+  --kernel-memory $${RAM}GB \
+  --network=host \
+  --name polkadot \
+  --restart unless-stopped \
+  -d \
+  -p 127.0.0.1:9933:9933 \
+  -p 30333:30333 \
+  -v /data:/data:z \
+  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
   pkill best-grep.sh
   sleep 10;
-  n=$[$n+1]
+  n=$((n+1))
 
 done
 

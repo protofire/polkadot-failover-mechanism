@@ -74,6 +74,7 @@ module "primary_region" {
   providers = {
     aws = aws.primary
   }
+  docker_image = var.docker_image
 }
 
 module "secondary_region" {
@@ -115,6 +116,7 @@ module "secondary_region" {
   providers = {
     aws = aws.secondary
   }
+  docker_image = var.docker_image
 }
 
 module "tertiary_region" {
@@ -156,4 +158,5 @@ module "tertiary_region" {
   providers = {
     aws = aws.tertiary
   }
+  docker_image = var.docker_image
 }

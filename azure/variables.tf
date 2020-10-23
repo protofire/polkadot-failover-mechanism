@@ -199,3 +199,9 @@ variable "delete_vms_with_api_in_single_mode" {
   type        = bool
   default     = false
 }
+
+variable "docker_image" {
+  description = "Polkadot docker image"
+  type        = string
+  default     = "parity/polkadot:master"
+}

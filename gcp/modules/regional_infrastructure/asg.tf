@@ -52,6 +52,7 @@ resource "google_compute_instance_template" "instance_template" {
     prefix               = var.prefix,
     chain                = var.chain,
     total_instance_count = var.total_instance_count
+    docker_image         = var.docker_image
   })
 
   metadata = {

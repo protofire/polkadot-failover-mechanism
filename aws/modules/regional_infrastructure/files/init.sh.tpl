@@ -149,7 +149,18 @@ done
 # Run docker with regular polkadot container inside of it
 /usr/bin/systemctl start docker
 
-/usr/bin/docker run --cpus ${cpu_limit} --memory ${ram_limit}GB --kernel-memory ${ram_limit}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+/usr/bin/docker run \
+  --cpus "${cpu_limit}" \
+  --memory "${ram_limit}GB" \
+  --kernel-memory "${ram_limit}GB" \
+  --network=host \
+  --name polkadot \
+  --restart unless-stopped \
+  -d \
+  -p 127.0.0.1:9933:9933 \
+  -p 30333:30333 \
+  -v /data:/data \
+  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
 
 exit_code=1
 set +eE
@@ -157,7 +168,7 @@ trap - ERR EXIT
 
 until [ $exit_code -eq 0 ]; do
 
-  curl localhost:9933
+  curl -X OPTIONS localhost:9933
   exit_code=$?
   sleep 1
 
@@ -235,15 +246,43 @@ until [ $n -ge 6 ]; do
   trap - ERR
   set +eE
 
-  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh ${prefix} && (consul kv delete blocks/.lock && consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY'"
+  /usr/local/bin/consul lock prefix \
+    "/usr/local/bin/double-signing-control.sh && \
+    /usr/local/bin/key-insert.sh ${prefix} && \
+    (consul kv delete blocks/.lock && \
+    consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
+    docker stop polkadot && \
+    docker rm polkadot && \
+    /usr/bin/docker run \
+    --cpus $${CPU} \
+    --memory $${RAM}GB \
+    --kernel-memory $${RAM}GB \
+    --network=host \
+    --name polkadot \
+    --restart unless-stopped \
+    -p 127.0.0.1:9933:9933 \
+    -p 30333:30333 \
+    -v /data:/data:z \
+    ${docker_image} --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY' -d /data"
 
   /usr/bin/docker stop polkadot || true
   /usr/bin/docker rm polkadot || true
-  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+  /usr/bin/docker run \
+  --cpus "$CPU" \
+  --memory $${RAM}GB \
+  --kernel-memory $${RAM}GB \
+  --network=host \
+  --name polkadot \
+  --restart unless-stopped \
+  -d \
+  -p 127.0.0.1:9933:9933 \
+  -p 30333:30333 \
+  -v /data:/data:z \
+  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
   pkill best-grep.sh
 
   sleep 10;
-  n=$[$n+1]
+  n=$((n+1))
 
 done
 

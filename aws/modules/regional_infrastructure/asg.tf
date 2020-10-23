@@ -63,7 +63,8 @@ resource "aws_launch_template" "polkadot" {
     lb-secondary          = var.lbs[1].dns_name,
     lb-tertiary           = var.lbs[2].dns_name,
     delete_on_termination = var.delete_on_termination,
-    total_instance_count  = var.total_instance_count
+    total_instance_count  = var.total_instance_count,
+    docker_image          = var.docker_image,
   }))
 }
 

@@ -101,3 +101,9 @@ variable "gcp_ssh_user" {
 variable "gcp_ssh_pub_key" {
   default = ""
 }
+
+variable "docker_image" {
+  description = "Polkadot docker image"
+  type        = string
+  default     = "parity/polkadot:master"
+}

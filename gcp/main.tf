@@ -30,6 +30,7 @@ module "primary_region" {
   providers = {
     google = google.primary
   }
+  docker_image = var.docker_image
 }
 
 module "secondary_region" {
@@ -64,9 +65,8 @@ module "secondary_region" {
   providers = {
     google = google.secondary
   }
+  docker_image = var.docker_image
 }
-
-
 
 module "tertiary_region" {
   source = "./modules/regional_infrastructure"
@@ -100,4 +100,5 @@ module "tertiary_region" {
   providers = {
     google = google.tertiary
   }
+  docker_image = var.docker_image
 }

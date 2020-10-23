@@ -38,6 +38,7 @@ module "primary_region" {
   wait_vmss = var.wait_vmss
 
   action_group_id = azurerm_monitor_action_group.main.id
+  docker_image    = var.docker_image
 
 }
 
@@ -80,6 +81,7 @@ module "secondary_region" {
   wait_vmss = var.wait_vmss
 
   action_group_id = azurerm_monitor_action_group.main.id
+  docker_image    = var.docker_image
 
 }
 
@@ -122,5 +124,6 @@ module "tertiary_region" {
   wait_vmss = var.wait_vmss
 
   action_group_id = azurerm_monitor_action_group.main.id
+  docker_image    = var.docker_image
 
 }

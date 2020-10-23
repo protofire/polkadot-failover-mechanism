@@ -30,7 +30,7 @@ source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh  
 source /usr/local/bin/stackdriver.sh
 
-install_consul ${prefix} ${total_instance_count}
+install_consul "${prefix}" "${total_instance_count}"
 install_consulate
 generate_collectd_checks
 generate_collectd_rewrite
@@ -40,7 +40,7 @@ service stackdriver-agent restart
 
 # Verify consul status
 cluster_members=0
-until [ $cluster_members -gt ${total_instance_count} ]; do
+until [ $cluster_members -gt "${total_instance_count}" ]; do
 
   cluster_members=$(/usr/local/bin/consul members --status alive | wc -l)
   sleep 10s
@@ -77,14 +77,25 @@ RAM=$(gcloud secrets versions access $(gcloud secrets versions list $RAM_NAME --
 NODEKEY_NAME=$(gcloud secrets list --format=json --filter="name ~ ${prefix}_nodekey AND labels.prefix=${prefix} AND labels.type != key" | jq -r .[0].name)
 NODEKEY=$(gcloud secrets versions access $(gcloud secrets versions list $NODEKEY_NAME --format json | jq '.[] | select(.state == "ENABLED") | .name' -r) --secret=$NODEKEY_NAME --format json | jq .payload.data -r | base64 -d)
 
-/usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+/usr/bin/docker run \
+  --cpus "$CPU" \
+  --memory $${RAM}GB \
+  --kernel-memory $${RAM}GB \
+  --network=host \
+  --name polkadot \
+  --restart unless-stopped \
+  -d \
+  -p 127.0.0.1:9933:9933 \
+  -p 30333:30333 \
+  -v /data:/data:z \
+  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
 
 exit_code=1
 until [ $exit_code -eq 0 ]; do
 
   set +eE
   trap - ERR
-  curl localhost:9933
+  curl -X OPTIONS localhost:9933
   exit_code=$?
   set -Ee
   trap default_trap ERR
@@ -115,15 +126,43 @@ until [ $n -ge 6 ]; do
   trap - ERR
   set +eE
   
-  /usr/local/bin/consul lock prefix "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh ${prefix} && consul kv delete blocks/.lock && (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY'"
+  /usr/local/bin/consul lock prefix \
+    "/usr/local/bin/double-signing-control.sh && \
+    /usr/local/bin/key-insert.sh ${prefix} && \
+    (consul kv delete blocks/.lock && \
+    consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
+    docker stop polkadot && \
+    docker rm polkadot && \
+    /usr/bin/docker run \
+    --cpus $${CPU} \
+    --memory $${RAM}GB \
+    --kernel-memory $${RAM}GB \
+    --network=host \
+    --name polkadot \
+    --restart unless-stopped \
+    -p 127.0.0.1:9933:9933 \
+    -p 30333:30333 \
+    -v /data:/data:z \
+    ${docker_image} --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY' -d /data"
 
   /usr/bin/docker stop polkadot || true
   /usr/bin/docker rm polkadot || true
-  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+  /usr/bin/docker run \
+    --cpus "$CPU" \
+    --memory $${RAM}GB \
+    --kernel-memory $${RAM}GB \
+    --network=host \
+    --name polkadot \
+    --restart unless-stopped \
+    -d \
+    -p 127.0.0.1:9933:9933 \
+    -p 30333:30333 \
+    -v /data:/data:z \
+    "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
   pkill best-grep.sh
 
   sleep 10;
-  n=$[$n+1]
+  n=$((n+1))
 
 done
 

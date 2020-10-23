@@ -129,3 +129,8 @@ variable "wait_vmss" {
   type        = bool
   default     = false
 }
+
+variable "docker_image" {
+  description = "Polkadot docker image"
+  type        = string
+}

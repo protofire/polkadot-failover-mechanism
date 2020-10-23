@@ -97,3 +97,8 @@ variable "expose_ssh" {
 variable "node_key" {
   description = "A unique ed25519 key that identifies the node"
 }
+
+variable "docker_image" {
+  description = "Polkadot docker image"
+  type        = string
+}
