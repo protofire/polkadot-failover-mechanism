@@ -8,7 +8,7 @@ Additional environments:
 	POLKADOT_TEST_INITIAL_TF_CLEANUP    - terraform destroy command before test
 	POLKADOT_TEST_NO_INITIAL_TF_APPLY   - no terraform apply command before test
 	POLKADOT_TEST_CLEANUP               - clean gcp infrastructure finding all resources with test prefix, it uses GCP API requests
-	POLKADOT_TEST_EXIT_AFTER_CLEANUP    - exit after intension cleanup
+	POLKADOT_TEST_EXIT_AFTER_CLEANUP    - exit after intentional cleanup
 	DRY_RUN                             - dry run force cleanup
 
 IAM Rules for tests:
@@ -19,10 +19,10 @@ IAM Rules for tests:
 * Project IAM Editor
 * Monitoring Editor
 
-POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_INITIAL_TF_CLEANUP=yes make gcp
+POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_INITIAL_TF_CLEANUP=yes make test-gcp
 
-* Starts clean up without terrafrom apply, only GCP API
-POLKADOT_TEST_CLEANUP=yes POLKADOT_TEST_EXIT_AFTER_CLEANUP=yes DRY_RUN=yes make gcp
+* Starts clean up without terraform apply, only GCP API
+POLKADOT_TEST_CLEANUP=yes POLKADOT_TEST_EXIT_AFTER_CLEANUP=yes DRY_RUN=yes make test-gcp
 
 */
 
@@ -35,7 +35,6 @@ import (
 	helpers2 "github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
 	"github.com/gruntwork-io/terratest/modules/gcp"
-	"github.com/gruntwork-io/terratest/modules/ssh"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	gcpHelpers "github.com/protofire/polkadot-failover-mechanism/pkg/helpers/gcp"
 	"github.com/protofire/polkadot-failover-mechanism/tests/helpers"
@@ -51,7 +50,8 @@ var (
 	exitOnCleanup = len(os.Getenv("POLKADOT_TEST_EXIT_AFTER_CLEANUP")) > 0
 	noApply       = len(os.Getenv("POLKADOT_TEST_NO_INITIAL_TF_APPLY")) > 0
 	dryRun        = len(os.Getenv("DRY_RUN")) > 0
-	sshUser       = "ubuntu"
+	sshUser       = "polkadot"
+	terraformDir  = "../../gcp/"
 )
 
 func TestBundle(t *testing.T) {
@@ -77,6 +77,8 @@ func TestBundle(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("TF state bucket %q has been ensured", gcpBucket)
 
+	require.NoError(t, helpers.ClearLocalTFState(terraformDir))
+
 	if forceCleanup {
 		err = gcpHelpers.CleanResources(gcpProject, prefix, dryRun)
 		require.NoError(t, err)
@@ -88,12 +90,12 @@ func TestBundle(t *testing.T) {
 	}
 
 	// Generate new SSH key for test virtual machines
-	sshKey := ssh.GenerateRSAKeyPair(t, 4096)
+	sshKey := helpers.GenerateSSHKeys(t)
 
 	// Configure Terraform - set backend, minimum set of infrastructure variables. Also expose ssh
 	terraformOptions := &terraform.Options{
 		// The path to where our Terraform code is located
-		TerraformDir: "../../gcp/",
+		TerraformDir: terraformDir,
 
 		BackendConfig: map[string]interface{}{
 			"bucket": gcpBucket,
@@ -108,11 +110,11 @@ func TestBundle(t *testing.T) {
 			"gcp_ssh_user":          sshUser,
 			"gcp_ssh_pub_key":       sshKey.PublicKey,
 			"prefix":                prefix,
-			"delete_on_termination": "true",
+			"delete_on_termination": true,
 			"cpu_limit":             "1",
 			"ram_limit":             "1",
 			"validator_name":        "test",
-			"expose_ssh":            "true",
+			"expose_ssh":            true,
 			"node_key":              "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
 			"chain":                 "westend",
 			"admin_email":           "1627_DEV@altoros.com",
@@ -129,6 +131,7 @@ func TestBundle(t *testing.T) {
 			} else {
 				require.NoError(t, gcpHelpers.ClearTFBucket(gcpProject, gcpBucket))
 			}
+			require.NoError(t, helpers.ClearLocalTFState(terraformDir))
 		} else {
 			t.Log("Skipping terrafrom deferred cleanup...")
 		}

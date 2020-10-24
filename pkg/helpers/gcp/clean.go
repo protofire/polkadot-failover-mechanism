@@ -8,9 +8,10 @@ type cleanFunc func(project, prefix string, dryRun bool) error
 
 // CleanResources cleans gcp resources
 func CleanResources(project, prefix string, dryRun bool) error {
-	var result *multierror.Error
 
-	funcs := []cleanFunc{
+	result := &multierror.Error{}
+
+	functions := []cleanFunc{
 		InstanceGroupsClean,
 		SMClean,
 		HealthCheckClean,
@@ -21,8 +22,8 @@ func CleanResources(project, prefix string, dryRun bool) error {
 		InstanceTemplatesClean,
 	}
 
-	for _, fnc := range funcs {
-		err := fnc(project, prefix, dryRun)
+	for _, function := range functions {
+		err := function(project, prefix, dryRun)
 		if err != nil {
 			result = multierror.Append(result, err)
 		}

@@ -12,7 +12,7 @@ module "primary_region" {
   delete_on_termination = var.delete_on_termination
 
   chain      = var.chain
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
@@ -47,7 +47,7 @@ module "secondary_region" {
   delete_on_termination = var.delete_on_termination
 
   chain      = var.chain
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
@@ -82,7 +82,7 @@ module "tertiary_region" {
   delete_on_termination = var.delete_on_termination
 
   chain      = var.chain
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit

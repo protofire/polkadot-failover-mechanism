@@ -59,7 +59,7 @@ func prepareZoneGetOp(ctx context.Context, client *compute.Service, project, zon
 
 func waitForOperation(ctx context.Context, op *compute.Operation, getOp getOp) error {
 
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	waiter := time.NewTimer(600 * time.Second)
 	defer ticker.Stop()
 	defer waiter.Stop()
@@ -69,6 +69,8 @@ func waitForOperation(ctx context.Context, op *compute.Operation, getOp getOp) e
 	for {
 		select {
 		case <-ctx.Done():
+			ticker.Stop()
+			waiter.Stop()
 			return fmt.Errorf("cancelled waiting for operation %q to complete", result.Name)
 		case <-waiter.C:
 			return fmt.Errorf("timeout waiting for operation %q to complete", result.Name)

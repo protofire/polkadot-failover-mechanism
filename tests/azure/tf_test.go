@@ -18,8 +18,8 @@ Additional environments:
 	POLKADOT_TEST_INITIAL_TF_CLEANUP    - terraform destroy command before tests
 	POLKADOT_TEST_NO_INITIAL_TF_APPLY   - no terraform apply command before tests
 
-POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_INITIAL_TF_CLEANUP=yes make azure
-POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_NO_INITIAL_TF_APPLY=yes make azure
+POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_INITIAL_TF_CLEANUP=yes make test-azure
+POLKADOT_TEST_NO_POST_TF_CLEANUP=yes POLKADOT_TEST_NO_INITIAL_TF_APPLY=yes make test-azure
 
 */
 
@@ -91,8 +91,7 @@ func TestBundle(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("TF state bucket %q has been ensured", azureBucket)
 
-	err = helpers.ClearLocalTFState(terraformDir)
-	require.NoError(t, err)
+	require.NoError(t, helpers.ClearLocalTFState(terraformDir))
 
 	// Generate new SSH key for test virtual machines
 	sshKey := helpers.GenerateSSHKeys(t)
@@ -146,8 +145,7 @@ func TestBundle(t *testing.T) {
 			} else {
 				require.NoError(t, azure.ClearTFBucket(azureStorageAccount, azureStorageAccessKey, azureBucket))
 			}
-			err = helpers.ClearLocalTFState(terraformDir)
-			require.NoError(t, err)
+			require.NoError(t, helpers.ClearLocalTFState(terraformDir))
 		} else {
 			t.Log("Skipping terraform deferred cleanup...")
 		}

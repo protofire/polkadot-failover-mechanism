@@ -20,57 +20,69 @@ variable "prefix" {
 }
 
 variable "public_subnet_cidrs" {
+  type        = list(string)
   description = "Subnet CIDR for each region, must be different for VPC peering to work"
   default     = ["10.0.0.0/24", "10.1.0.0/24", "10.2.0.0/24"]
 }
 
 variable "instance_type" {
+  type    = string
   default = "n1-standard-1"
 }
 
 variable "cpu_limit" {
+  type        = string
   default     = "0.75"
   description = "CPU limit in CPUs number that Polkadot node can use. Should never be greater than chosen instance type has."
 }
 
 variable "ram_limit" {
+  type        = string
   default     = "3.5"
   description = "RAM limit in GB that Polkadot node can use. Should never be greater than chosen instance type has."
 }
 
 variable "disk_size" {
+  type    = number
   default = 80
 }
 
 variable "delete_on_termination" {
-  default     = "false"
+  type        = bool
+  default     = false
   description = "Defines whether or not to delete data disks on termination. Useful when using scripts with CI"
 }
 
 variable "validator_name" {
+  type        = string
   default     = "Polkadot Failover validator"
   description = "A moniker of the validator"
 }
 
 variable "instance_count" {
+  type        = list(number)
   default     = [1, 1, 1]
   description = "A number of instances to run in each region. Odd number of instances in total is a must have for proper work"
 }
 
 variable "chain" {
+  type        = string
   default     = "kusama"
   description = "A name of the chain to run Polkadot node at"
 }
 
 variable "health_check_interval" {
+  type    = number
   default = 10
 }
 
 variable "health_check_healthy_threshold" {
+  type    = number
   default = 3
 }
 
 variable "health_check_unhealthy_threshold" {
+  type    = number
   default = 3
 }
 
@@ -83,22 +95,27 @@ variable "validator_keys" {
 }
 
 variable "expose_ssh" {
-  default = "true"
+  type    = bool
+  default = false
 }
 
 variable "node_key" {
+  type        = string
   description = "A unique ed25519 key that identifies the node"
 }
 
 variable "admin_email" {
+  type        = string
   description = "An Admin email to send alerts to"
 }
 
 variable "gcp_ssh_user" {
+  type    = string
   default = ""
 }
 
 variable "gcp_ssh_pub_key" {
+  type    = string
   default = ""
 }
 
@@ -106,4 +123,9 @@ variable "docker_image" {
   description = "Polkadot docker image"
   type        = string
   default     = "parity/polkadot:master"
+}
+
+variable "metrics_namespace" {
+  type    = string
+  default = "polkadot"
 }
