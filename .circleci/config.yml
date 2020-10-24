@@ -114,7 +114,8 @@ jobs:
             make build-azure-provider
             VERSION=$(git describe --tags --abbrev=8 --exact-match 2>/dev/null || echo "${AZURE_POLCADOT_PROVIDER_VERSION}")
             VERSION=${VERSION#*-}
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./terraform-provider-polkadot
+            mv ./terraform-provider-polkadot ./terraform-provider-polkadot-azure
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./terraform-provider-polkadot-azure
       - slack/status:
           fail_only: true
 
