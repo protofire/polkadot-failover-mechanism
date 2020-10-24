@@ -93,7 +93,8 @@ variable "subscription" {
 }
 
 variable "expose_ssh" {
-  default = "False"
+  type    = bool
+  default = false
 }
 
 variable "ssh_key_content" {

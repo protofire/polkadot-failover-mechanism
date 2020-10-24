@@ -141,8 +141,8 @@ variable "admin_user" {
 }
 
 variable "expose_ssh" {
-  type    = string
-  default = "False"
+  type    = bool
+  default = false
 }
 
 variable "sa_type" {
