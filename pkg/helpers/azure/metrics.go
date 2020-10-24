@@ -218,3 +218,37 @@ func LogMetrics(metrics map[string]insights.Metric, level string) {
 		}
 	}
 }
+
+// WaitForValidator waits till validator metrics is being appeared
+func WaitForValidator(ctx context.Context, client *insights.MetricsClient, vmScaleSetNames []string, resourceGroup, metricName, metricNamespace string, timeout int) (Validator, error) {
+
+	timer := time.NewTimer(time.Duration(timeout) * time.Second)
+	timerChan := timer.C
+
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-timerChan:
+			return Validator{}, fmt.Errorf("timeout waiting alive validator")
+		default:
+			validator, err := GetCurrentValidator(
+				ctx,
+				client,
+				vmScaleSetNames,
+				resourceGroup,
+				metricName,
+				metricNamespace,
+				insights.Maximum,
+			)
+			if err != nil {
+				return Validator{}, err
+			}
+			if validator.ScaleSetName != "" {
+				return validator, err
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+
+}

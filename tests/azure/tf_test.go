@@ -29,9 +29,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
-
-	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/resources/mgmt/insights"
 
 	helpers2 "github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
@@ -313,36 +310,7 @@ func TestBundle(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	waitForMetric := func(n int) (azure.Validator, error) {
-
-		for i := 0; i < n; i++ {
-
-			validator, err := azure.GetCurrentValidator(
-				ctx,
-				&metricsClient,
-				vmScaleSetNames,
-				azureResourceGroup,
-				metricName,
-				metricNamespace,
-				insights.Maximum,
-			)
-
-			if err != nil {
-				return azure.Validator{}, err
-			}
-
-			if validator.ScaleSetName != "" {
-				return validator, err
-			}
-
-			time.Sleep(60 * time.Second)
-		}
-
-		return azure.Validator{}, err
-
-	}
-
-	validatorBefore, err := waitForMetric(10)
+	validatorBefore, err := azure.WaitForValidator(ctx, &metricsClient, vmScaleSetNames, azureResourceGroup, metricName, metricNamespace, 600)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, validatorBefore.ScaleSetName)
@@ -352,7 +320,7 @@ func TestBundle(t *testing.T) {
 
 	t.Run("singleMode", func(t *testing.T) {
 
-		validatorAfter, err := waitForMetric(10)
+		validatorAfter, err := azure.WaitForValidator(ctx, &metricsClient, vmScaleSetNames, azureResourceGroup, metricName, metricNamespace, 600)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, validatorAfter.ScaleSetName)
