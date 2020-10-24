@@ -146,8 +146,10 @@ func TestBundle(t *testing.T) {
 			} else {
 				require.NoError(t, azure.ClearTFBucket(azureStorageAccount, azureStorageAccessKey, azureBucket))
 			}
+			err = helpers.ClearLocalTFState(terraformDir)
+			require.NoError(t, err)
 		} else {
-			t.Log("Skipping terrafrom deferred cleanup...")
+			t.Log("Skipping terraform deferred cleanup...")
 		}
 	})
 
