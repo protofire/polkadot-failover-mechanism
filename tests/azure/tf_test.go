@@ -322,19 +322,21 @@ func TestBundle(t *testing.T) {
 
 	t.Run("singleMode", func(t *testing.T) {
 
-		validatorAfter, err := azure.WaitForValidator(ctx, &metricsClient, vmScaleSetNames, azureResourceGroup, metricName, metricNamespace, 600)
-		require.NoError(t, err)
+		t.Run("CheckValidator", func(t *testing.T) {
+			validatorAfter, err := azure.WaitForValidator(ctx, &metricsClient, vmScaleSetNames, azureResourceGroup, metricName, metricNamespace, 600)
+			require.NoError(t, err)
+			require.NotEmpty(t, validatorAfter.ScaleSetName)
+			require.NotEmpty(t, validatorAfter.Hostname)
+			require.Equal(t, validatorAfter.ScaleSetName, validatorBefore.ScaleSetName)
+			require.Equal(t, validatorAfter.Hostname, validatorBefore.Hostname)
+		})
 
-		require.NotEmpty(t, validatorAfter.ScaleSetName)
-		require.NotEmpty(t, validatorAfter.Hostname)
-
-		require.Equal(t, validatorAfter.ScaleSetName, validatorBefore.ScaleSetName)
-		require.Equal(t, validatorAfter.Hostname, validatorBefore.Hostname)
-
-		vms, err = azure.GetVirtualMachineScaleSetVMs(prefix, azureSubscriptionID, azureResourceGroup)
-		require.NoError(t, err)
-		require.Equal(t, 1, vms.Size())
-		require.Len(t, vms, 3)
+		t.Run("CheckVirtualMachines", func(t *testing.T) {
+			vms, err = azure.GetVirtualMachineScaleSetVMs(prefix, azureSubscriptionID, azureResourceGroup)
+			require.NoError(t, err)
+			require.Equal(t, 1, vms.Size())
+			require.Len(t, vms, 3)
+		})
 
 	})
 
