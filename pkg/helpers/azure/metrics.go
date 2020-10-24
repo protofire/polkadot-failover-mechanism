@@ -171,7 +171,9 @@ func getDataAggregation(data insights.MetricValue, aggregationType insights.Aggr
 	return -1
 }
 
-func FindValidatorScaleSetInstanceName(metrics map[string]insights.Metric, aggregationType insights.AggregationType, checkValue int) Validator {
+func FindValidator(metrics map[string]insights.Metric, aggregationType insights.AggregationType, checkValue int) (Validator, error) {
+
+	var validators []Validator
 
 	for vmScaleSetName, metric := range metrics {
 		if metric.Timeseries != nil && len(*metric.Timeseries) > 0 {
@@ -188,21 +190,25 @@ func FindValidatorScaleSetInstanceName(metrics map[string]insights.Metric, aggre
 						}
 					}
 					if getDataAggregation(data, aggregationType, checkValue) == checkValue {
-						return Validator{
+						validators = append(validators, Validator{
 							ScaleSetName: vmScaleSetName,
 							Hostname:     hostname,
 							Metric:       checkValue,
-						}
+						})
+						break
 					}
 				}
 			}
 		}
 	}
 
-	return Validator{
-		ScaleSetName: "",
-		Hostname:     "",
-		Metric:       0,
+	switch len(validators) {
+	case 0:
+		return Validator{}, fmt.Errorf("cannot find validators")
+	case 1:
+		return validators[0], nil
+	default:
+		return Validator{}, fmt.Errorf("found %d validators: %#v", len(validators), validators)
 	}
 
 }
@@ -220,7 +226,15 @@ func LogMetrics(metrics map[string]insights.Metric, level string) {
 }
 
 // WaitForValidator waits till validator metrics is being appeared
-func WaitForValidator(ctx context.Context, client *insights.MetricsClient, vmScaleSetNames []string, resourceGroup, metricName, metricNamespace string, timeout int) (Validator, error) {
+func WaitForValidator(
+	ctx context.Context,
+	client *insights.MetricsClient,
+	vmScaleSetNames []string,
+	resourceGroup,
+	metricName,
+	metricNamespace string,
+	timeout int,
+) (Validator, error) {
 
 	timer := time.NewTimer(time.Duration(timeout) * time.Second)
 	timerChan := timer.C
@@ -230,7 +244,7 @@ func WaitForValidator(ctx context.Context, client *insights.MetricsClient, vmSca
 	for {
 		select {
 		case <-timerChan:
-			return Validator{}, fmt.Errorf("timeout waiting alive validator")
+			return Validator{}, fmt.Errorf("timeout waiting for validator")
 		default:
 			validator, err := GetCurrentValidator(
 				ctx,
@@ -241,10 +255,7 @@ func WaitForValidator(ctx context.Context, client *insights.MetricsClient, vmSca
 				metricNamespace,
 				insights.Maximum,
 			)
-			if err != nil {
-				return Validator{}, err
-			}
-			if validator.ScaleSetName != "" {
+			if err == nil && validator.ScaleSetName != "" {
 				return validator, err
 			}
 			time.Sleep(5 * time.Second)

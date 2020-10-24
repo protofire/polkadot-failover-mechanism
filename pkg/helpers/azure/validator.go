@@ -35,8 +35,6 @@ func GetCurrentValidator(
 		return Validator{}, fmt.Errorf("[ERROR]. Cannot get metric %s for namespace %s: %w", metricName, metricNameSpace, err)
 	}
 
-	LogMetrics(metrics, "DEBUG")
-
-	return FindValidatorScaleSetInstanceName(metrics, aggregator, 1), nil
+	return FindValidator(metrics, aggregator, 1)
 
 }
