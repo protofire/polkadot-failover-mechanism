@@ -151,99 +151,109 @@ func TestBundle(t *testing.T) {
 	// TEST 1: Verify that there are healthy instances in each region with public ips assigned
 	var instanceIPs []string
 
-	t.Run("Instances", func(t *testing.T) {
-		for _, value := range gcpRegion {
-			regionInstanceIPs := gcp.FetchRegionalInstanceGroup(t, gcpProject, value, fmt.Sprintf("%s-instance-group-manager", prefix)).GetPublicIps(t, gcpProject)
+	t.Run("DistributedMode", func(t *testing.T) {
 
-			require.GreaterOrEqualf(t, len(regionInstanceIPs), 1, "ERROR! No instances found in %s region.", value)
-			t.Logf("INFO. The following instances found in %s region: %s.", value, strings.Join(regionInstanceIPs, ","))
+		t.Run("Instances", func(t *testing.T) {
+			for _, value := range gcpRegion {
+				regionInstanceIPs := gcp.FetchRegionalInstanceGroup(t, gcpProject, value, fmt.Sprintf("%s-instance-group-manager", prefix)).GetPublicIps(t, gcpProject)
 
-			// Fetching PublicIPs for the instances we have found
-			instanceIPs = append(instanceIPs, regionInstanceIPs...)
-			t.Logf("INFO. Instances IPs found in all regions: %s", strings.Join(instanceIPs, ","))
-		}
+				require.GreaterOrEqualf(t, len(regionInstanceIPs), 1, "ERROR! No instances found in %s region.", value)
+				t.Logf("INFO. The following instances found in %s region: %s.", value, strings.Join(regionInstanceIPs, ","))
+
+				// Fetching PublicIPs for the instances we have found
+				instanceIPs = append(instanceIPs, regionInstanceIPs...)
+				t.Logf("INFO. Instances IPs found in all regions: %s", strings.Join(instanceIPs, ","))
+			}
+		})
+
+		// TEST 2: Verify the number of existing GCP instances - should be an odd number
+		t.Run("InstanceCount", func(t *testing.T) {
+
+			instanceCount := len(instanceIPs)
+
+			require.Equal(t, instanceCount%2, 1, "ERROR! There are even instances running")
+			t.Log("INFO. There are odd instances running")
+
+			// TEST 3: Verify the number of existing EC2 instances - should be at least 3
+			require.Greaterf(t, instanceCount, 2, "ERROR! Minimum viable instance count (3) not reached. There are %d instances running.", instanceCount)
+			t.Logf("INFO. Minimum viable instance count (3) reached. There are %d instances running.", instanceCount)
+		})
+
+		// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnance
+		t.Run("ConsulVerifications", func(t *testing.T) {
+
+			if assert.True(t, helpers.ConsulLockCheck(t, instanceIPs, sshKey, sshUser)) {
+				t.Log("INFO. Consul lock check passed. Each Consul node can see exactly 1 lock.")
+			}
+
+			// TEST 5: All of the Consul nodes should be healthy
+			if assert.True(t, helpers.ConsulCheck(t, instanceIPs, sshKey, sshUser)) {
+				t.Log("INFO. Consul check passed. Each node can see full cluster, all nodes are healthy")
+			}
+
+		})
+
+		t.Run("PolkadotVerifications", func(t *testing.T) {
+
+			// TEST 6: Verify that there is only one Polkadot node working in Validator mode at a time
+			if assert.True(t, helpers.LeadersCheck(t, instanceIPs, sshKey, sshUser)) {
+				t.Log("INFO. Leaders check passed. Exactly 1 leader found")
+			}
+			// TEST 7: Verify that all Polkadot nodes are healthy
+			if assert.True(t, helpers.PolkadotCheck(t, instanceIPs, sshKey, sshUser)) {
+				t.Log("INFO. Polkadot node check passed. All instances are healthy")
+			}
+
+		})
+
+		// TEST 8: All the validator keys were successfully uploaded
+		t.Run("SMTests", func(t *testing.T) {
+			if assert.True(t, gcpHelpers.SMCheck(t, prefix, gcpProject)) {
+				t.Log("INFO. All keys were uploaded. Private key is encrypted.")
+			}
+		})
+
+		// TEST 9: All the firewalls were successfully created
+		t.Run("FirewallTests", func(t *testing.T) {
+			if assert.NoError(t, gcpHelpers.FirewallCheck(prefix, gcpProject)) {
+				t.Log("INFO. All firewalls were successfully created")
+			}
+		})
+
+		// TEST 10: Check that all disks are being mounted
+		t.Run("VolumesTests", func(t *testing.T) {
+			if assert.NoError(t, gcpHelpers.VolumesCheck(prefix, gcpProject)) {
+				t.Log("INFO. All volumes were successfully created and attached")
+			}
+		})
+
+		// TEST 11: Check that all alert policies have been created
+		t.Run("AlertsTests", func(t *testing.T) {
+			if assert.NoError(t, gcpHelpers.AlertsPoliciesCheck(prefix, gcpProject)) {
+				t.Log("INFO. All alerts policies were successfully created")
+			}
+		})
+
+		// TEST 12: Instances health check
+		t.Run("HealthCheckTests", func(t *testing.T) {
+			if assert.NoError(t, gcpHelpers.HealthStatusCheck(prefix, gcpProject)) {
+				t.Log("INFO. There are all healthy instances")
+			}
+		})
+
+		// TEST 13: Check that there are exactly 5 keys in the keystore
+		t.Run("KeystoreTests", func(t *testing.T) {
+			if assert.True(t, helpers.KeystoreCheck(t, instanceIPs, sshKey, sshUser)) {
+				t.Log("INFO. There are exactly 5 keys in the Keystore")
+			}
+		})
+
 	})
 
-	// TEST 2: Verify the number of existing GCP instances - should be an odd number
-	t.Run("InstanceCount", func(t *testing.T) {
-
-		instanceCount := len(instanceIPs)
-
-		require.Equal(t, instanceCount%2, 1, "ERROR! There are even instances running")
-		t.Log("INFO. There are odd instances running")
-
-		// TEST 3: Verify the number of existing EC2 instances - should be at least 3
-		require.Greaterf(t, instanceCount, 2, "ERROR! Minimum viable instance count (3) not reached. There are %d instances running.", instanceCount)
-		t.Logf("INFO. Minimum viable instance count (3) reached. There are %d instances running.", instanceCount)
-	})
-
-	// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnance
-	t.Run("ConsulVerifications", func(t *testing.T) {
-
-		if assert.True(t, helpers.ConsulLockCheck(t, instanceIPs, sshKey, sshUser)) {
-			t.Log("INFO. Consul lock check passed. Each Consul node can see exactly 1 lock.")
-		}
-
-		// TEST 5: All of the Consul nodes should be healthy
-		if assert.True(t, helpers.ConsulCheck(t, instanceIPs, sshKey, sshUser)) {
-			t.Log("INFO. Consul check passed. Each node can see full cluster, all nodes are healthy")
-		}
-
-	})
-
-	t.Run("PolkadotVerifications", func(t *testing.T) {
-
-		// TEST 6: Verify that there is only one Polkadot node working in Validator mode at a time
-		if assert.True(t, helpers.LeadersCheck(t, instanceIPs, sshKey, sshUser)) {
-			t.Log("INFO. Leaders check passed. Exactly 1 leader found")
-		}
-		// TEST 7: Verify that all Polkadot nodes are healthy
-		if assert.True(t, helpers.PolkadotCheck(t, instanceIPs, sshKey, sshUser)) {
-			t.Log("INFO. Polkadot node check passed. All instances are healthy")
-		}
-
-	})
-
-	// TEST 8: All the validator keys were successfully uploaded
-	t.Run("SMTests", func(t *testing.T) {
-		if assert.True(t, gcpHelpers.SMCheck(t, prefix, gcpProject)) {
-			t.Log("INFO. All keys were uploaded. Private key is encrypted.")
-		}
-	})
-
-	// TEST 9: All the firewalls were successfully created
-	t.Run("FirewallTests", func(t *testing.T) {
-		if assert.NoError(t, gcpHelpers.FirewallCheck(prefix, gcpProject)) {
-			t.Log("INFO. All firewalls were successfully created")
-		}
-	})
-
-	// TEST 10: Check that all disks are being mounted
-	t.Run("VolumesTests", func(t *testing.T) {
-		if assert.NoError(t, gcpHelpers.VolumesCheck(prefix, gcpProject)) {
-			t.Log("INFO. All volumes were successfully created and attached")
-		}
-	})
-
-	// TEST 11: Check that all alert policies have been created
-	t.Run("AlertsTests", func(t *testing.T) {
-		if assert.NoError(t, gcpHelpers.AlertsPoliciesCheck(prefix, gcpProject)) {
-			t.Log("INFO. All alerts policies were successfully created")
-		}
-	})
-
-	// TEST 12: Instances health check
-	t.Run("HealthCheckTests", func(t *testing.T) {
-		if assert.NoError(t, gcpHelpers.HealthStatusCheck(prefix, gcpProject)) {
-			t.Log("INFO. There are all healthy instances")
-		}
-	})
-
-	// TEST 13: Check that there are exactly 5 keys in the keystore
-	t.Run("KeystoreTests", func(t *testing.T) {
-		if assert.True(t, helpers.KeystoreCheck(t, instanceIPs, sshKey, sshUser)) {
-			t.Log("INFO. There are exactly 5 keys in the Keystore")
-		}
+	t.Run("SingleMode", func(t *testing.T) {
+		validator, err := gcpHelpers.GetValidator(gcpProject, prefix, 1)
+		require.NoError(t, err)
+		require.NotEmpty(t, validator.InstanceName)
 	})
 
 }

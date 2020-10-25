@@ -3,8 +3,11 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
+
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
@@ -29,7 +32,7 @@ func getMetricsClient() (*monitoring.MetricClient, error) {
 	return client, nil
 }
 
-func prepareFilter(prefix, resourceType, metricsNamespace, metricsFamily, metricName string, instanceNames ...string) string {
+func prepareFilter(prefix, project, resourceType, metricsNamespace, metricsFamily, metricName string, instanceNames ...string) string {
 
 	var instanceFilters []string
 
@@ -40,8 +43,9 @@ func prepareFilter(prefix, resourceType, metricsNamespace, metricsFamily, metric
 	instancesFilter := strings.Join(instanceFilters, " OR ")
 
 	mainFilter := fmt.Sprintf(
-		`resource.type = "%s" AND metric.type = "custom.googleapis.com/%s/%s/%s" AND metric.label.prefix = "%s"`,
+		`resource.type = "%s" AND resource.label.project_id = "%s" AND metric.type = "custom.googleapis.com/%s/%s/%s" AND metric.label.prefix = "%s"`,
 		resourceType,
+		project,
 		metricsNamespace,
 		metricsFamily,
 		metricName,
@@ -69,7 +73,18 @@ func listMetrics(
 	instanceNames ...string,
 ) (InstanceMetricPoints, error) {
 
-	filter := prepareFilter(prefix, resourceType, metricsNamespace, metricsFamily, metricName, instanceNames...)
+	filter := prepareFilter(
+		prefix,
+		project,
+		resourceType,
+		metricsNamespace,
+		metricsFamily,
+		metricName,
+		instanceNames...,
+	)
+
+	log.Printf("[DEBUG]. Filtering time series with filter: %s", filter)
+
 	startTime := time.Now().UTC().Add(time.Minute * -time.Duration(interval))
 	endTime := time.Now().UTC()
 
@@ -98,7 +113,7 @@ func listMetrics(
 	}
 
 	timeSeriesIterator := client.ListTimeSeries(ctx, &req)
-	result := make(InstanceMetricPoints)
+	results := make(InstanceMetricPoints)
 
 	for {
 		timeSeries, err := timeSeriesIterator.Next()
@@ -106,23 +121,21 @@ func listMetrics(
 			break
 		}
 		if err != nil {
-			return result, err
+			return results, err
 		}
 
-		metric := timeSeries.Metric
 		resource := timeSeries.Resource
 		instanceID := resource.Labels["instance_id"]
 		projectID := resource.Labels["project_id"]
-		metricPrefix := metric.Labels["prefix"]
 
-		if projectID != project || metricPrefix != prefix {
+		if projectID != project || !strings.HasPrefix(instanceID, helpers.GetPrefix(prefix)) {
 			continue
 		}
-		result[instanceID] = timeSeries.Points
+		results[instanceID] = timeSeries.Points
 
 	}
 
-	return result, nil
+	return results, nil
 
 }
 
@@ -142,7 +155,7 @@ func GetValidatorMetrics(
 		"polkadot",
 		"validator",
 		"value",
-		1,
+		5,
 		60,
 		instanceNames...,
 	)

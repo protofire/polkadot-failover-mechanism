@@ -115,6 +115,7 @@ func AlertPolicyClean(project, prefix string, dryRun bool) error {
 func AlertsPoliciesCheck(prefix, project string) error {
 
 	ctx := context.Background()
+
 	client, err := monitoring.NewAlertPolicyClient(ctx)
 	if err != nil {
 		return fmt.Errorf("Cannot create notification alerts client: %w", err)
@@ -131,7 +132,7 @@ func AlertsPoliciesCheck(prefix, project string) error {
 
 	alertPolicyConditions := alertPolicies[0].Conditions
 
-	if len(alertPolicyConditions) != 4 {
+	if len(alertPolicyConditions) != 5 {
 		return fmt.Errorf("Wrong alert policy conditions count: %d", len(alertPolicyConditions))
 	}
 
