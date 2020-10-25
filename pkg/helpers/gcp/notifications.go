@@ -16,7 +16,7 @@ import (
 
 func listMonitoringChannels(ctx context.Context, client *monitoring.NotificationChannelClient, project, prefix string) ([]string, error) {
 
-	fullPrefix := getPrefix(prefix)
+	fullPrefix := helpers.GetPrefix(prefix)
 
 	channelReq := &monitoringpb.ListNotificationChannelsRequest{
 		Name:   "projects/" + project,
@@ -37,8 +37,8 @@ func listMonitoringChannels(ctx context.Context, client *monitoring.Notification
 			return channels, err
 		}
 
-		shortName := lastPartOnSplit(channel.Name, "/")
-		shortDisplayName := lastPartOnSplit(channel.DisplayName, "/")
+		shortName := helpers.LastPartOnSplit(channel.Name, "/")
+		shortDisplayName := helpers.LastPartOnSplit(channel.DisplayName, "/")
 
 		if strings.HasPrefix(shortName, fullPrefix) || strings.HasPrefix(shortDisplayName, fullPrefix) {
 			channels = append(channels, channel.Name)

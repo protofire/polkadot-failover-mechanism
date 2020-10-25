@@ -12,12 +12,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/resources/mgmt/insights"
 )
 
-type Validator struct {
-	ScaleSetName string
-	Hostname     string
-	Metric       int
-}
-
 func getMetricsResourceURL(subscriptionID, resourceGroup, vmScaleSetName string) string {
 	return fmt.Sprintf(
 		"/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute/virtualMachineScaleSets/%s",
@@ -169,48 +163,6 @@ func getDataAggregation(data insights.MetricValue, aggregationType insights.Aggr
 		}
 	}
 	return -1
-}
-
-func FindValidator(metrics map[string]insights.Metric, aggregationType insights.AggregationType, checkValue int) (Validator, error) {
-
-	var validators []Validator
-
-	for vmScaleSetName, metric := range metrics {
-		if metric.Timeseries != nil && len(*metric.Timeseries) > 0 {
-			series := (*metric.Timeseries)[0]
-			if series.Data != nil && len(*series.Data) > 0 {
-				for _, data := range *series.Data {
-					metadata := series.Metadatavalues
-					hostname := ""
-					if metadata != nil && len(*series.Metadatavalues) > 0 {
-						for _, meta := range *series.Metadatavalues {
-							if meta.Name != nil && meta.Value != nil && meta.Name.Value != nil && *meta.Name.Value == "host" {
-								hostname = *meta.Value
-							}
-						}
-					}
-					if getDataAggregation(data, aggregationType, checkValue) == checkValue {
-						validators = append(validators, Validator{
-							ScaleSetName: vmScaleSetName,
-							Hostname:     hostname,
-							Metric:       checkValue,
-						})
-						break
-					}
-				}
-			}
-		}
-	}
-
-	switch len(validators) {
-	case 0:
-		return Validator{}, fmt.Errorf("cannot find validators")
-	case 1:
-		return validators[0], nil
-	default:
-		return Validator{}, fmt.Errorf("found %d validators: %#v", len(validators), validators)
-	}
-
 }
 
 // LogMetrics ...

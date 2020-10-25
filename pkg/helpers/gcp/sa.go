@@ -28,8 +28,8 @@ func SAClean(project, prefix string, dryRun bool) error {
 
 	for _, account := range response.Accounts {
 
-		accountName := lastPartOnSplit(account.Name, "/")
-		if strings.HasPrefix(accountName, getPrefix(prefix)) {
+		accountName := helpers.LastPartOnSplit(account.Name, "/")
+		if strings.HasPrefix(accountName, helpers.GetPrefix(prefix)) {
 			serviceAccounts = append(serviceAccounts, account.Name)
 		}
 	}

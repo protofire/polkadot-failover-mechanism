@@ -93,7 +93,7 @@ func SMClean(project, prefix string, dryRun bool) error {
 		}
 		log.Printf("got secret: %s\n", secret.Name)
 
-		secretName := lastPartOnSplit(secret.Name, "/")
+		secretName := helpers.LastPartOnSplit(secret.Name, "/")
 
 		if strings.HasPrefix(secretName, fmt.Sprintf("%s_", prefix)) {
 			secretNames = append(secretNames, secret.Name)

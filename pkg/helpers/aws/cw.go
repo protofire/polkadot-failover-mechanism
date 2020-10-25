@@ -79,17 +79,19 @@ func CloudWatchCheck(t *testing.T, awsRegions []string, prefix string) bool {
 			t.Log("INFO. CloudWatch Alarms number matches the predefined value of 4")
 
 			// If alarm still has "INSUFFICIENT DATA" status - we need to wait until alarm either triggers or move into "OK" state.
+		loop:
 			for k, v := range check {
-				if v == "OK" {
+				switch v {
+				case "OK":
 					t.Logf("INFO. The CloudWatch Alarm %s in region %s has the state OK!", k, region)
 					continue
-				} else if v == "INSUFFICIENT_DATA" {
+				case "INSUFFICIENT_DATA":
 					t.Logf("INFO. The CloudWatch Alarm %s in region %s has insufficient data right now.", k, region)
 					insufficientDataFlag = true
-					break
-				} else {
+					break loop
+				default:
 					t.Errorf("ERROR! The CloudWatch Alarm %s in region %s has the state %s, which is not OK", k, region, v)
-					count = count + 1
+					count++
 				}
 			}
 

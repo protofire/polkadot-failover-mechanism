@@ -34,7 +34,7 @@ func getNetworks(ctx context.Context, client *compute.Service, project, prefix s
 
 	for _, network := range networks {
 
-		if strings.HasPrefix(network.Name, getPrefix(prefix)) {
+		if strings.HasPrefix(network.Name, helpers.GetPrefix(prefix)) {
 			networkNames = append(networkNames, network.Name)
 		}
 	}
@@ -56,12 +56,12 @@ func deleteNetworkSubnets(ctx context.Context, client *compute.Service, project,
 
 	for _, subnet := range subnetsList.Items {
 		for _, subnet := range subnet.Subnetworks {
-			networkName := lastPartOnSplit(subnet.Network, "/")
-			if _, ok := contains(networkNames, networkName); !ok {
+			networkName := helpers.LastPartOnSplit(subnet.Network, "/")
+			if _, ok := helpers.Contains(networkNames, networkName); !ok {
 				continue
 			}
-			regionName := lastPartOnSplit(subnet.Region, "/")
-			if strings.HasPrefix(subnet.Name, getPrefix(prefix)) {
+			regionName := helpers.LastPartOnSplit(subnet.Region, "/")
+			if strings.HasPrefix(subnet.Name, helpers.GetPrefix(prefix)) {
 				subnets = append(subnets, subnetItem{
 					network: networkName,
 					region:  regionName,
@@ -135,7 +135,7 @@ func getFirewalls(ctx context.Context, client *compute.Service, project, prefix 
 	var firewalls []*compute.Firewall
 
 	for _, firewall := range firewallsList.Items {
-		if strings.HasPrefix(firewall.Name, getPrefix(prefix)) {
+		if strings.HasPrefix(firewall.Name, helpers.GetPrefix(prefix)) {
 			firewalls = append(firewalls, firewall)
 		}
 	}
@@ -158,11 +158,11 @@ func deleteNetworkFirewalls(ctx context.Context, client *compute.Service, projec
 	var firewalls []string
 
 	for _, firewall := range firewallsList.Items {
-		networkName := lastPartOnSplit(firewall.Network, "/")
-		if _, ok := contains(networkNames, networkName); !ok {
+		networkName := helpers.LastPartOnSplit(firewall.Network, "/")
+		if _, ok := helpers.Contains(networkNames, networkName); !ok {
 			continue
 		}
-		if strings.HasPrefix(firewall.Name, getPrefix(prefix)) {
+		if strings.HasPrefix(firewall.Name, helpers.GetPrefix(prefix)) {
 			firewalls = append(firewalls, firewall.Name)
 		}
 	}

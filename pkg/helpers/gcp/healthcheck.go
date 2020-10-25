@@ -24,7 +24,7 @@ func getHealthChecks(ctx context.Context, client *compute.Service, project, pref
 
 	for _, item := range items {
 		for _, check := range item.HealthChecks {
-			if strings.HasPrefix(lastPartOnSplit(check.Name, "/"), getPrefix(prefix)) {
+			if strings.HasPrefix(helpers.LastPartOnSplit(check.Name, "/"), helpers.GetPrefix(prefix)) {
 				healthChecks = append(healthChecks, check)
 			}
 		}

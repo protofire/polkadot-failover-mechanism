@@ -140,7 +140,7 @@ func TestMetricsResponse(t *testing.T) {
 	mp[vmSSName1] = (*responseSuccess.Value)[0]
 	mp[vmSSName2] = (*responseBlank.Value)[0]
 
-	validator, err := FindValidator(mp, insights.Maximum, 1)
+	validator, err := findValidator(mp, insights.Maximum, 1)
 	require.NoError(t, err)
 	require.Equal(t, vmSSName1, validator.ScaleSetName)
 	require.Equal(t, "primary000002", validator.Hostname)
@@ -157,7 +157,7 @@ func TestMetrics(t *testing.T) {
 	mp := make(map[string]insights.Metric)
 	mp[vmSSName1] = metric
 
-	validator, err := FindValidator(mp, insights.Maximum, 1)
+	validator, err := findValidator(mp, insights.Maximum, 1)
 	require.NoError(t, err)
 	require.Equal(t, vmSSName1, validator.ScaleSetName)
 	require.Equal(t, "primary000000", validator.Hostname)

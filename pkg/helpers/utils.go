@@ -63,6 +63,7 @@ func RandStringBytes(n int) string {
 	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, n)
 	for i := range b {
+		// nolint
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
 	return string(b)
@@ -75,4 +76,20 @@ func FindStrIndex(input string, search []string) int {
 		}
 	}
 	return -1
+}
+
+func Contains(slice []string, val string) (int, bool) {
+	for i, item := range slice {
+		if item == val {
+			return i, true
+		}
+	}
+	return -1, false
+}
+
+func RemoveFromSlice(slice []string, i int) []string {
+	slice[i] = slice[len(slice)-1]
+	slice[len(slice)-1] = ""
+	slice = slice[:len(slice)-1]
+	return slice
 }

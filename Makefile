@@ -9,8 +9,8 @@ GOBIN_DEFAULT 			:= $(GOPATH)/bin
 export GOBIN 			?= $(GOBIN_DEFAULT)
 export GO111MODULE 		:= on
 TEST_ARGS_DEFAULT 		:= -v -p 1 -timeout 0
-TEST_ARGS 				?= $(TEST_ARGS_DEFAULT)
-TEST_PROVIDER_ARGS 		?= -v --timeout 0
+TEST_TF_ARGS 			?= $(TEST_ARGS_DEFAULT)
+TEST_ARGS 				?= -v --timeout 0
 HAS_GOLANGCI 			:= $(shell command -v golangci-lint;)
 HAS_GOIMPORTS 			:= $(shell command -v goimports;)
 GOOS            		?= $(shell go env GOOS)
@@ -42,16 +42,18 @@ clean:
 	go clean -cache
 
 test-aws: check cache
-	go test -tags=aws $(TEST_ARGS) ./tests/aws...
+	go test -tags=aws $(TEST_TF_ARGS) ./tests/aws...
 
 test-gcp: check cache
-	go test -tags=gcp $(TEST_ARGS) ./tests/gcp...
+	go test -tags=gcp $(TEST_TF_ARGS) ./tests/gcp...
 
 test-azure: cache install-azure-provider
-	go test -tags=azure $(TEST_ARGS) ./tests/azure...
+	go test -tags=azure $(TEST_TF_ARGS) ./tests/azure...
 
-test-azure-provider: check
+test-helpers:
 	go test $(TEST_ARGS) ./pkg/helpers...
+
+test-azure-provider: check test-helpers
 	go test $(TEST_ARGS) ./pkg/providers/azure...
 
 build-azure-provider: test-azure-provider
@@ -98,6 +100,6 @@ shell:
 		test-gcp \
 		test-azure \
 		test-all \
-		test-providers-all\
-		build-azure-provider\
+		test-providers-all \
+		build-azure-provider \
 		install-azure-provider

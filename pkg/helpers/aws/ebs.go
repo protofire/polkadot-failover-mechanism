@@ -3,7 +3,6 @@ package aws
 // This file contains all the supplementary functions that are required to query EC2's Elastic Block Storage API
 
 import (
-	"fmt"
 	"testing"
 
 	saws "github.com/aws/aws-sdk-go/aws"
@@ -14,7 +13,7 @@ import (
 )
 
 // getVolumeDescribe This function list all prefixed volumes that does not attached to any instance
-func getVolumeDescribe(t *testing.T, region string, value string) []*ec2.Volume {
+func getVolumeDescribe(t *testing.T, region string, value string) ([]*ec2.Volume, error) {
 
 	ses, err := session.NewSession(&saws.Config{
 		Region: saws.String(region),
@@ -42,36 +41,33 @@ func getVolumeDescribe(t *testing.T, region string, value string) []*ec2.Volume 
 	}
 	result, err := svc.DescribeVolumes(input)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			fmt.Println(err.Error())
+		if awsErr, ok := err.(awserr.Error); ok {
+			err = awsErr
 		}
-		//return
+		return nil, err
 	}
-	return result.Volumes
+	return result.Volumes, err
 }
 
-// VolumesCheck checks cvolumes
+// VolumesCheck checks volumes
 func VolumesCheck(t *testing.T, awsRegions []string, prefix string) bool {
 
 	count := 0
 	// Go through each region. Select unattached labeled disks. If no disks found, then the test passes successfully
 	for _, region := range awsRegions {
 
-		check := getVolumeDescribe(t, region, prefix)
+		volumes, err := getVolumeDescribe(t, region, prefix)
 
-		if len(check) == 0 {
+		if err != nil {
+			t.Error(err)
+		}
+
+		if len(volumes) == 0 {
 			t.Log("No unattached disks were found in region " + region)
 			continue
 		} else {
 			t.Error("Unattached disks were found in region " + region)
-			count = count + 1
+			count++
 		}
 
 	}

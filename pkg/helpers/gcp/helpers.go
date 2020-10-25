@@ -11,31 +11,6 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
-func getPrefix(prefix string) string {
-	return fmt.Sprintf("%s-", prefix)
-}
-
-func contains(slice []string, val string) (int, bool) {
-	for i, item := range slice {
-		if item == val {
-			return i, true
-		}
-	}
-	return -1, false
-}
-
-func removeFromSlice(slice []string, i int) []string {
-	slice[i] = slice[len(slice)-1]
-	slice[len(slice)-1] = ""
-	slice = slice[:len(slice)-1]
-	return slice
-}
-
-// nolint
-func lastPartOnSplit(s, delimiter string) string {
-	return s[strings.LastIndex(s, delimiter)+1:]
-}
-
 type getOp func(opName string) (*compute.Operation, error)
 
 func prepareGlobalGetOp(ctx context.Context, client *compute.Service, project string) getOp {

@@ -16,7 +16,7 @@ import (
 
 func listAlertPolicies(ctx context.Context, client *monitoring.AlertPolicyClient, project, prefix string) ([]*monitoringpb.AlertPolicy, error) {
 
-	fullPrefix := getPrefix(prefix)
+	fullPrefix := helpers.GetPrefix(prefix)
 
 	alertsReq := &monitoringpb.ListAlertPoliciesRequest{
 		Name:   "projects/" + project,
@@ -37,7 +37,7 @@ func listAlertPolicies(ctx context.Context, client *monitoring.AlertPolicyClient
 			return alertPolicies, err
 		}
 
-		shortDisplayName := lastPartOnSplit(alertPolicy.DisplayName, "/")
+		shortDisplayName := helpers.LastPartOnSplit(alertPolicy.DisplayName, "/")
 
 		if strings.HasPrefix(shortDisplayName, fullPrefix) {
 			alertPolicies = append(alertPolicies, alertPolicy)
@@ -140,15 +140,16 @@ func AlertsPoliciesCheck(prefix, project string) error {
 		"Health not OK",
 		"Validator less than 1",
 		"Validator more than 1",
+		"Disk consumed more than 90 percent",
 	}
 
 	var idx int
 	var ok bool
 	for _, condition := range alertPolicyConditions {
-		if idx, ok = contains(conditionNames, condition.DisplayName); !ok {
+		if idx, ok = helpers.Contains(conditionNames, condition.DisplayName); !ok {
 			return fmt.Errorf("Cannot find alert policy condition with name: %q", condition.DisplayName)
 		}
-		removeFromSlice(conditionNames, idx)
+		helpers.RemoveFromSlice(conditionNames, idx)
 	}
 
 	return nil

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
+
 	"github.com/hashicorp/go-multierror"
 	"google.golang.org/api/compute/v1"
 )
@@ -30,7 +32,7 @@ func VolumesCheck(prefix, project string) error {
 	for _, volume := range volumes.Items {
 		for _, disk := range volume.Disks {
 
-			if !strings.HasPrefix(disk.Name, getPrefix(prefix)) {
+			if !strings.HasPrefix(disk.Name, helpers.GetPrefix(prefix)) {
 				continue
 			}
 
