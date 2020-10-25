@@ -15,7 +15,7 @@ set -x -eE
 # Get hostname
 INSTANCE_ID=$(hostname)
 
-curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/gcp-telegraf/init-helpers/influxdb.repo
+curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/influxdb.repo
 
 # Install unzip, docker, jq, git
 /usr/bin/yum update -y
@@ -24,9 +24,9 @@ curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/prot
 zone=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/zone)
 
 # get helper functions to install and configure necessary tools and systems
-curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/gcp-telegraf/init-helpers/gcp/install_consul.sh
-curl -o /usr/local/bin/install_consulate.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/gcp-telegraf/init-helpers/install_consulate.sh
-curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/gcp-telegraf/init-helpers/gcp/telegraf.sh
+curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/gcp/install_consul.sh
+curl -o /usr/local/bin/install_consulate.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/install_consulate.sh
+curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/gcp/telegraf.sh
 
 source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh  
@@ -107,10 +107,10 @@ until [ $exit_code -eq 0 ]; do
 
 done
 
-curl -o /usr/local/bin/double-signing-control.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/gcp-telegraf/init-helpers/double-signing-control.sh
-curl -o /usr/local/bin/best-grep.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/gcp-telegraf/init-helpers/best-grep.sh
-curl -o /usr/local/bin/key-insert.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/gcp-telegraf/init-helpers/gcp/key-insert.sh
-curl -o /usr/local/bin/watcher.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/gcp-telegraf/init-helpers/watcher.sh
+curl -o /usr/local/bin/double-signing-control.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/double-signing-control.sh
+curl -o /usr/local/bin/best-grep.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/best-grep.sh
+curl -o /usr/local/bin/key-insert.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/gcp/key-insert.sh
+curl -o /usr/local/bin/watcher.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/watcher.sh
 
 chmod 700 /usr/local/bin/double-signing-control.sh
 chmod 700 /usr/local/bin/best-grep.sh
