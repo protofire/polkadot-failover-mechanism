@@ -2,10 +2,12 @@
 set -x -e -E
 
 # Fetch keys from SSM. Then add the fetched keys to the node via the curl request
-key_names=$(gcloud secrets list --format=json --filter="name ~ ${1}_ AND labels.prefix=${1} AND labels.type=key" | jq .[].name -r | cut -d '_' -f2 | uniq)
+readarray -t key_names < <(gcloud secrets list --format=json --filter="name ~ ${1}_ AND labels.prefix=${1} AND labels.type=key" | jq .[].name -r | cut -d '_' -f2 | uniq)
+
 for key_name in "${key_names[@]}"; do
 
-  echo "Adding key $key_name"
+  echo "Adding key '$key_name'"
+
   SEED_NAME=$(gcloud secrets list --format=json --filter="name ~ ${1}_${key_name}_seed AND labels.prefix=${1} AND labels.type=key" | jq -r .[0].name)
   KEY_NAME=$(gcloud secrets list --format=json --filter="name ~ ${1}_${key_name}_key AND labels.prefix=${1} AND labels.type=key" | jq -r .[0].name)
   TYPE_NAME=$(gcloud secrets list --format=json --filter="name ~ ${1}_${key_name}_type AND labels.prefix=${1} AND labels.type=key" | jq -r .[0].name)
