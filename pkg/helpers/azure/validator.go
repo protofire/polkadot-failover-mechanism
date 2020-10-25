@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/resources/mgmt/insights"
 )
@@ -85,4 +86,42 @@ func findValidator(metrics map[string]insights.Metric, aggregationType insights.
 		return Validator{}, fmt.Errorf("found %d validators: %#v", len(validators), validators)
 	}
 
+}
+
+// WaitForValidator waits while validator metrics is being appeared
+func WaitForValidator(
+	ctx context.Context,
+	client *insights.MetricsClient,
+	vmScaleSetNames []string,
+	resourceGroup,
+	metricName,
+	metricNamespace string,
+	timeout int,
+) (Validator, error) {
+
+	timer := time.NewTimer(time.Duration(timeout) * time.Second)
+	timerChan := timer.C
+
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-timerChan:
+			return Validator{}, fmt.Errorf("timeout waiting for validator")
+		default:
+			validator, err := GetCurrentValidator(
+				ctx,
+				client,
+				vmScaleSetNames,
+				resourceGroup,
+				metricName,
+				metricNamespace,
+				insights.Maximum,
+			)
+			if err == nil && validator.ScaleSetName != "" {
+				return validator, err
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
 }

@@ -251,7 +251,7 @@ func TestBundle(t *testing.T) {
 	})
 
 	t.Run("SingleMode", func(t *testing.T) {
-		validator, err := gcpHelpers.GetValidator(gcpProject, prefix, 1)
+		validator, err := gcpHelpers.WaitForValidator(gcpProject, prefix, 1, 600)
 		require.NoError(t, err)
 		require.NotEmpty(t, validator.InstanceName)
 	})
