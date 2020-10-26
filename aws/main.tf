@@ -56,8 +56,9 @@ module "primary_region" {
   chain          = var.chain
 
   asg_role   = aws_iam_instance_profile.monitoring.name
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
+  region    = var.aws_regions[0]
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
 
@@ -97,11 +98,12 @@ module "secondary_region" {
   key_content    = var.key_content
   chain          = var.chain
 
+  region    = var.aws_regions[1]
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
 
   asg_role   = aws_iam_instance_profile.monitoring.name
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
   regions = var.aws_regions
   cidrs   = var.vpc_cidrs
@@ -139,11 +141,12 @@ module "tertiary_region" {
   key_content    = var.key_content
   chain          = var.chain
 
+  region    = var.aws_regions[1]
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
 
   asg_role   = aws_iam_instance_profile.monitoring.name
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
   regions = var.aws_regions
   cidrs   = var.vpc_cidrs

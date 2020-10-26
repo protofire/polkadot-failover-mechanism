@@ -37,6 +37,7 @@ resource "aws_launch_template" "polkadot" {
     tags = {
       Name   = "${var.prefix}-failover-validator"
       prefix = var.prefix
+      region = var.region
     }
   }
 
@@ -46,6 +47,7 @@ resource "aws_launch_template" "polkadot" {
     tags = {
       Name   = "${var.prefix}-failover-validator-root"
       prefix = var.prefix
+      region = var.region
     }
   }
 
@@ -74,6 +76,7 @@ resource "aws_autoscaling_group" "polkadot" {
   min_size                  = var.instance_count
   desired_capacity          = var.instance_count
   wait_for_elb_capacity     = var.instance_count
+  wait_for_capacity_timeout = "20m"
   default_cooldown          = 300
   health_check_type         = "ELB"
   health_check_grace_period = 300
@@ -89,9 +92,10 @@ resource "aws_autoscaling_group" "polkadot" {
     aws_lb_target_group.rpc.id,
     aws_lb_target_group.lan.id,
     aws_lb_target_group.wan.id,
-  aws_lb_target_group.polkadot.id]
-  vpc_zone_identifier = [
-  var.subnet.id]
+    aws_lb_target_group.polkadot.id
+  ]
+
+  vpc_zone_identifier = [var.subnet.id]
 
   depends_on = [
     aws_ssm_parameter.keys,

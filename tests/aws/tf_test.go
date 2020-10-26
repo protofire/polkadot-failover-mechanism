@@ -18,7 +18,6 @@ import (
 	helpers2 "github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
 	taws "github.com/gruntwork-io/terratest/modules/aws"
-	"github.com/gruntwork-io/terratest/modules/ssh"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/aws"
@@ -33,6 +32,7 @@ var (
 	awsAccessKeys = []string{os.Getenv("AWS_ACCESS_KEY")}
 	awsSecretKeys = []string{os.Getenv("AWS_SECRET_KEY")}
 	sshUser       = "ec2-user"
+	terraformDir  = "../../aws/"
 )
 
 // A collection of tests that will be run
@@ -63,14 +63,17 @@ func TestBundle(t *testing.T) {
 
 	bucketCreated, err := aws.EnsureTFBucket(s3bucket, s3region)
 	require.NoError(t, err)
+	t.Logf("TF state bucket %q has been ensured", s3bucket)
+
+	require.NoError(t, helpers.ClearLocalTFState(terraformDir))
 
 	// Generate new SSH key for test virtual machines
-	sshKey := ssh.GenerateRSAKeyPair(t, 4096)
+	sshKey := helpers.GenerateSSHKeys(t)
 
 	// Configure Terraform - set backend, minimum set of infrastructure variables. Also expose ssh
 	terraformOptions := &terraform.Options{
 		// The path to where our Terraform code is located
-		TerraformDir: "../../aws/",
+		TerraformDir: terraformDir,
 
 		BackendConfig: map[string]interface{}{
 			"bucket": s3bucket,
@@ -87,11 +90,11 @@ func TestBundle(t *testing.T) {
 			"key_name":              "test",
 			"key_content":           sshKey.PublicKey,
 			"prefix":                prefix,
-			"delete_on_termination": "true",
+			"delete_on_termination": true,
 			"cpu_limit":             "1",
 			"ram_limit":             "1",
 			"validator_name":        "test",
-			"expose_ssh":            "true",
+			"expose_ssh":            true,
 			"node_key":              "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
 			"chain":                 "westend",
 		},
@@ -211,7 +214,7 @@ func TestBundle(t *testing.T) {
 
 	// TEST 11: Check that no CloudWatch alarm were triggered
 	t.Run("CloudWatch tests", func(t *testing.T) {
-		if assert.True(t, aws.CloudWatchCheck(t, awsRegions, prefix), "ERROR! Cloud Watch alarms are not in a good state") {
+		if assert.True(t, aws.CloudWatchCheck(t, awsRegions, prefix, 5), "ERROR! Cloud Watch alarms are not in a good state") {
 			t.Log("INFO. All Cloud Watch alarms were created. No Cloud Watch alarm were triggered.")
 		}
 	})

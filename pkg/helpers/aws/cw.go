@@ -62,25 +62,28 @@ func newCWClientE(region string) (*cloudwatch.CloudWatch, error) {
 }
 
 // CloudWatchCheck checks cloud watch
-func CloudWatchCheck(t *testing.T, awsRegions []string, prefix string) bool {
+func CloudWatchCheck(t *testing.T, awsRegions []string, prefix string, expectedAlertsCount int) bool {
 
-	count := 0
+	errors := 0
+	attempts := 0
+	maxAttempts := 100
 	for _, region := range awsRegions {
 		for {
 			insufficientDataFlag := false
-			check := getAlarmsNamesAndStatesByPrefix(t, region, prefix)
-			lencheck := len(check)
+			attempts++
+			alarms := getAlarmsNamesAndStatesByPrefix(t, region, prefix)
+			alarmsCount := len(alarms)
 
 			// Check that there are exactly 4 CloudWatch alarms (should be changed here if new alarms added)
-			if lencheck != 4 {
-				t.Errorf("ERROR! It is expected to have 4 CloudWatch Alarms in total, got %d", lencheck)
+			if alarmsCount != expectedAlertsCount {
+				t.Errorf("ERROR! It is expected to have %d CloudWatch Alarms in total, got %d", expectedAlertsCount, alarmsCount)
 				continue
 			}
-			t.Log("INFO. CloudWatch Alarms number matches the predefined value of 4")
+			t.Logf("INFO. CloudWatch Alarms number matches the predefined value of %d", expectedAlertsCount)
 
 			// If alarm still has "INSUFFICIENT DATA" status - we need to wait until alarm either triggers or move into "OK" state.
 		loop:
-			for k, v := range check {
+			for k, v := range alarms {
 				switch v {
 				case "OK":
 					t.Logf("INFO. The CloudWatch Alarm %s in region %s has the state OK!", k, region)
@@ -91,10 +94,14 @@ func CloudWatchCheck(t *testing.T, awsRegions []string, prefix string) bool {
 					break loop
 				default:
 					t.Errorf("ERROR! The CloudWatch Alarm %s in region %s has the state %s, which is not OK", k, region, v)
-					count++
+					errors++
 				}
 			}
 
+			if attempts >= maxAttempts {
+				t.Errorf("Max attempts waiting metrics status")
+				return false
+			}
 			// If some of the alarms has insufficient data state - rerun all the checks once again.
 			if !insufficientDataFlag {
 				break
@@ -106,5 +113,5 @@ func CloudWatchCheck(t *testing.T, awsRegions []string, prefix string) bool {
 
 	}
 
-	return count == 0
+	return errors == 0
 }
