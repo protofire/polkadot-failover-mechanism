@@ -117,7 +117,7 @@ chmod 700 /usr/local/bin/best-grep.sh
 chmod 700 /usr/local/bin/key-insert.sh
 chmod 700 /usr/local/bin/watcher.sh
 
-### This will add a crontab entry that will check nodes health from inside the VM and send data to the Azure Monitor
+### This will add a crontab entry that will check nodes health from inside the VM and send data to the GCP Monitor
 (echo '* * * * * /usr/local/bin/watcher.sh') | crontab -
 
 # Create lock for the instance
