@@ -19,7 +19,7 @@ trap stop TERM INT
 RESOURCE="/subscriptions/$1/resourceGroups/$2/providers/Microsoft.Compute/virtualMachineScaleSets/$3"
 shift 3
 
-max_attempts=500
+max_attempts=300
 attempts=0
 recheck_metrics_count=10
 success_metric_checks=0
