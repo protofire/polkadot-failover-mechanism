@@ -245,7 +245,7 @@ until [ $n -ge 6 ]; do
   set +eE
 
   /usr/local/bin/consul lock prefix \
-    "source /usr/local/bin/validator.sh &&
+    "source /usr/local/bin/validator.sh && \
     /usr/local/bin/double-signing-control.sh && \
     start_polkadot_passive_mode $docker_name ${cpu_limit} ${ram_limit}GB ${docker_image} ${chain} $data true && \
     /usr/local/bin/key-insert.sh ${prefix} && \
