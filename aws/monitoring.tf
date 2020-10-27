@@ -22,11 +22,7 @@ resource "aws_cloudwatch_metric_alarm" "validator_count" {
 
   dynamic "metric_query" {
 
-    for_each = concat(
-      data.aws_instances.ec2-asg-instances-info-1.ids,
-      data.aws_instances.ec2-asg-instances-info-2.ids,
-      data.aws_instances.ec2-asg-instances-info-3.ids,
-    )
+    for_each = local.instance_ids
 
     content {
       id = "m${metric_query.key}"
@@ -78,11 +74,7 @@ resource "aws_cloudwatch_metric_alarm" "validator_overflow" {
 
   dynamic "metric_query" {
 
-    for_each = concat(
-      data.aws_instances.ec2-asg-instances-info-1.ids,
-      data.aws_instances.ec2-asg-instances-info-2.ids,
-      data.aws_instances.ec2-asg-instances-info-3.ids,
-    )
+    for_each = local.instance_ids
 
     content {
       id = "m${metric_query.key}"

@@ -106,7 +106,7 @@ EOF
 resource "aws_iam_instance_profile" "monitoring" {
   provider = aws.primary
 
-  name = "${var.prefix}-polkadot.validator"
+  name = "${var.prefix}-polkadot-validator"
   role = aws_iam_role.monitoring.name
 
   depends_on = [aws_iam_policy.monitoring]
