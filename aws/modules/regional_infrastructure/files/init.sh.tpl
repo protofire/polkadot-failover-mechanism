@@ -59,20 +59,16 @@ curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/prot
 
 region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
 instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+hostname=$(hostname)
 zone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
 docker_name="polkadot"
 health_metric_name="health"
 data="/data"
 
-# Get hostname
-INSTANCE_ID=$(hostname)
-
 lbs=()
 [ -n "${lb-primary}" ] && lbs+=( "${lb-primary}" )
 [ -n "${lb-secondary}" ] && lbs+=( "${lb-secondary}" )
 [ -n "${lb-tertiary}" ] && lbs+=( "${lb-tertiary}" )
-
-regions=( "${primary-region}" "${secondary-region}" "${tertiary-region}" )
 
 # Check that instance profile is attached
 until aws sts get-caller-identity; do
@@ -191,7 +187,7 @@ curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofir
 
 source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh
-source /usr/local/bin/telegraf.sh "${prefix}" "$INSTANCE_ID" "$region" "${autoscaling-name}" "$instance_id"
+source /usr/local/bin/telegraf.sh "${prefix}" "$hostname" "${autoscaling-name}" "$instance_id" "${primary-region}" "${secondary-region}" "${tertiary-region}"
 /usr/bin/systemctl enable telegraf
 /usr/bin/systemctl restart telegraf
 

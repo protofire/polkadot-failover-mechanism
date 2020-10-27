@@ -147,8 +147,8 @@ func AlertsPoliciesCheck(prefix, project string) error {
 	var idx int
 	var ok bool
 	for _, condition := range alertPolicyConditions {
-		if idx, ok = helpers.Contains(conditionNames, condition.DisplayName); !ok {
-			return fmt.Errorf("Cannot find alert policy condition with name: %q", condition.DisplayName)
+		if idx, ok = helpers.StringsContains(condition.DisplayName, conditionNames); !ok {
+			return fmt.Errorf("cannot find alert policy condition with name: %q", condition.DisplayName)
 		}
 		helpers.RemoveFromSlice(conditionNames, idx)
 	}

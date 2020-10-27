@@ -1,91 +1,3 @@
-resource "aws_cloudwatch_metric_alarm" "validator_count" {
-
-  alarm_name          = "${var.prefix}-polkadot-validator-count"
-  comparison_operator = "LessThanThreshold"
-  evaluation_periods  = 3
-  datapoints_to_alarm = 3
-  threshold           = 1
-  treat_missing_data  = "missing"
-
-  alarm_description = "This alert triggers when there are not enough validators."
-  alarm_actions     = [aws_sns_topic.sns.arn]
-
-  metric_query {
-    id          = "e1"
-    expression  = "SUM(METRICS())"
-    label       = "Validator state"
-    return_data = "true"
-  }
-
-
-  dynamic "metric_query" {
-
-    for_each = data.aws_instances.ec2-asg-instance-info.ids
-
-    content {
-      id = "m${metric_query.key}"
-      metric {
-        metric_name = "validator_value"
-        period      = 60
-        stat        = "Sum"
-        namespace   = var.prefix
-        dimensions = {
-          asg_name    = aws_autoscaling_group.polkadot.name
-          instance_id = metric_query.value
-        }
-      }
-    }
-  }
-
-  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns, data.aws_instances.ec2-asg-instance-info]
-
-}
-
-resource "aws_cloudwatch_metric_alarm" "validator_overflow" {
-
-  alarm_name          = "${var.prefix}-polkadot-validator-overflow"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 3
-  datapoints_to_alarm = 3
-  threshold           = 1
-  treat_missing_data  = "missing"
-
-  alarm_description = "CRITICAL! This alert means that there are more than 1 validator at the same time."
-  alarm_actions     = [aws_sns_topic.sns.arn]
-
-  metric_query {
-
-    id          = "e2"
-    expression  = "SUM(METRICS())"
-    label       = "Validator state"
-    return_data = "true"
-
-  }
-
-  dynamic "metric_query" {
-
-    for_each = data.aws_instances.ec2-asg-instance-info.ids
-
-    content {
-      id = "m${metric_query.key}"
-      metric {
-        metric_name = "validator_value"
-        period      = 60
-        stat        = "Sum"
-        namespace   = var.prefix
-        dimensions = {
-          asg_name    = aws_autoscaling_group.polkadot.name
-          instance_id = metric_query.value
-        }
-      }
-    }
-  }
-
-  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns, data.aws_instances.ec2-asg-instance-info]
-
-}
-
-
 resource "aws_cloudwatch_metric_alarm" "health_status" {
 
   alarm_name          = "${var.prefix}-polkadot-health-status"
@@ -228,11 +140,10 @@ data "aws_instances" "ec2-asg-instance-info" {
     Name                        = "${var.prefix}-failover-validator"
     prefix                      = var.prefix
     "aws:autoscaling:groupName" = "${var.prefix}-polkadot-validator"
-    region                      = var.region
   }
 
   instance_state_names = ["running"]
 
-  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns]
+  depends_on = [aws_autoscaling_group.polkadot]
 
 }

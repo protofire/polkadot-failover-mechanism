@@ -141,7 +141,7 @@ module "tertiary_region" {
   key_content    = var.key_content
   chain          = var.chain
 
-  region    = var.aws_regions[1]
+  region    = var.aws_regions[2]
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
 

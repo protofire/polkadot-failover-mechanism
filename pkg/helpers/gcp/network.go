@@ -57,7 +57,7 @@ func deleteNetworkSubnets(ctx context.Context, client *compute.Service, project,
 	for _, subnet := range subnetsList.Items {
 		for _, subnet := range subnet.Subnetworks {
 			networkName := helpers.LastPartOnSplit(subnet.Network, "/")
-			if _, ok := helpers.Contains(networkNames, networkName); !ok {
+			if _, ok := helpers.StringsContains(networkName, networkNames); !ok {
 				continue
 			}
 			regionName := helpers.LastPartOnSplit(subnet.Region, "/")
@@ -159,7 +159,7 @@ func deleteNetworkFirewalls(ctx context.Context, client *compute.Service, projec
 
 	for _, firewall := range firewallsList.Items {
 		networkName := helpers.LastPartOnSplit(firewall.Network, "/")
-		if _, ok := helpers.Contains(networkNames, networkName); !ok {
+		if _, ok := helpers.StringsContains(networkName, networkNames); !ok {
 			continue
 		}
 		if strings.HasPrefix(firewall.Name, helpers.GetPrefix(prefix)) {

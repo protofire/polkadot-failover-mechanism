@@ -1,7 +1,7 @@
 cat <<EOF >/etc/telegraf/telegraf.conf
 [global_tags]
-asg_name = "$4" # will tag all metrics with asg name
-instance_id = "$5" # will tag all metrics with instance id
+asg_name = "$3" # will tag all metrics with asg name
+instance_id = "$4" # will tag all metrics with instance id
 
 # Configuration for telegraf agent
 [agent]
@@ -16,7 +16,19 @@ instance_id = "$5" # will tag all metrics with instance id
 
 # Send aggregate metrics to AWS cloudwatch
 [[outputs.cloudwatch]]
-  region = "$3"
+  region = "$5"
+  namespace = "$1"
+  high_resolution_metrics = false
+  write_statistics = false
+
+[[outputs.cloudwatch]]
+  region = "$6"
+  namespace = "$1"
+  high_resolution_metrics = false
+  write_statistics = false
+
+[[outputs.cloudwatch]]
+  region = "$7"
   namespace = "$1"
   high_resolution_metrics = false
   write_statistics = false

@@ -62,7 +62,7 @@ func newCWClientE(region string) (*cloudwatch.CloudWatch, error) {
 }
 
 // CloudWatchCheck checks cloud watch
-func CloudWatchCheck(t *testing.T, awsRegions []string, prefix string, expectedAlertsCount int) bool {
+func CloudWatchCheck(t *testing.T, awsRegions []string, prefix string, expectedAlertsPerRegion map[string]int) bool {
 
 	errors := 0
 	attempts := 0
@@ -74,12 +74,12 @@ func CloudWatchCheck(t *testing.T, awsRegions []string, prefix string, expectedA
 			alarms := getAlarmsNamesAndStatesByPrefix(t, region, prefix)
 			alarmsCount := len(alarms)
 
-			// Check that there are exactly 4 CloudWatch alarms (should be changed here if new alarms added)
-			if alarmsCount != expectedAlertsCount {
-				t.Errorf("ERROR! It is expected to have %d CloudWatch Alarms in total, got %d", expectedAlertsCount, alarmsCount)
+			// Check that there are exactly required CloudWatch alarms (should be changed here if new alarms added)
+			if alarmsCount != expectedAlertsPerRegion[region] {
+				t.Errorf("ERROR! It is expected to have %d CloudWatch Alarms in total, got %d", expectedAlertsPerRegion[region], alarmsCount)
 				continue
 			}
-			t.Logf("INFO. CloudWatch Alarms number matches the predefined value of %d", expectedAlertsCount)
+			t.Logf("INFO. CloudWatch Alarms number matches the predefined value of %d", expectedAlertsPerRegion[region])
 
 			// If alarm still has "INSUFFICIENT DATA" status - we need to wait until alarm either triggers or move into "OK" state.
 		loop:

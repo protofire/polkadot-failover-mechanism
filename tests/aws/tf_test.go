@@ -214,7 +214,12 @@ func TestBundle(t *testing.T) {
 
 	// TEST 11: Check that no CloudWatch alarm were triggered
 	t.Run("CloudWatch tests", func(t *testing.T) {
-		if assert.True(t, aws.CloudWatchCheck(t, awsRegions, prefix, 5), "ERROR! Cloud Watch alarms are not in a good state") {
+		expectedAlertsPerRegion := map[string]int{
+			awsRegions[0]: 5,
+			awsRegions[1]: 3,
+			awsRegions[2]: 3,
+		}
+		if assert.True(t, aws.CloudWatchCheck(t, awsRegions, prefix, expectedAlertsPerRegion), "ERROR! Cloud Watch alarms are not in a good state") {
 			t.Log("INFO. All Cloud Watch alarms were created. No Cloud Watch alarm were triggered.")
 		}
 	})

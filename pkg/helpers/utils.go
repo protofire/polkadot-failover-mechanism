@@ -78,13 +78,18 @@ func FindStrIndex(input string, search []string) int {
 	return -1
 }
 
-func Contains(slice []string, val string) (int, bool) {
-	for i, item := range slice {
-		if item == val {
-			return i, true
+func StringsContains(input string, search []string) (int, bool) {
+	idx := FindStrIndex(input, search)
+	return idx, idx != -1
+}
+
+func FindIntIndex(input int, search []int) int {
+	for idx, loc := range search {
+		if loc == input {
+			return idx
 		}
 	}
-	return -1, false
+	return -1
 }
 
 func RemoveFromSlice(slice []string, i int) []string {
