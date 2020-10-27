@@ -42,7 +42,7 @@ disk_attach ()
   done
 
   # Optionally marks data disk with "delete on termination"
-  if "${delete_on_termination}"; then
+  if [ "${delete_on_termination}" = true ]; then
     aws ec2 modify-instance-attribute --instance-id "$instance_id" --block-device-mappings "[{\"DeviceName\": \"/dev/sdb\",\"Ebs\":{\"DeleteOnTermination\":true}}]"
   fi
 }
@@ -60,6 +60,9 @@ curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/prot
 region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
 instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 zone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+docker_name="polkadot"
+health_metric_name="health"
+data="/data"
 
 # Get hostname
 INSTANCE_ID=$(hostname)
@@ -70,7 +73,6 @@ lbs=()
 [ -n "${lb-tertiary}" ] && lbs+=( "${lb-tertiary}" )
 
 regions=( "${primary-region}" "${secondary-region}" "${tertiary-region}" )
-health_metric_name="health"
 
 # Check that instance profile is attached
 until aws sts get-caller-identity; do
@@ -163,21 +165,13 @@ for DISK in /dev/nvme?; do
 done
 done
 
+curl -s -o /usr/local/bin/validator.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/validator.sh
+source /usr/local/bin/validator.sh
+
 # Run docker with regular polkadot container inside of it
 /usr/bin/systemctl start docker
 
-/usr/bin/docker run \
-  --cpus "${cpu_limit}" \
-  --memory "${ram_limit}GB" \
-  --kernel-memory "${ram_limit}GB" \
-  --network=host \
-  --name polkadot \
-  --restart unless-stopped \
-  -d \
-  -p 127.0.0.1:9933:9933 \
-  -p 30333:30333 \
-  -v /data:/data \
-  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
+start_polkadot_passive_mode "$docker_name" "${cpu_limit}" "${ram_limit}GB" "${docker_image}" "${chain}" "$data"
 
 exit_code=1
 set +eE
@@ -255,38 +249,15 @@ until [ $n -ge 6 ]; do
   set +eE
 
   /usr/local/bin/consul lock prefix \
-    "/usr/local/bin/double-signing-control.sh && \
+    "source /usr/local/bin/validator.sh &&
+    /usr/local/bin/double-signing-control.sh && \
+    start_polkadot_passive_mode $docker_name ${cpu_limit} ${ram_limit}GB ${docker_image} ${chain} $data true && \
     /usr/local/bin/key-insert.sh ${prefix} && \
     (consul kv delete blocks/.lock && \
     consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
-    docker stop polkadot && \
-    docker rm polkadot && \
-    /usr/bin/docker run \
-    --cpus $${CPU} \
-    --memory $${RAM}GB \
-    --kernel-memory $${RAM}GB \
-    --network=host \
-    --name polkadot \
-    --restart unless-stopped \
-    -p 127.0.0.1:9933:9933 \
-    -p 30333:30333 \
-    -v /data:/data:z \
-    ${docker_image} --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY' -d /data"
+    start_polkadot_validator_mode $docker_name ${cpu_limit} ${ram_limit}GB ${docker_image} ${chain} $data $NAME $NODEKEY"
 
-  /usr/bin/docker stop polkadot || true
-  /usr/bin/docker rm polkadot || true
-  /usr/bin/docker run \
-  --cpus "$CPU" \
-  --memory $${RAM}GB \
-  --kernel-memory $${RAM}GB \
-  --network=host \
-  --name polkadot \
-  --restart unless-stopped \
-  -d \
-  -p 127.0.0.1:9933:9933 \
-  -p 30333:30333 \
-  -v /data:/data:z \
-  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
+  start_polkadot_passive_mode "$docker_name" "${cpu_limit}" "${ram_limit}GB" "${docker_image}" "${chain}" $data
   pkill best-grep.sh
 
   sleep 10;
