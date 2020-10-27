@@ -13,8 +13,9 @@ default_trap ()
 # Set verbose mode and quit on error flags
 set -x -eE
 
-# Get hostname
-INSTANCE_ID=$(hostname)
+hostname=$(hostname)
+docker_name="polkadot"
+data="/data"
 
 # Install custom repos
 curl -o /etc/yum.repos.d/azure-cli.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/azure-cli.repo 
@@ -71,25 +72,10 @@ CPU=$(az keyvault secret show --name "polkadot-${prefix}-cpulimit" --vault-name 
 RAM=$(az keyvault secret show --name "polkadot-${prefix}-ramlimit" --vault-name "${key_vault_name}" | jq .value -r)
 NODEKEY=$(az keyvault secret show --name "polkadot-${prefix}-nodekey" --vault-name "${key_vault_name}" | jq .value -r)
 
-set +eE
-trap - ERR
-/usr/bin/docker stop polkadot
-/usr/bin/docker rm polkadot
-set -eE
-trap default_trap ERR
+curl -s -o /usr/local/bin/validator.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/validator.sh
+source /usr/local/bin/validator.sh
 
-/usr/bin/docker run \
-  --cpus "$CPU" \
-  --memory $${RAM}GB \
-  --kernel-memory $${RAM}GB \
-  --network=host \
-  --name polkadot \
-  --restart unless-stopped \
-  -d \
-  -p 127.0.0.1:9933:9933 \
-  -p 30333:30333 \
-  -v /data:/data:z \
-  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
+start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data"
 
 # Since polkadot container does not have curl inside - port it from host instance
 
@@ -112,7 +98,7 @@ curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofir
 
 source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh  
-source /usr/local/bin/telegraf.sh "${prefix}" "$INSTANCE_ID"
+source /usr/local/bin/telegraf.sh "${prefix}" "$hostname"
 /usr/bin/systemctl enable telegraf
 /usr/bin/systemctl restart telegraf
 
@@ -174,36 +160,15 @@ until [ $n -ge 6 ]; do
   set +eE
 
   /usr/local/bin/consul lock prefix \
-    "/usr/local/bin/double-signing-control.sh && \
+    "source /usr/local/bin/validator.sh &&
+    /usr/local/bin/double-signing-control.sh && \
+    start_polkadot_passive_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data true && \
     /usr/local/bin/key-insert.sh '${key_vault_name}' '${prefix}' && \
     consul kv delete blocks/.lock && \
     (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
-    docker stop polkadot && \
-    docker rm polkadot && \
-    /usr/bin/docker run \
-    --cpus $${CPU} \
-    --memory $${RAM}GB \
-    --kernel-memory $${RAM}GB \
-    --network=host --name polkadot \
-    --restart unless-stopped \
-    -p 127.0.0.1:9933:9933 -p 30333:30333 \
-    -v /data:/data:z \
-    ${docker_image} --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY' -d /data"
+    start_polkadot_validator_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data $NAME $NODEKEY"
 
-  /usr/bin/docker stop polkadot || true
-  /usr/bin/docker rm polkadot || true
-  /usr/bin/docker run \
-  --cpus "$CPU" \
-  --memory $${RAM}GB \
-  --kernel-memory $${RAM}GB \
-  --network=host \
-  --name polkadot \
-  --restart unless-stopped \
-  -d \
-  -p 127.0.0.1:9933:9933 \
-  -p 30333:30333 \
-  -v /data:/data:z \
-  "${docker_image}" --chain "${chain}" --rpc-methods=Unsafe --rpc-external --pruning=archive -d /data
+  start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data"
   pkill best-grep.sh
   sleep 10;
   n=$((n+1))
