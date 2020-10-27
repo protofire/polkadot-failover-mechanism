@@ -51,7 +51,7 @@ function create_consul_healthcheck {
 }
 EOF
 
-chown "$CONSUL_USER:$CONSUL_USER $CONSUL_CONFIG_DIR/healthcheck.json"
+chown "$CONSUL_USER:$CONSUL_USER" "$CONSUL_CONFIG_DIR/healthcheck.json"
 
 }
 
