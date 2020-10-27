@@ -34,7 +34,7 @@ variable "azure_regions" {
   description = "Should be an array consisting of exactly three elements"
   validation {
     condition     = length(var.azure_regions) == 3
-    error_message = "Number of azure_client elements must be 3."
+    error_message = "Number of azure_regions elements must be 3."
   }
 }
 
