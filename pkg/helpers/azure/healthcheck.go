@@ -27,6 +27,12 @@ func HealthStatusCheck(subscriptionID, resourceGroup string, vms VMSMap) error {
 			if err != nil {
 				return err
 			}
+			if view.VMHealth == nil {
+				return fmt.Errorf("instance view is null for VM %q", *vm.Name)
+			}
+			if view.VMHealth.Status == nil {
+				return fmt.Errorf("instance view health status is null for VM %q", *vm.Name)
+			}
 			status := view.VMHealth.Status.Code
 			if path.Base(*status) != "healthy" {
 				return fmt.Errorf("VM %q status is not healthy: %q", *vm.Name, *status)
