@@ -55,12 +55,19 @@ instance_id = "$4" # will tag all metrics with instance id
   # no configuration
 
 [[inputs.consul]]
-datacenter = "$1"
-metric_version = 2
+  datacenter = "$1"
+  metric_version = 2
 
 [[inputs.http_listener_v2]]
   service_address = ":12500"
   path = "/telegraf"
   max_body_size = "1MB"
   data_format = "influx"
+
+[[inputs.http_listener_v2]]
+  service_address = ":12501"
+  path = "/telegraf"
+  max_body_size = "1MB"
+  data_format = "influx"
+  tagexclude = ["instance_id"]
 EOF
