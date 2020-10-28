@@ -16,6 +16,7 @@ set -x -eE
 hostname=$(hostname)
 docker_name="polkadot"
 data="/data"
+polkadot_user_id=1000
 
 # Install custom repos
 curl -o /etc/yum.repos.d/azure-cli.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/azure-cli.repo 
@@ -41,7 +42,7 @@ if grep -qs '/data ' /proc/mounts; then
 else
     mount /dev/sdc /data
 fi
-chown polkadot:polkadot /data -R
+chown "$polkadot_user_id:$polkadot_user_id" /data -R
 set -eE
 
 trap default_trap ERR EXIT

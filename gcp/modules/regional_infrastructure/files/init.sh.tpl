@@ -15,6 +15,7 @@ set -x -eE
 hostname=$(hostname)
 docker_name="polkadot"
 data="/data"
+polkadot_user_id=1000
 
 curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/influxdb.repo
 
@@ -61,7 +62,7 @@ set -eE
 /usr/bin/mount /dev/sdb /data
 /usr/bin/echo "/dev/sdb /data xfs defaults 0 0" >> /etc/fstab
 
-chown 1000:1000 /data
+chown "$polkadot_user_id:$polkadot_user_id" /data
 
 # Run docker with regular polkadot container inside of it
 /bin/systemctl enable docker
