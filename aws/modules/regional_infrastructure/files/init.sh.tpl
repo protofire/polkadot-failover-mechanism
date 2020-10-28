@@ -57,6 +57,11 @@ curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/prot
 /usr/bin/unzip -qq -o awscliv2.zip
 ./aws/install --update
 
+# downgrade due bug in /sbin/ebsnvme-id
+# File "/sbin/ebsnvme-id", line 167
+# print(err, file=sys.stderr)
+/usr/bin/yum downgrade ec2-utils -y
+
 region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
 instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 hostname=$(hostname)
@@ -64,6 +69,7 @@ zone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zo
 docker_name="polkadot"
 health_metric_name="health"
 data="/data"
+polkadot_user_id=1000
 
 lbs=()
 [ -n "${lb-primary}" ] && lbs+=( "${lb-primary}" )
@@ -151,7 +157,7 @@ for DISK in /dev/nvme?; do
         /usr/bin/mount $${DISK}n1 /data
         /usr/bin/echo "UUID=$${UUID} /data xfs defaults 0 0" >> /etc/fstab
         # Change owner of data folder to ec2-user
-        /usr/bin/chown ec2-user:ec2-user /data
+        /usr/bin/chown "$polkadot_user_id:$polkadot_user_id" /data
         # Remove keys inside of data folder TODO
         rm -R /data/chains/*/keystore || true
     else
@@ -175,7 +181,7 @@ trap - ERR EXIT
 
 until [ $exit_code -eq 0 ]; do
 
-  curl -X OPTIONS localhost:9933
+  curl -s -X OPTIONS localhost:9933
   exit_code=$?
   sleep 1
 
