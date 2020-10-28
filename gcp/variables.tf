@@ -122,7 +122,7 @@ variable "gcp_ssh_pub_key" {
 variable "docker_image" {
   description = "Polkadot docker image"
   type        = string
-  default     = "parity/polkadot:master"
+  default     = "parity/polkadot:master-0.8.26-80e3a7e-5d52c096"
 }
 
 variable "metrics_namespace" {
