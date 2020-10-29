@@ -110,7 +110,7 @@ jobs:
       - run:
           name: "Publish Release on GitHub"
           command: |
-            GO111MODULE=off get github.com/tcnksm/ghr
+            GO111MODULE=off go get github.com/tcnksm/ghr
             make build-azure-provider
             VERSION=$(git describe --tags --abbrev=8 --exact-match 2>/dev/null || echo "${AZURE_POLCADOT_PROVIDER_VERSION}")
             VERSION=${VERSION#*-}
@@ -163,10 +163,6 @@ workflows:
           requires:
             - test_azure
           filters:
-            branches:
-              only:
-                - master
-                - dev
             tags:
               only: /^azure-\d+\.\d+\.\d+$/
       - build:
