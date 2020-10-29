@@ -57,11 +57,6 @@ curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/prot
 /usr/bin/unzip -qq -o awscliv2.zip
 ./aws/install --update
 
-# downgrade due bug in /sbin/ebsnvme-id
-# File "/sbin/ebsnvme-id", line 167
-# print(err, file=sys.stderr)
-/usr/bin/yum downgrade ec2-utils -y
-
 region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
 instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 hostname=$(hostname)
