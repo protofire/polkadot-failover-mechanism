@@ -76,7 +76,7 @@ resource "aws_autoscaling_group" "polkadot" {
   min_size                  = var.instance_count
   desired_capacity          = var.instance_count
   wait_for_elb_capacity     = var.instance_count
-  wait_for_capacity_timeout = "20m"
+  wait_for_capacity_timeout = "30m"
   default_cooldown          = 300
   health_check_type         = "ELB"
   health_check_grace_period = 300
