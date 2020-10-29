@@ -19,7 +19,7 @@ function install_consulate {
     
   cat <<EOF > /etc/systemd/system/consulate.service
 [Unit]
-Description="Consulate - a middleware for consul healthchecks"
+Description="Consulate - a middleware for consul health checks"
 Documentation=https://github.com/kadaan/consulate
 Requires=network-online.target
 After=network-online.target

@@ -23,7 +23,7 @@ resource "azurerm_network_security_rule" "outbound" {
 }
 
 resource "azurerm_network_security_rule" "ssh" {
-  count                       = var.expose_ssh == "true" ? 1 : 0
+  count                       = var.expose_ssh ? 1 : 0
   name                        = "ssh"
   priority                    = 100
   direction                   = "Inbound"

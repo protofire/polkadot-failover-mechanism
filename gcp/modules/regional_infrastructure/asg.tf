@@ -11,8 +11,7 @@ resource "google_compute_instance_template" "instance_template" {
   region       = var.region
   description  = "This template is used to create Polkadot failover nodes."
 
-  tags = [
-  var.prefix]
+  tags = [var.prefix]
 
   labels = {
     prefix       = var.prefix
@@ -52,12 +51,15 @@ resource "google_compute_instance_template" "instance_template" {
     prefix               = var.prefix,
     chain                = var.chain,
     total_instance_count = var.total_instance_count
+    docker_image         = var.docker_image
+    project              = var.gcp_project
+    metrics_namespace    = var.metrics_namespace
   })
 
   metadata = {
     shutdown-script = templatefile("${path.module}/files/shutdown.sh.tpl", {})
     prefix          = var.prefix
-    ssh-keys        = var.gcp_ssh_user == "" ? null : "${var.gcp_ssh_user}:${var.gcp_ssh_pub_key}"
+    ssh-keys        = var.expose_ssh && var.gcp_ssh_user != "" && var.gcp_ssh_pub_key != "" ? "${var.gcp_ssh_user}:${var.gcp_ssh_pub_key}" : null
   }
 
   service_account {
@@ -112,7 +114,7 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
   wait_for_instances = true
 
   timeouts {
-    create = "20m"
+    create = "30m"
   }
 
   update_policy {

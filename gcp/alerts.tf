@@ -21,7 +21,7 @@ resource "google_monitoring_alert_policy" "validator" {
   conditions {
     display_name = "Health not OK"
     condition_threshold {
-      filter          = "metric.type=\"custom.googleapis.com/polkadot/polkadot/state_\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
+      filter          = "metric.type=\"custom.googleapis.com/${var.metrics_namespace}/health/value\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
       duration        = "60s"
       comparison      = "COMPARISON_GT"
       threshold_value = 0
@@ -38,7 +38,7 @@ resource "google_monitoring_alert_policy" "validator" {
   conditions {
     display_name = "Health not OK"
     condition_threshold {
-      filter          = "metric.type=\"custom.googleapis.com/polkadot/polkadot/state_\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
+      filter          = "metric.type=\"custom.googleapis.com/${var.metrics_namespace}/health/value\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
       duration        = "60s"
       comparison      = "COMPARISON_LT"
       threshold_value = 0
@@ -55,7 +55,7 @@ resource "google_monitoring_alert_policy" "validator" {
   conditions {
     display_name = "Validator less than 1"
     condition_threshold {
-      filter          = "metric.type=\"custom.googleapis.com/polkadot/polkadot/validatorcount_\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
+      filter          = "metric.type=\"custom.googleapis.com/${var.metrics_namespace}/validator/value\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
       duration        = "60s"
       comparison      = "COMPARISON_LT"
       threshold_value = 1
@@ -73,10 +73,28 @@ resource "google_monitoring_alert_policy" "validator" {
   conditions {
     display_name = "Validator more than 1"
     condition_threshold {
-      filter          = "metric.type=\"custom.googleapis.com/polkadot/polkadot/validatorcount_\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
+      filter          = "metric.type=\"custom.googleapis.com/${var.metrics_namespace}/validator/value\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
       duration        = "60s"
       comparison      = "COMPARISON_GT"
       threshold_value = 1
+      trigger {
+        count = 1
+      }
+      aggregations {
+        alignment_period     = "60s"
+        per_series_aligner   = "ALIGN_MAX"
+        cross_series_reducer = "REDUCE_SUM"
+      }
+    }
+  }
+
+  conditions {
+    display_name = "Disk consumed more than 90 percent"
+    condition_threshold {
+      filter          = "metric.type=\"custom.googleapis.com/${var.metrics_namespace}/disk/used_percent\" AND resource.type=\"gce_instance\" AND metadata.user_labels.prefix=\"${var.prefix}\""
+      duration        = "60s"
+      comparison      = "COMPARISON_GT"
+      threshold_value = 90
       trigger {
         count = 1
       }

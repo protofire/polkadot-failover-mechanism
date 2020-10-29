@@ -30,6 +30,22 @@ variable "validator_name" {
 }
 
 variable "instance_count" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_primary" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_secondary" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_tertiary" {
+  type    = number
   default = 1
 }
 
@@ -77,7 +93,8 @@ variable "subscription" {
 }
 
 variable "expose_ssh" {
-  default = "False"
+  type    = bool
+  default = false
 }
 
 variable "ssh_key_content" {
@@ -112,4 +129,9 @@ variable "wait_vmss" {
   description = "Should we wait until vmss is being ready. Required set az console utility"
   type        = bool
   default     = false
+}
+
+variable "docker_image" {
+  description = "Polkadot docker image"
+  type        = string
 }

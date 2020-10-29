@@ -8,9 +8,10 @@ data "template_file" "script" {
     chain                = var.chain
     total_instance_count = var.total_instance_count
     key_vault_name       = var.key_vault_name
-    lb-primary           = cidrhost(var.subnet_cidrs[0], 10)
-    lb-secondary         = cidrhost(var.subnet_cidrs[1], 10)
-    lb-tertiary          = cidrhost(var.subnet_cidrs[2], 10)
+    lb-primary           = var.instance_count_primary > 0 ? cidrhost(var.subnet_cidrs[0], 10) : ""
+    lb-secondary         = var.instance_count_secondary > 0 ? cidrhost(var.subnet_cidrs[1], 10) : ""
+    lb-tertiary          = var.instance_count_tertiary > 0 ? cidrhost(var.subnet_cidrs[2], 10) : ""
+    docker_image         = var.docker_image
   }
 }
 

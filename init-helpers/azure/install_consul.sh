@@ -1,7 +1,10 @@
-# Function to genetrate consul healthchecks to validate node health
+# Function to generate consul health checks to validate node health
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
 function create_consul_healthcheck {
 
-  cat <<EOF > $CONSUL_CONFIG_DIR/healthcheck.json
+  cat <<EOF > "$CONSUL_CONFIG_DIR/healthcheck.json"
 {
    "check": {
       "id": "consul_check",
@@ -48,7 +51,7 @@ function create_consul_healthcheck {
 }
 EOF
 
-chown $CONSUL_USER:$CONSUL_USER $CONSUL_CONFIG_DIR/healthcheck.json
+chown "$CONSUL_USER:$CONSUL_USER" "$CONSUL_CONFIG_DIR/healthcheck.json"
 
 }
 
@@ -84,6 +87,16 @@ function install_consul {
   lb_secondary="$4"
   lb_tertiary="$5"
   cluster_tag_name=$prefix
+
+  lbs=()
+
+  [ -n "${lb_primary}" ] && lbs+=( "\"${lb_primary}\"" )
+  [ -n "${lb_secondary}" ] && lbs+=( "\"${lb_secondary}\"" )
+  [ -n "${lb_tertiary}" ] && lbs+=( "\"${lb_tertiary}\"" )
+
+  lbs_str=$(join_by ", ", "${lbs[@]}")
+
+  echo "LoadBalancers: ${lbs_str}"
 
   # Add consul user
   id $CONSUL_USER >& /dev/null || useradd --system $CONSUL_USER
@@ -132,7 +145,7 @@ cat <<EOF > $CONFIG_PATH
   "client_addr": "0.0.0.0",
   "node_name": "$INSTANCE_ID",
   "retry_join": [
-    "${lb_primary}", "${lb_secondary}", "${lb_tertiary}"
+    ${lbs_str}
   ],
   "server": $server,
   "ui": $ui,
@@ -140,7 +153,7 @@ cat <<EOF > $CONFIG_PATH
 }
 EOF
 
-# Create consul healthcheck
+# Create consul health check
 create_consul_healthcheck 
 
   # SystemD reload and restart

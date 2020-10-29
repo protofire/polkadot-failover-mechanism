@@ -180,7 +180,7 @@ func ConsulLockCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair, user st
 
 }
 
-//PolkadotCheck checks polkadot system
+// PolkadotCheck checks polkadot system
 func PolkadotCheck(t *testing.T, publicIPs []string, key *ssh.KeyPair, user string) bool {
 
 	command := "curl -s -H \"Content-Type: application/json\" -d '{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"system_health\", \"params\":[]}' http://localhost:9933"

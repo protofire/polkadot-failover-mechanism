@@ -56,8 +56,9 @@ module "primary_region" {
   chain          = var.chain
 
   asg_role   = aws_iam_instance_profile.monitoring.name
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
+  region    = var.aws_regions[0]
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
 
@@ -74,6 +75,7 @@ module "primary_region" {
   providers = {
     aws = aws.primary
   }
+  docker_image = var.docker_image
 }
 
 module "secondary_region" {
@@ -96,11 +98,12 @@ module "secondary_region" {
   key_content    = var.key_content
   chain          = var.chain
 
+  region    = var.aws_regions[1]
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
 
   asg_role   = aws_iam_instance_profile.monitoring.name
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
   regions = var.aws_regions
   cidrs   = var.vpc_cidrs
@@ -115,6 +118,7 @@ module "secondary_region" {
   providers = {
     aws = aws.secondary
   }
+  docker_image = var.docker_image
 }
 
 module "tertiary_region" {
@@ -137,11 +141,12 @@ module "tertiary_region" {
   key_content    = var.key_content
   chain          = var.chain
 
+  region    = var.aws_regions[2]
   cpu_limit = var.cpu_limit
   ram_limit = var.ram_limit
 
   asg_role   = aws_iam_instance_profile.monitoring.name
-  expose_ssh = "true"
+  expose_ssh = var.expose_ssh
 
   regions = var.aws_regions
   cidrs   = var.vpc_cidrs
@@ -156,4 +161,5 @@ module "tertiary_region" {
   providers = {
     aws = aws.tertiary
   }
+  docker_image = var.docker_image
 }

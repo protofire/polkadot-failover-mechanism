@@ -19,12 +19,10 @@ jobs:
           name: Run Go AWS tests
           command: |
             export PREFIX="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1 | sed -E 's/^([0-9]+)(.*)/\2\1/g')"
-            echo "PREFIX=${PREFIX}"
-            cd tests
-            make aws
-            cd ..
+            make test-aws
           environment:
             - TF_STATE_REGION: us-east-1
+            - POLCADOT_PROVIDER_VERSION: 0.1.0
   test_gcp:
     docker:
       - image: circleci/golang:1.15
@@ -41,10 +39,9 @@ jobs:
           command: |
             echo -n "${GOOGLE_APPLICATION_CREDENTIALS_CONTENT}" > "${GOOGLE_APPLICATION_CREDENTIALS}"
             export PREFIX="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1 | sed -E 's/^([0-9]+)(.*)/\2\1/g')"
-            echo "PREFIX=${PREFIX}"
-            cd tests
-            make gcp
-            cd ..
+            make test-gcp
+          environment:
+            - POLCADOT_PROVIDER_VERSION: 0.1.0
   test_azure:
     docker:
       - image: circleci/golang:1.15
@@ -75,10 +72,12 @@ jobs:
           name: Run Go Azure tests
           command: |
             export PREFIX="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1 | sed -E 's/^([0-9]+)(.*)/\2\1/g')"
-            echo "PREFIX=${PREFIX}"
-            cd tests
-            make azure
-            cd ..
+            VERSION=$(git describe --tags --abbrev=8 --exact-match 2>/dev/null || echo "${POLCADOT_PROVIDER_VERSION}")
+            [[ "${VERSION}" =~ "^azure" ]] || VERSION="${POLCADOT_PROVIDER_VERSION}"
+            export VERSION=${VERSION#*-}
+            make test-azure
+          environment:
+            - POLCADOT_PROVIDER_VERSION: 0.1.0
       - slack/status:
           fail_only: true
 
@@ -95,6 +94,29 @@ jobs:
       - run:
           name: Push image
           command: docker push ${dockerhub_repo}:latest
+      - slack/status:
+          fail_only: true
+
+  build_azure_polkadot_provider:
+    docker:
+      - image: circleci/golang:1.15
+    steps:
+      - checkout
+      - run:
+          name: "Pull Submodules"
+          command: |
+            git submodule init
+            git submodule update --remote
+      - run:
+          name: "Publish Azure polkadot provider release on GitHub"
+          command: |
+            GO111MODULE=off go get github.com/tcnksm/ghr
+            make build-azure-provider
+            VERSION=$(git describe --tags --abbrev=8 --exact-match 2>/dev/null || echo "${AZURE_POLCADOT_PROVIDER_VERSION}")
+            VERSION=${VERSION#*-}
+            echo $VERSION
+            mv -v ./terraform-provider-polkadot ./terraform-provider-polkadot-azure
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./terraform-provider-polkadot-azure
       - slack/status:
           fail_only: true
 

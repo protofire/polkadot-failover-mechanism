@@ -47,7 +47,7 @@ resource "google_compute_firewall" "validator-node-external" {
   network     = google_compute_network.vpc_network.self_link
 
   dynamic "allow" {
-    for_each = var.expose_ssh == "false" ? [] : [1]
+    for_each = var.expose_ssh ? [1] : []
     content {
       ports    = ["22"]
       protocol = "tcp"

@@ -7,17 +7,20 @@ default_trap ()
   shutdown -P +1
   curl -i -XPOST 'http://localhost:12500/telegraf' --data-binary "health value=100000"
   /usr/local/bin/consul leave; 
+  docker stop polkadot
 }
 
 # Set verbose mode and quit on error flags
 set -x -eE
 
-# Get hostname
-INSTANCE_ID=$(hostname)
+hostname=$(hostname)
+docker_name="polkadot"
+data="/data"
+polkadot_user_id=1000
 
 # Install custom repos
-curl -o /etc/yum.repos.d/azure-cli.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/azure-cli.repo 
-curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/influxdb.repo 
+curl -o /etc/yum.repos.d/azure-cli.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/azure-cli.repo 
+curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/influxdb.repo
 
 ### Start of main script
 # Install unzip, docker, jq, awscli
@@ -39,7 +42,7 @@ if grep -qs '/data ' /proc/mounts; then
 else
     mount /dev/sdc /data
 fi
-chown polkadot:polkadot /data -R
+chown "$polkadot_user_id:$polkadot_user_id" /data -R
 set -eE
 
 trap default_trap ERR EXIT
@@ -70,14 +73,10 @@ CPU=$(az keyvault secret show --name "polkadot-${prefix}-cpulimit" --vault-name 
 RAM=$(az keyvault secret show --name "polkadot-${prefix}-ramlimit" --vault-name "${key_vault_name}" | jq .value -r)
 NODEKEY=$(az keyvault secret show --name "polkadot-${prefix}-nodekey" --vault-name "${key_vault_name}" | jq .value -r)
 
-set +eE
-trap - ERR
-/usr/bin/docker stop polkadot
-/usr/bin/docker rm polkadot
-set -eE
-trap default_trap ERR
+curl -s -o /usr/local/bin/validator.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/validator.sh
+source /usr/local/bin/validator.sh
 
-/usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data"
 
 # Since polkadot container does not have curl inside - port it from host instance
 
@@ -86,7 +85,7 @@ until [ $exit_code -eq 0 ]; do
 
   trap - ERR
   set +eE
-  curl localhost:9933
+  curl -X OPTIONS localhost:9933
   exit_code=$?
   set -eE
   trap default_trap ERR
@@ -94,25 +93,35 @@ until [ $exit_code -eq 0 ]; do
 
 done
 
-curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/install_consul.sh
-curl -o /usr/local/bin/install_consulate.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/install_consulate.sh
-curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/telegraf.sh
+curl -o /usr/local/bin/install_consul.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/install_consul.sh
+curl -o /usr/local/bin/install_consulate.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/install_consulate.sh
+curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/telegraf.sh
 
 source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh  
-source /usr/local/bin/telegraf.sh ${prefix} $INSTANCE_ID
+source /usr/local/bin/telegraf.sh "${prefix}" "$hostname"
+/usr/bin/systemctl enable telegraf
 /usr/bin/systemctl restart telegraf
 
-install_consul ${prefix} ${total_instance_count} ${lb-primary} ${lb-secondary} ${lb-tertiary}
+install_consul "${prefix}" "${total_instance_count}" "${lb-primary}" "${lb-secondary}" "${lb-tertiary}"
+
 install_consulate
+
+lbs=()
+
+[ -n "${lb-primary}" ] && lbs+=( "${lb-primary}" )
+[ -n "${lb-secondary}" ] && lbs+=( "${lb-secondary}" )
+[ -n "${lb-tertiary}" ] && lbs+=( "${lb-tertiary}" )
+
+echo "LoadBalancers: $${lbs[@]}"
 
 # Join to the created cluster
 cluster_members=0
-until [ $cluster_members -gt ${total_instance_count} ]; do
+until [ $cluster_members -gt "${total_instance_count}" ]; do
 
   set +eE
   trap - ERR EXIT
-  /usr/local/bin/consul join ${lb-primary} ${lb-secondary} ${lb-tertiary}
+  /usr/local/bin/consul join "$${lbs[@]}"
   trap default_trap ERR EXIT
   set -eE
   cluster_members=$(/usr/local/bin/consul members --status alive | wc -l)
@@ -120,10 +129,11 @@ until [ $cluster_members -gt ${total_instance_count} ]; do
 
 done
 
-curl -o /usr/local/bin/double-signing-control.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/double-signing-control.sh
-curl -o /usr/local/bin/best-grep.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/best-grep.sh
-curl -o /usr/local/bin/key-insert.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/key-insert.sh
-curl -o /usr/local/bin/watcher.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/master/init-helpers/azure/watcher.sh
+
+curl -o /usr/local/bin/double-signing-control.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/double-signing-control.sh
+curl -o /usr/local/bin/best-grep.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/best-grep.sh
+curl -o /usr/local/bin/key-insert.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/key-insert.sh
+curl -o /usr/local/bin/watcher.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/watcher.sh
 
 chmod 700 /usr/local/bin/double-signing-control.sh
 chmod 700 /usr/local/bin/best-grep.sh
@@ -142,7 +152,7 @@ until [ $n -ge 6 ]; do
 
   set -eE
   trap default_trap ERR
-  node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep Full | wc -l)
+  node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep -c Full)
   if [ "$node" != 1 ]; then 
     echo "ERROR! Node either does not work or work in not correct way"
     default_trap
@@ -151,14 +161,18 @@ until [ $n -ge 6 ]; do
   set +eE
 
   /usr/local/bin/consul lock prefix \
-  "/usr/local/bin/double-signing-control.sh && /usr/local/bin/key-insert.sh '${key_vault_name}' '${prefix}' && consul kv delete blocks/.lock && (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && docker stop polkadot && docker rm polkadot && /usr/bin/docker run --cpus $${CPU} --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data chevdor/polkadot:latest polkadot --chain ${chain} --validator --name '$NAME' --node-key '$NODEKEY'"
+    "source /usr/local/bin/validator.sh && \
+    /usr/local/bin/double-signing-control.sh && \
+    start_polkadot_passive_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data true && \
+    /usr/local/bin/key-insert.sh '${key_vault_name}' '${prefix}' && \
+    consul kv delete blocks/.lock && \
+    (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
+    start_polkadot_validator_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data $NAME $NODEKEY"
 
-  /usr/bin/docker stop polkadot || true
-  /usr/bin/docker rm polkadot || true
-  /usr/bin/docker run --cpus $CPU --memory $${RAM}GB --kernel-memory $${RAM}GB --network=host --name polkadot --restart unless-stopped -d -p 127.0.0.1:9933:9933 -p 30333:30333 -v /data:/data:z chevdor/polkadot:latest polkadot --chain ${chain} --rpc-methods=Unsafe --pruning=archive
+  start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data"
   pkill best-grep.sh
   sleep 10;
-  n=$[$n+1]
+  n=$((n+1))
 
 done
 
