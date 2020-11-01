@@ -8,17 +8,15 @@ import (
 	"time"
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
+	helperErrors "github.com/protofire/polkadot-failover-mechanism/pkg/helpers/errors"
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/gcp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/protofire/polkadot-failover-mechanism/pkg/providers/resource"
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/failover/tags"
-	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/validate"
 )
 
 func resourcePolkadotFailover() *schema.Resource {
@@ -36,96 +34,14 @@ func resourcePolkadotFailover() *schema.Resource {
 			Delete: schema.DefaultTimeout(time.Minute * 30),
 		},
 
-		Schema: map[string]*schema.Schema{
-
-			resource.InstancesFieldName: {
-				Type:     schema.TypeList,
-				Required: true,
-				ForceNew: true,
-				MaxItems: 3,
-				MinItems: 3,
-				Elem: &schema.Schema{
-					Type: schema.TypeInt,
-				},
-			},
-
-			resource.LocationsFieldName: {
-				Type:     schema.TypeList,
-				Required: true,
-				ForceNew: true,
-				MaxItems: 3,
-				MinItems: 3,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-
-			resource.PrefixFieldName: {
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validate.DiagFunc(validate.Prefix),
-			},
-
-			resource.TagsFieldName: tags.Schema(),
-
-			resource.MetricNameFieldName: {
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validate.DiagFunc(validation.StringIsNotEmpty),
-			},
-
-			resource.MetricNamespaceFieldName: {
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validate.DiagFunc(validation.StringIsNotEmpty),
-			},
-
-			resource.FailoverModeFieldName: {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-				ValidateDiagFunc: validate.DiagFunc(validation.StringInSlice([]string{
-					string(resource.FailOverModeDistributed),
-					string(resource.FailOverModeSingle),
-				}, false)),
-			},
-
-			resource.FailoverInstancesFieldName: {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeInt,
-				},
-			},
-
-			resource.PrimaryCountFieldName: {
-				Type:        schema.TypeInt,
-				Description: "Polkadot nodes count in primary location. Primary locations is first one in locations parameter",
-				Computed:    true,
-			},
-
-			resource.SecondaryCountFieldName: {
-				Type:        schema.TypeInt,
-				Description: "Polkadot nodes count in secondary location. Secondary locations is second one in locations parameter",
-				Computed:    true,
-			},
-
-			resource.TertiaryCountFieldName: {
-				Type:        schema.TypeInt,
-				Description: "Polkadot nodes count in tertiary location. Tertiary locations is third one in locations parameter",
-				Computed:    true,
-			},
-		},
+		Schema: resource.GetPolkadotSchema(),
 	}
 }
 
 func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
 	config := meta.(*Config)
-	failover := &resource.GCPFailover{}
+	failover := &GCPFailover{}
 	err := failover.FromIDOrSchema(d)
 
 	if err != nil {
@@ -209,7 +125,7 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
 	config := meta.(*Config)
-	failover := &resource.GCPFailover{}
+	failover := &GCPFailover{}
 	err := failover.FromIDOrSchema(d)
 
 	if err != nil {
@@ -266,9 +182,14 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		1,
 	)
 
-	if err != nil && !errors.As(err, &gcp.ValidatorError{}) {
-		log.Printf("[ERROR] failover: Cannot get validator: %s", err)
-		return diag.FromErr(err)
+	if err != nil {
+		validatorError := &helperErrors.ValidatorError{}
+		if errors.As(err, validatorError) {
+			log.Printf("[WARNING] failover: Cannot get validator: %s", validatorError)
+		} else {
+			log.Printf("[ERROR] failover: Cannot get validator: %s", err)
+			return diag.FromErr(err)
+		}
 	}
 
 	log.Printf("[DEBUG] failover: Found validator instance: %s", validator.InstanceName)
@@ -305,6 +226,7 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	}
 
 	failover.SetCounts(positions...)
+	failover.FillDefaultCountsIfNotSet()
 
 	// delete all instances besides the validator instance. In case we did not find the validator, or we found multiple validators,
 	// we will delete all instances
@@ -330,7 +252,6 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	failover.FillDefaultCountsIfNotSet()
 	id, err := failover.ID()
 	if err != nil {
 		return diag.FromErr(err)

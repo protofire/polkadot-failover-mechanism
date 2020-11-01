@@ -29,6 +29,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	helpers2 "github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
@@ -310,7 +311,18 @@ func TestBundle(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	validatorBefore, err := azure.WaitForValidator(ctx, &metricsClient, vmScaleSetNames, azureResourceGroup, metricName, metricNamespace, 600)
+	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(600))
+	defer cancel()
+
+	validatorBefore, err := azure.WaitForValidator(
+		ctxTimeout,
+		&metricsClient,
+		vmScaleSetNames,
+		azureResourceGroup,
+		metricName,
+		metricNamespace,
+		5,
+	)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, validatorBefore.ScaleSetName)
@@ -321,7 +333,19 @@ func TestBundle(t *testing.T) {
 	t.Run("singleMode", func(t *testing.T) {
 
 		t.Run("CheckValidator", func(t *testing.T) {
-			validatorAfter, err := azure.WaitForValidator(ctx, &metricsClient, vmScaleSetNames, azureResourceGroup, metricName, metricNamespace, 600)
+
+			ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(600))
+			defer cancel()
+
+			validatorAfter, err := azure.WaitForValidator(
+				ctxTimeout,
+				&metricsClient,
+				vmScaleSetNames,
+				azureResourceGroup,
+				metricName,
+				metricNamespace,
+				5,
+			)
 			require.NoError(t, err)
 			require.NotEmpty(t, validatorAfter.ScaleSetName)
 			require.NotEmpty(t, validatorAfter.Hostname)

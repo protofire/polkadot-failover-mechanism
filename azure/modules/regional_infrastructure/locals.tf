@@ -13,28 +13,4 @@ locals {
     polkadot = ["30333", "Tcp", "30333"]
   }
 
-  metric_namespaces = {
-    health = {
-      namespace = "${var.prefix}/health"
-      //TODO: Value or value
-      metric = "value"
-    }
-    health_checks = {
-      namespace = "${var.prefix}/consul_health_checks"
-      metric    = "critical"
-    }
-    disk = {
-      namespace = "${var.prefix}/disk"
-      metric    = "used_percent"
-    }
-  }
-
-  monitoring_command_parameters = [
-    var.subscription,
-    var.rg,
-    azurerm_linux_virtual_machine_scale_set.polkadot.name,
-    "${local.metric_namespaces.health.namespace}:${local.metric_namespaces.health.metric}",
-    "${local.metric_namespaces.health_checks.namespace}:${local.metric_namespaces.health_checks.metric}",
-    "${local.metric_namespaces.disk.namespace}:${local.metric_namespaces.disk.metric}",
-  ]
 }

@@ -62,18 +62,30 @@ Note that you will have to wait some time before running the scripts, so the API
 1. Open `gcp` folder of the cloned (downloaded) repo.
 2. Create `terraform.tfvars` file inside of the `gcp` folder of the cloned repo, where `terraform.tfvars.example` is located.
 3. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
-4. (Optional) You can either place a Terraform state file on Google storage bucket or on your local machine. 
-   * To place it on the local machine rename the `remote_state.tf` file to `remote_state.tf.stop`. 
-   * To place it on Google storage bucket - create google storage bucket.
-   * Rename `backend/gcp.tf.example` file to `backend/gcp.tf`. 
+4. You can either place a Terraform state file on GCP storage bucket or on your local machine.
+   * To place it on the local machine rename the `remote_state.tf` file to `remote_state.tf.stop`. `terraform init`
+   * To place it on GCP storage bucket - create gcp storage bucket. `gsutil mb 'gs://name'`
+   * Rename `backend/gcp.tf.example` file to `backend/gcp.tf`.
    * Run `terraform init -backend-config=backend/gcp.tf --reconfigure`.
-   * Skip the step `5`.
-5. Run `terraform init`.
-6. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
-7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
-8. After the deployment is complete you can open Azure Portal to check that the instances were deployed successfully.
+5. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
+6. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
+7. After the deployment is complete you can open Azure Portal to check that the instances were deployed successfully.
 
 *!IMPORTANT!* Unlike AWS and Azure GCP will not provide you with alarm each time failover occurs due to metrics sending methods currently implemented. #5 issue should fix this.
+
+### Switch into / from standalone (single) mode
+
+1. Into standalone mode
+
+
+    terraform plan -var failover_mode=single
+    terraform apply -auto-approve -var delete_vms_with_api_in_single_mode=true -var failover_mode=single
+
+2. Into distributed mode
+
+
+    terraform plan
+    terraform apply -auto-approve
 
 ### Validate
 

@@ -1,4 +1,4 @@
-data "polkadot_failover" "polkadot" {
+resource "polkadot_failover" "polkadot" {
   provider            = polkadot
   locations           = var.azure_regions
   instances           = var.instance_count

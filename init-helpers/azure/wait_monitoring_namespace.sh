@@ -1,5 +1,5 @@
-[ $# -lt 4 ] && {
-    echo "Subscription ID, resource group, scale set name and metric params required as script arguments"
+[ $# -lt 5 ] && {
+    echo "number of scale set instances, subscription ID, resource group, scale set name and metric params required as script arguments"
     exit 1
 }
 
@@ -16,7 +16,15 @@ function stop() {
 
 trap stop TERM INT
 
+if [ "${1}" -eq 0 ]; then
+  echo "{}"
+  exit 0
+fi
+
+shift
+
 RESOURCE="/subscriptions/$1/resourceGroups/$2/providers/Microsoft.Compute/virtualMachineScaleSets/$3"
+
 shift 3
 
 max_attempts=300

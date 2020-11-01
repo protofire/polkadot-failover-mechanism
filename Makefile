@@ -56,13 +56,10 @@ test-azure: cache install-azure-provider
 test-helpers:
 	go test $(TEST_ARGS) ./pkg/helpers...
 
-test-providers:
-	go test $(TEST_ARGS) ./pkg/providers/resource...
-
-test-azure-provider: check test-helpers test-providers
+test-azure-provider: check test-helpers
 	go test $(TEST_ARGS) ./pkg/providers/azure...
 
-test-gcp-provider: check test-helpers test-providers
+test-gcp-provider: check test-helpers
 	go test $(TEST_ARGS) ./pkg/providers/google...
 
 build-azure-provider: test-azure-provider
