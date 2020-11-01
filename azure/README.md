@@ -1,6 +1,3 @@
-# Beta-release note
-According to [Azure docs](https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/virtual-machines/linux/using-cloud-init.md) the CentOS image with cloud-init scripts that is used in this solution is still in beta. Despite the fact that these scripts were tested on Azure the new versions of image might introduce breaking changes that will affect the scripts behavior.
-
 # Deployment instruction
 
 ## Manual installation
