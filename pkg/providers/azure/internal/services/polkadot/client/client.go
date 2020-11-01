@@ -14,6 +14,7 @@ type Client struct {
 	InterfacesClient        *network.InterfacesClient
 	PublicIPAddressesClient *network.PublicIPAddressesClient
 	MetricsClient           *insights.MetricsClient
+	MetricDefinitionsClient *insights.MetricDefinitionsClient
 }
 
 func NewClient(o *common.ClientOptions) *Client {
@@ -35,6 +36,9 @@ func NewClient(o *common.ClientOptions) *Client {
 	metricsClient := insights.NewMetricsClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionID)
 	o.ConfigureClient(&metricsClient.Client, o.ResourceManagerAuthorizer)
 
+	metricDefinitionsClient := insights.NewMetricDefinitionsClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionID)
+	o.ConfigureClient(&metricDefinitionsClient.Client, o.ResourceManagerAuthorizer)
+
 	return &Client{
 		VMScaleSetsClient:       &vmScaleSetsClient,
 		VMScaleSetVMsClient:     &vmScaleSetVMsClient,
@@ -42,5 +46,6 @@ func NewClient(o *common.ClientOptions) *Client {
 		InterfacesClient:        &interfacesClient,
 		PublicIPAddressesClient: &publicIPAddressClient,
 		MetricsClient:           &metricsClient,
+		MetricDefinitionsClient: &metricDefinitionsClient,
 	}
 }

@@ -6,11 +6,11 @@ module "primary_region" {
   region_prefix = "primary"
   chain         = var.chain
 
-  instance_count           = data.polkadot_failover.polkadot.primary_count
-  instance_count_primary   = data.polkadot_failover.polkadot.primary_count
-  instance_count_secondary = data.polkadot_failover.polkadot.secondary_count
-  instance_count_tertiary  = data.polkadot_failover.polkadot.tertiary_count
-  total_instance_count     = sum(data.polkadot_failover.polkadot.failover_instances)
+  instance_count           = polkadot_failover.polkadot.primary_count
+  instance_count_primary   = polkadot_failover.polkadot.primary_count
+  instance_count_secondary = polkadot_failover.polkadot.secondary_count
+  instance_count_tertiary  = polkadot_failover.polkadot.tertiary_count
+  total_instance_count     = sum(polkadot_failover.polkadot.failover_instances)
   instance_type            = var.instance_type
 
   region       = var.azure_regions[0]
@@ -49,11 +49,11 @@ module "secondary_region" {
   prefix        = var.prefix
   chain         = var.chain
 
-  instance_count           = data.polkadot_failover.polkadot.secondary_count
-  instance_count_primary   = data.polkadot_failover.polkadot.primary_count
-  instance_count_secondary = data.polkadot_failover.polkadot.secondary_count
-  instance_count_tertiary  = data.polkadot_failover.polkadot.tertiary_count
-  total_instance_count     = sum(data.polkadot_failover.polkadot.failover_instances)
+  instance_count           = polkadot_failover.polkadot.secondary_count
+  instance_count_primary   = polkadot_failover.polkadot.primary_count
+  instance_count_secondary = polkadot_failover.polkadot.secondary_count
+  instance_count_tertiary  = polkadot_failover.polkadot.tertiary_count
+  total_instance_count     = sum(polkadot_failover.polkadot.failover_instances)
   instance_type            = var.instance_type
 
   region       = var.azure_regions[1]
@@ -92,11 +92,11 @@ module "tertiary_region" {
   prefix        = var.prefix
   chain         = var.chain
 
-  instance_count           = data.polkadot_failover.polkadot.tertiary_count
-  instance_count_primary   = data.polkadot_failover.polkadot.primary_count
-  instance_count_secondary = data.polkadot_failover.polkadot.secondary_count
-  instance_count_tertiary  = data.polkadot_failover.polkadot.tertiary_count
-  total_instance_count     = sum(data.polkadot_failover.polkadot.failover_instances)
+  instance_count           = polkadot_failover.polkadot.tertiary_count
+  instance_count_primary   = polkadot_failover.polkadot.primary_count
+  instance_count_secondary = polkadot_failover.polkadot.secondary_count
+  instance_count_tertiary  = polkadot_failover.polkadot.tertiary_count
+  total_instance_count     = sum(polkadot_failover.polkadot.failover_instances)
   instance_type            = var.instance_type
 
   region       = var.azure_regions[2]

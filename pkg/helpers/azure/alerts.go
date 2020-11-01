@@ -134,15 +134,15 @@ func checkAlerts(alerts []alertsmanagement.Alert) error {
 
 func getTestMetricAlertNames(prefix string) []string {
 	return []string{
+		fmt.Sprintf("%s-consul-health-primary", prefix),
 		fmt.Sprintf("%s-disk-primary", prefix),
 		fmt.Sprintf("%s-health-primary", prefix),
-		fmt.Sprintf("%s-validator-primary", prefix),
-		fmt.Sprintf("%s-validator-secondary", prefix),
-		fmt.Sprintf("%s-health-secondary", prefix),
+		fmt.Sprintf("%s-consul-health-secondary", prefix),
 		fmt.Sprintf("%s-disk-secondary", prefix),
-		fmt.Sprintf("%s-health-tertiary", prefix),
-		fmt.Sprintf("%s-validator-tertiary", prefix),
+		fmt.Sprintf("%s-health-secondary", prefix),
+		fmt.Sprintf("%s-consul-health-tertiary", prefix),
 		fmt.Sprintf("%s-disk-tertiary", prefix),
+		fmt.Sprintf("%s-health-tertiary", prefix),
 	}
 }
 

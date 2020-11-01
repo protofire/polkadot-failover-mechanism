@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/errors"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/resources/mgmt/insights"
 )
 
@@ -79,11 +81,11 @@ func findValidator(metrics map[string]insights.Metric, aggregationType insights.
 
 	switch len(validators) {
 	case 0:
-		return Validator{}, fmt.Errorf("cannot find validators")
+		return Validator{}, errors.NewValidatorError("cannot find validators", errors.ValidatorErrorNotFound)
 	case 1:
 		return validators[0], nil
 	default:
-		return Validator{}, fmt.Errorf("found %d validators: %#v", len(validators), validators)
+		return Validator{}, errors.NewValidatorError(fmt.Sprintf("found %d validators: %#v", len(validators), validators), errors.ValidatorErrorMultiple)
 	}
 
 }
@@ -96,19 +98,19 @@ func WaitForValidator(
 	resourceGroup,
 	metricName,
 	metricNamespace string,
-	timeout int,
+	period int,
 ) (Validator, error) {
 
-	timer := time.NewTimer(time.Duration(timeout) * time.Second)
-	timerChan := timer.C
+	ticker := time.NewTicker(time.Duration(period) * time.Second)
+	tickerChan := ticker.C
 
-	defer timer.Stop()
+	defer ticker.Stop()
 
 	for {
 		select {
-		case <-timerChan:
-			return Validator{}, fmt.Errorf("timeout waiting for validator")
-		default:
+		case <-ctx.Done():
+			return Validator{}, fmt.Errorf("timeout waiting for validator. context has been cancelled")
+		case <-tickerChan:
 			validator, err := GetCurrentValidator(
 				ctx,
 				client,
@@ -121,7 +123,6 @@ func WaitForValidator(
 			if err == nil && validator.ScaleSetName != "" {
 				return validator, err
 			}
-			time.Sleep(5 * time.Second)
 		}
 	}
 }
