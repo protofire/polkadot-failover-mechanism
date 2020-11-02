@@ -83,18 +83,18 @@ func StringsContains(input string, search []string) (int, bool) {
 	return idx, idx != -1
 }
 
-func FindIntIndex(input int, search []int) int {
-	for idx, loc := range search {
-		if loc == input {
-			return idx
-		}
-	}
-	return -1
-}
-
 func RemoveFromSlice(slice []string, i int) []string {
 	slice[i] = slice[len(slice)-1]
 	slice[len(slice)-1] = ""
 	slice = slice[:len(slice)-1]
 	return slice
+}
+
+func SortIntSPosition(names []string, positions []string, values []int) []int {
+	res := make([]int, len(values))
+	for idx, name := range names {
+		posIdx := FindStrIndex(name, positions)
+		res[posIdx] = values[idx]
+	}
+	return res
 }

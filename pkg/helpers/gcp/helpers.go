@@ -44,8 +44,6 @@ func waitForOperation(ctx context.Context, op *compute.Operation, getOp getOp) e
 	for {
 		select {
 		case <-ctx.Done():
-			ticker.Stop()
-			waiter.Stop()
 			return fmt.Errorf("cancelled waiting for operation %q to complete", result.Name)
 		case <-waiter.C:
 			return fmt.Errorf("timeout waiting for operation %q to complete", result.Name)
@@ -56,14 +54,14 @@ func waitForOperation(ctx context.Context, op *compute.Operation, getOp getOp) e
 				result = op
 			}
 			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
-				log.Printf("Not found operation %q with type %q status %q and kind %q", result.Name, result.OperationType, result.Status, result.Kind)
+				log.Printf("Not found operation %q with type %q status %q and Kind %q", result.Name, result.OperationType, result.Status, result.Kind)
 				break
 			}
 			if err != nil {
-				return fmt.Errorf("Cannot get operations: %q. %w", result.Name, err)
+				return fmt.Errorf("cannot get operations: %q. %w", result.Name, err)
 			}
 
-			log.Printf("Operation %q with type %q status %q and kind %q", result.Name, result.OperationType, result.Status, result.Kind)
+			log.Printf("Operation %q with type %q status %q and Kind %q", result.Name, result.OperationType, result.Status, result.Kind)
 
 			if result.Status != "DONE" {
 				break

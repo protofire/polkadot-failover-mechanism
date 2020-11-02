@@ -62,9 +62,9 @@ func EnsureTFBucket(storageAccount, storageAccessKey, containerName string, forc
 
 }
 
-func listContainerBlobs(ctx context.Context, containerURL *azblob.ContainerURL) ([]azblob.BlobItem, error) {
+func listContainerBlobs(ctx context.Context, containerURL *azblob.ContainerURL) ([]azblob.BlobItemInternal, error) {
 
-	var blobs []azblob.BlobItem
+	var blobs []azblob.BlobItemInternal
 
 	for blobMarker := (azblob.Marker{}); blobMarker.NotDone(); {
 		listBlob, err := containerURL.ListBlobsFlatSegment(ctx, blobMarker, azblob.ListBlobsSegmentOptions{})
@@ -82,7 +82,7 @@ func listContainerBlobs(ctx context.Context, containerURL *azblob.ContainerURL) 
 	return blobs, nil
 }
 
-func deleteContainerBlobs(ctx context.Context, containerURL *azblob.ContainerURL, blobs []azblob.BlobItem) error {
+func deleteContainerBlobs(ctx context.Context, containerURL *azblob.ContainerURL, blobs []azblob.BlobItemInternal) error {
 	for _, blob := range blobs {
 		log.Printf("Deleting blob %q from container %q...", blob.Name, containerURL.String())
 		_, err := containerURL.NewBlobURL(blob.Name).Delete(ctx, azblob.DeleteSnapshotsOptionInclude, azblob.BlobAccessConditions{})

@@ -9,7 +9,7 @@ import (
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-30/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-06-01/network"
 )
 

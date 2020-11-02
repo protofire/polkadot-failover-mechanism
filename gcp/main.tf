@@ -1,4 +1,15 @@
 module "primary_region" {
+
+  depends_on = [
+    google_secret_manager_secret_version.cpu-version,
+    google_secret_manager_secret_version.keys-version,
+    google_secret_manager_secret_version.name-version,
+    google_secret_manager_secret_version.nodekey-version,
+    google_secret_manager_secret_version.ram-version,
+    google_secret_manager_secret_version.seeds-version,
+    google_secret_manager_secret_version.types-version,
+  ]
+
   source = "./modules/regional_infrastructure"
 
   sa_email = google_service_account.service_account.email
@@ -19,8 +30,8 @@ module "primary_region" {
 
   region = var.gcp_regions[0]
 
-  instance_count       = var.instance_count[0]
-  total_instance_count = var.instance_count[0] + var.instance_count[1] + var.instance_count[2]
+  instance_count       = polkadot_failover.polkadot.primary_count
+  total_instance_count = sum(polkadot_failover.polkadot.failover_instances)
 
   health_check = google_compute_health_check.autohealing.self_link
 
@@ -34,6 +45,17 @@ module "primary_region" {
 }
 
 module "secondary_region" {
+
+  depends_on = [
+    google_secret_manager_secret_version.cpu-version,
+    google_secret_manager_secret_version.keys-version,
+    google_secret_manager_secret_version.name-version,
+    google_secret_manager_secret_version.nodekey-version,
+    google_secret_manager_secret_version.ram-version,
+    google_secret_manager_secret_version.seeds-version,
+    google_secret_manager_secret_version.types-version,
+  ]
+
   source = "./modules/regional_infrastructure"
 
   sa_email = google_service_account.service_account.email
@@ -54,8 +76,8 @@ module "secondary_region" {
 
   region = var.gcp_regions[1]
 
-  instance_count       = var.instance_count[0]
-  total_instance_count = var.instance_count[0] + var.instance_count[1] + var.instance_count[2]
+  instance_count       = polkadot_failover.polkadot.secondary_count
+  total_instance_count = sum(polkadot_failover.polkadot.failover_instances)
 
   health_check = google_compute_health_check.autohealing.self_link
 
@@ -69,6 +91,17 @@ module "secondary_region" {
 }
 
 module "tertiary_region" {
+
+  depends_on = [
+    google_secret_manager_secret_version.cpu-version,
+    google_secret_manager_secret_version.keys-version,
+    google_secret_manager_secret_version.name-version,
+    google_secret_manager_secret_version.nodekey-version,
+    google_secret_manager_secret_version.ram-version,
+    google_secret_manager_secret_version.seeds-version,
+    google_secret_manager_secret_version.types-version,
+  ]
+
   source = "./modules/regional_infrastructure"
 
   sa_email = google_service_account.service_account.email
@@ -89,8 +122,8 @@ module "tertiary_region" {
 
   region = var.gcp_regions[2]
 
-  instance_count       = var.instance_count[0]
-  total_instance_count = var.instance_count[0] + var.instance_count[1] + var.instance_count[2]
+  instance_count       = polkadot_failover.polkadot.tertiary_count
+  total_instance_count = sum(polkadot_failover.polkadot.failover_instances)
 
   health_check = google_compute_health_check.autohealing.self_link
 

@@ -6,7 +6,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-30/compute"
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 )
 

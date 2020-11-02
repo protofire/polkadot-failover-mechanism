@@ -78,7 +78,7 @@ You will need to clone this repository and its submodules. Use `git clone --recu
 
 ### Prepare terraform polkadot provider
 
-    make install-azure-provider
+    VERSION=0.1.0 make install-azure-provider
 
 ### Run the Terraform scripts
 

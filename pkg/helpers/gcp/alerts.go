@@ -132,7 +132,7 @@ func AlertsPoliciesCheck(prefix, project string) error {
 
 	alertPolicyConditions := alertPolicies[0].Conditions
 
-	if len(alertPolicyConditions) != 5 {
+	if len(alertPolicyConditions) != 6 {
 		return fmt.Errorf("Wrong alert policy conditions count: %d", len(alertPolicyConditions))
 	}
 
@@ -142,6 +142,7 @@ func AlertsPoliciesCheck(prefix, project string) error {
 		"Validator less than 1",
 		"Validator more than 1",
 		"Disk consumed more than 90 percent",
+		"Validator metric timeseries absent",
 	}
 
 	var idx int
