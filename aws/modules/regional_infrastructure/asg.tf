@@ -71,7 +71,7 @@ resource "aws_launch_template" "polkadot" {
 }
 
 resource "aws_autoscaling_group" "polkadot" {
-  name                      = "${var.prefix}-polkadot-validator"
+  name                      = "${var.prefix}-polkadot-validator-${var.region_prefix}"
   max_size                  = var.instance_count
   min_size                  = var.instance_count
   desired_capacity          = var.instance_count

@@ -145,3 +145,20 @@ variable "docker_image" {
   type        = string
   default     = "parity/polkadot:master-0.8.26-80e3a7e-5d52c096"
 }
+
+variable "failover_mode" {
+  description = "Failover mode. Either 'single' or 'distributed'"
+  type        = string
+  default     = "distributed"
+  validation {
+    condition     = var.failover_mode == "single" || var.failover_mode == "distributed"
+    error_message = "The failover_mode must be one of 'single', 'distributed'."
+  }
+}
+
+variable "validator_metric" {
+  description = "Name of telegraf validate metric"
+  type        = string
+  default     = "value"
+}
+

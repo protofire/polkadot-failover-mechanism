@@ -3,6 +3,11 @@ variable "prefix" {
   description = "Unique prefix for cloud resources at Terraform"
 }
 
+variable "region_prefix" {
+  type        = string
+  description = "Unique region prefix for cloud resources at Terraform"
+}
+
 variable "instance_type" {
   type    = string
   default = "t3.medium"

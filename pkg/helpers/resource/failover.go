@@ -68,7 +68,7 @@ func (f Failover) IsNotSet() bool {
 }
 
 func (f Failover) Initialized() bool {
-	return len(f.Locations) != 0 && f.MetricName != "" && f.MetricNameSpace != ""
+	return len(f.Instances) != 0 && f.MetricName != "" && f.MetricNameSpace != ""
 }
 
 func (f *Failover) FillDefaultCountsIfNotSet() {

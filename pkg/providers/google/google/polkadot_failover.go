@@ -192,7 +192,11 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		}
 	}
 
-	log.Printf("[DEBUG] failover: Found validator instance: %s", validator.InstanceName)
+	if validator.InstanceName != "" {
+		log.Printf("[DEBUG] failover: Found validator instance: %s", validator.InstanceName)
+	} else {
+		log.Printf("[DEBUG] failover: Have not found the validator instance")
+	}
 
 	instanceGroups, err := gcp.GetInstanceGroupManagersForRegions(
 		ctx,
