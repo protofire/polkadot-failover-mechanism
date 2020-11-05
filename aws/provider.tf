@@ -25,3 +25,11 @@ provider "aws" {
   region     = var.aws_regions[2]
   alias      = "tertiary"
 }
+
+provider "polkadot" {
+  version    = "~> 0.1"
+  profile    = length(var.aws_profiles) > 0 ? element(var.aws_profiles, 2) : null
+  access_key = length(var.aws_access_keys) > 0 ? element(var.aws_access_keys, 2) : null
+  secret_key = length(var.aws_secret_keys) > 0 ? element(var.aws_secret_keys, 2) : null
+  regions    = var.aws_regions
+}

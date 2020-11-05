@@ -56,14 +56,14 @@ resource "aws_launch_template" "polkadot" {
     primary-region        = var.regions[0],
     secondary-region      = var.regions[1],
     tertiary-region       = var.regions[2],
-    autoscaling-name      = "${var.prefix}-polkadot-validator",
+    autoscaling-name      = "${var.prefix}-polkadot-validator-${var.region_prefix}"
     chain                 = var.chain,
     disk_size             = var.disk_size,
     cpu_limit             = var.cpu_limit,
     ram_limit             = var.ram_limit,
-    lb-primary            = var.lbs[0].dns_name,
-    lb-secondary          = var.lbs[1].dns_name,
-    lb-tertiary           = var.lbs[2].dns_name,
+    lb-primary            = var.instance_count_primary > 0 ? var.lbs[0].dns_name : "",
+    lb-secondary          = var.instance_count_secondary > 0 ? var.lbs[1].dns_name : "",
+    lb-tertiary           = var.instance_count_tertiary > 0 ? var.lbs[2].dns_name : "",
     delete_on_termination = var.delete_on_termination,
     total_instance_count  = var.total_instance_count,
     docker_image          = var.docker_image,
@@ -71,7 +71,7 @@ resource "aws_launch_template" "polkadot" {
 }
 
 resource "aws_autoscaling_group" "polkadot" {
-  name                      = "${var.prefix}-polkadot-validator"
+  name                      = "${var.prefix}-polkadot-validator-${var.region_prefix}"
   max_size                  = var.instance_count
   min_size                  = var.instance_count
   desired_capacity          = var.instance_count

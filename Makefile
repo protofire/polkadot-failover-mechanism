@@ -30,6 +30,11 @@ GCP_BINARY    			:= "./${PROVIDER_NAME}"
 GCP_CMD_PACKAGE 		:= ./pkg/providers/google
 GCP_PROVIDER_PATH 		:= "${HOME}/.terraform.d/plugins/polkadot-failover-mechanism/gcp/polkadot/${VERSION}/${GOOS}_${GOARCH}"
 
+AWS_LDFLAGS   			:= "-w -s -X 'aws.version.ProviderVersion=${VERSION}'"
+AWS_BINARY    			:= "./${PROVIDER_NAME}"
+AWS_CMD_PACKAGE 		:= ./pkg/providers/aws
+AWS_PROVIDER_PATH 		:= "${HOME}/.terraform.d/plugins/polkadot-failover-mechanism/aws/polkadot/${VERSION}/${GOOS}_${GOARCH}"
+
 $(GOBIN):
 	echo "create gobin"
 	mkdir -p $(GOBIN)
@@ -44,7 +49,7 @@ cache:
 clean:
 	go clean -cache
 
-test-aws: check cache
+test-aws: check cache install-aws-provider
 	go test -tags=aws $(TEST_TF_ARGS) ./tests/aws...
 
 test-gcp: check cache install-gcp-provider
@@ -62,6 +67,9 @@ test-azure-provider: check test-helpers
 test-gcp-provider: check test-helpers
 	go test $(TEST_ARGS) ./pkg/providers/google...
 
+test-aws-provider: check test-helpers
+	go test $(TEST_ARGS) ./pkg/providers/aws...
+
 build-azure-provider: test-azure-provider
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
 	-ldflags $(AZURE_LDFLAGS) \
@@ -74,6 +82,12 @@ build-gcp-provider: test-gcp-provider
 	-tags=azure -o $(GCP_BINARY) \
 	$(GCP_CMD_PACKAGE)
 
+build-aws-provider: test-aws-provider
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
+	-ldflags $(AWS_LDFLAGS) \
+	-tags=aws -o $(AWS_BINARY) \
+	$(AWS_CMD_PACKAGE)
+
 install-azure-provider: build-azure-provider
 	mkdir -p $(AZURE_PROVIDER_PATH)
 	mv -v $(AZURE_BINARY) $(AZURE_PROVIDER_PATH)
@@ -82,9 +96,13 @@ install-gcp-provider: build-gcp-provider
 	mkdir -p $(GCP_PROVIDER_PATH)
 	mv -v $(GCP_BINARY) $(GCP_PROVIDER_PATH)
 
+install-aws-provider: build-aws-provider
+	mkdir -p $(AWS_PROVIDER_PATH)
+	mv -v $(AWS_BINARY) $(AWS_PROVIDER_PATH)
+
 test-all: test-aws test-gcp test-azure
-test-providers-all: test-azure-provider test-gcp-provider
-install-all: install-azure-provider install-gcp-provider
+test-providers-all: test-azure-provider test-gcp-provider test-aws-provider
+install-all: install-azure-provider install-gcp-provider install-aws-provider
 
 fmt:
 	go fmt ./...
@@ -119,5 +137,7 @@ shell:
 		test-providers-all \
 		build-azure-provider \
 		build-gcp-provider \
+		build-aws-provider \
 		install-azure-provider \
-		install-gcp-provider
+		install-gcp-provider \
+		install-aws-provider

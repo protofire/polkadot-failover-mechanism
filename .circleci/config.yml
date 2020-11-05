@@ -19,7 +19,9 @@ jobs:
           name: Run Go AWS tests
           command: |
             export PREFIX="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1 | sed -E 's/^([0-9]+)(.*)/\2\1/g')"
-            make test-aws
+            VERSION=$(git describe --tags --abbrev=8 --exact-match 2>/dev/null || echo "${AWS_POLKADOT_PROVIDER_VERSION}")
+            [[ "${VERSION}" =~ "^aws" ]] || VERSION="${AWS_POLKADOT_PROVIDER_VERSION}"
+            VERSION=${VERSION#*-} make test-aws
       - slack/status:
           fail_only: true
     environment:
@@ -144,6 +146,25 @@ jobs:
           fail_only: true
     environment:
       - GCP_POLKADOT_PROVIDER_VERSION: 0.1.0
+
+  build_aws_polkadot_provider:
+    docker:
+      - image: circleci/golang:1.15
+    steps:
+      - checkout
+      - run:
+          name: "Publish AWS polkadot provider release on GitHub"
+          command: |
+            GO111MODULE=off go get github.com/tcnksm/ghr
+            VERSION=$(git describe --tags --abbrev=8 --exact-match 2>/dev/null || echo "${AWS_POLKADOT_PROVIDER_VERSION}")
+            [[ "${VERSION}" =~ "^AWS" ]] || VERSION="${AWS_POLKADOT_PROVIDER_VERSION}"
+            VERSION=${VERSION#*-} make build-aws-provider
+            mv -v ./terraform-provider-polkadot ./terraform-provider-polkadot-aws
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./terraform-provider-polkadot-aws
+      - slack/status:
+          fail_only: true
+    environment:
+      - AWS_POLKADOT_PROVIDER_VERSION: 0.1.0
 
 workflows:
   version: 2

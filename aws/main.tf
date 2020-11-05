@@ -39,6 +39,7 @@ module "primary_region" {
   source = "./modules/regional_infrastructure"
 
   prefix        = var.prefix
+  region_prefix = local.region_prefix.primary
   vpc           = module.primary_network.vpc
   subnet        = module.primary_network.subnet
   lb            = module.primary_network.lb
@@ -65,8 +66,11 @@ module "primary_region" {
   regions = var.aws_regions
   cidrs   = var.vpc_cidrs
 
-  instance_count       = var.instance_count[0]
-  total_instance_count = var.instance_count[0] + var.instance_count[1] + var.instance_count[2]
+  instance_count           = polkadot_failover.polkadot.primary_count
+  total_instance_count     = sum(polkadot_failover.polkadot.failover_instances)
+  instance_count_primary   = polkadot_failover.polkadot.primary_count
+  instance_count_secondary = polkadot_failover.polkadot.secondary_count
+  instance_count_tertiary  = polkadot_failover.polkadot.tertiary_count
 
   health_check_interval            = var.health_check_interval
   health_check_healthy_threshold   = var.health_check_healthy_threshold
@@ -82,6 +86,7 @@ module "secondary_region" {
   source = "./modules/regional_infrastructure"
 
   prefix        = var.prefix
+  region_prefix = local.region_prefix.secondary
   vpc           = module.secondary_network.vpc
   subnet        = module.secondary_network.subnet
   lb            = module.secondary_network.lb
@@ -108,8 +113,11 @@ module "secondary_region" {
   regions = var.aws_regions
   cidrs   = var.vpc_cidrs
 
-  instance_count       = var.instance_count[1]
-  total_instance_count = var.instance_count[0] + var.instance_count[1] + var.instance_count[2]
+  instance_count           = polkadot_failover.polkadot.secondary_count
+  total_instance_count     = sum(polkadot_failover.polkadot.failover_instances)
+  instance_count_primary   = polkadot_failover.polkadot.primary_count
+  instance_count_secondary = polkadot_failover.polkadot.secondary_count
+  instance_count_tertiary  = polkadot_failover.polkadot.tertiary_count
 
   health_check_interval            = var.health_check_interval
   health_check_healthy_threshold   = var.health_check_healthy_threshold
@@ -125,6 +133,7 @@ module "tertiary_region" {
   source = "./modules/regional_infrastructure"
 
   prefix        = var.prefix
+  region_prefix = local.region_prefix.tertiary
   vpc           = module.tertiary_network.vpc
   subnet        = module.tertiary_network.subnet
   lb            = module.tertiary_network.lb
@@ -151,8 +160,11 @@ module "tertiary_region" {
   regions = var.aws_regions
   cidrs   = var.vpc_cidrs
 
-  instance_count       = var.instance_count[2]
-  total_instance_count = var.instance_count[0] + var.instance_count[1] + var.instance_count[2]
+  instance_count           = polkadot_failover.polkadot.tertiary_count
+  total_instance_count     = sum(polkadot_failover.polkadot.failover_instances)
+  instance_count_primary   = polkadot_failover.polkadot.primary_count
+  instance_count_secondary = polkadot_failover.polkadot.secondary_count
+  instance_count_tertiary  = polkadot_failover.polkadot.tertiary_count
 
   health_check_interval            = var.health_check_interval
   health_check_healthy_threshold   = var.health_check_healthy_threshold

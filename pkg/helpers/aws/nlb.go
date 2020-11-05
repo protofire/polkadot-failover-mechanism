@@ -71,7 +71,6 @@ func newNLBClientE(region string) (*elbv2.ELBV2, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return elbv2.New(sess), nil
 }
 

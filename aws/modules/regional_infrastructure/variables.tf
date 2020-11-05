@@ -3,6 +3,11 @@ variable "prefix" {
   description = "Unique prefix for cloud resources at Terraform"
 }
 
+variable "region_prefix" {
+  type        = string
+  description = "Unique region prefix for cloud resources at Terraform"
+}
+
 variable "instance_type" {
   type    = string
   default = "t3.medium"
@@ -34,6 +39,21 @@ variable "validator_keys" {
 }
 
 variable "instance_count" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_primary" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_secondary" {
+  type    = number
+  default = 1
+}
+
+variable "instance_count_tertiary" {
   type    = number
   default = 1
 }
