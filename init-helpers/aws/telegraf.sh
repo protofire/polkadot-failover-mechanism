@@ -1,7 +1,6 @@
 cat <<EOF >/etc/telegraf/telegraf.conf
 [global_tags]
 asg_name = "$3" # will tag all metrics with asg name
-instance_id = "$4" # will tag all metrics with instance id
 
 # Configuration for telegraf agent
 [agent]
@@ -57,6 +56,7 @@ instance_id = "$4" # will tag all metrics with instance id
 [[inputs.consul]]
   datacenter = "$1"
   metric_version = 2
+  tagexclude = ["node"]
 
 [[inputs.http_listener_v2]]
   service_address = ":12500"
@@ -69,5 +69,6 @@ instance_id = "$4" # will tag all metrics with instance id
   path = "/telegraf"
   max_body_size = "1MB"
   data_format = "influx"
-  tagexclude = ["instance_id"]
+  [inputs.http_listener_v2]
+    instance_id = "$4"
 EOF

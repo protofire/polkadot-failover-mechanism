@@ -39,7 +39,7 @@ module "primary_region" {
   source = "./modules/regional_infrastructure"
 
   prefix        = var.prefix
-  region_prefix = local.region_prefixes[0]
+  region_prefix = local.region_prefix.primary
   vpc           = module.primary_network.vpc
   subnet        = module.primary_network.subnet
   lb            = module.primary_network.lb
@@ -83,7 +83,7 @@ module "secondary_region" {
   source = "./modules/regional_infrastructure"
 
   prefix        = var.prefix
-  region_prefix = local.region_prefixes[1]
+  region_prefix = local.region_prefix.secondary
   vpc           = module.secondary_network.vpc
   subnet        = module.secondary_network.subnet
   lb            = module.secondary_network.lb
@@ -127,7 +127,7 @@ module "tertiary_region" {
   source = "./modules/regional_infrastructure"
 
   prefix        = var.prefix
-  region_prefix = local.region_prefixes[2]
+  region_prefix = local.region_prefix.tertiary
   vpc           = module.tertiary_network.vpc
   subnet        = module.tertiary_network.subnet
   lb            = module.tertiary_network.lb

@@ -18,7 +18,7 @@ resource "aws_cloudwatch_metric_alarm" "validator_count" {
   statistic   = "Sum"
   namespace   = var.prefix
   dimensions = {
-    asg_name = "${var.prefix}-polkadot-validator"
+    asg_name = module.primary_region.asg.name
   }
 
   depends_on = [
@@ -50,7 +50,7 @@ resource "aws_cloudwatch_metric_alarm" "validator_overflow" {
   statistic   = "Sum"
   namespace   = var.prefix
   dimensions = {
-    asg_name = "${var.prefix}-polkadot-validator"
+    asg_name = module.primary_region.asg.name
   }
 
   depends_on = [

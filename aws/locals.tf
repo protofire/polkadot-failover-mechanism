@@ -1,3 +1,7 @@
 locals {
-  region_prefixes = ["primary", "secondary", "tertiary"]
+  region_prefix = {
+    primary   = "primary",
+    secondary = "secondary",
+    tertiary  = "tertiary"
+  }
 }
