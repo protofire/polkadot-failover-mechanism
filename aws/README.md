@@ -46,6 +46,21 @@ Either clone this repo using `git clone` command or simply download it from Web 
 9. After the deployment is complete you can open your EC2 console to check that the instances were deployed successfully.
 10. (Optional) Subscribe to notifications. As for now Terraform does not support automatic email alert creation due to AWS API limitation. Thus, these scripts creates an SNS topic that you should subscribe to manually to start receiving alert messages.
 
+### Switch into / from standalone (single) mode
+
+1. Into standalone mode
+
+
+    terraform plan -var failover_mode=single
+    terraform apply -auto-approve -var delete_vms_with_api_in_single_mode=true -var failover_mode=single
+
+2. Into distributed mode
+
+
+    terraform plan
+    terraform apply -auto-approve
+
+
 ### Validate
 
 1. Watch [Polkadot Telemetry](https://telemetry.polkadot.io/) for your node to synchronize with the network.<br />
