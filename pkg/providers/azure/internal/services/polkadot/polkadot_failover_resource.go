@@ -55,7 +55,7 @@ func deleteVms(
 ) error {
 
 	vmsToDelete := getVmsToDelete(vms, validator.Hostname)
-	log.Printf("[DEBUG] failover: We will delete instances %#v with API requests", vmsToDelete)
+	log.Printf("[DEBUG] failover: Create. We will delete instances %#v with API requests", vmsToDelete)
 	for vmSSName, vmsIDs := range vmsToDelete {
 		if err := azure.DeleteVMs(ctx, client.Polkadot.VMScaleSetsClient, failover.ResourceGroup, vmSSName, vmsIDs); err != nil {
 			return err
@@ -70,7 +70,7 @@ func deleteVms(
 		waitForCount = 0
 	}
 
-	log.Printf("[DEBUG] failover: Waiting for VMs count: %d", waitForCount)
+	log.Printf("[DEBUG] failover: Create. Waiting for VMs count: %d", waitForCount)
 
 	if err := azure.WaitForVirtualMachineScaleSetVMsWithClient(
 		ctxTimeout,
@@ -84,14 +84,14 @@ func deleteVms(
 		return err
 	}
 
-	log.Printf("[DEBUG] failover: Ensured VMs count: %d", waitForCount)
+	log.Printf("[DEBUG] failover: Create. Ensured VMs count: %d", waitForCount)
 
 	ctxTimeout, cancel = context.WithTimeout(ctx, time.Second*time.Duration(timeout))
 	defer cancel()
 
 	if validator.ScaleSetName != "" {
 
-		log.Printf("[DEBUG] failover: Waiting for validator")
+		log.Printf("[DEBUG] failover: Create. Waiting for validator")
 
 		validator, err := azure.WaitForValidator(
 			ctxTimeout,
@@ -106,7 +106,7 @@ func deleteVms(
 			return err
 		}
 
-		log.Printf("[DEBUG] failover: Ensured validator: %#v", validator)
+		log.Printf("[DEBUG] failover: Create. Ensured validator: %#v", validator)
 	}
 
 	return nil
@@ -128,12 +128,12 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	if azureFailover.IsDistributedMode() {
-		log.Printf("[DEBUG] failover: Failover mode is %q. Using predefined number of instances", azureFailover.FailoverMode)
+		log.Printf("[DEBUG] failover: Read. Failover mode is %q. Using predefined number of instances", azureFailover.FailoverMode)
 		azureFailover.SetCounts(azureFailover.Instances...)
 		return azureFailover.SetSchemaValuesDiag(d)
 	}
 
-	log.Printf("[DEBUG] failover: Failover mode is %q", azureFailover.FailoverMode)
+	log.Printf("[DEBUG] failover: Read. Failover mode is %q", azureFailover.FailoverMode)
 
 	client := meta.(*clients.Client)
 
@@ -153,7 +153,7 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("[ERROR] failover: Cannot get VM scale sets: %v", err)
 	}
 
-	log.Printf("[DEBUG] failover: Found %d VM scale sets", len(vmScaleSetNames))
+	log.Printf("[DEBUG] failover: Read. Found %d VM scale sets", len(vmScaleSetNames))
 
 	validator, err := azure.GetCurrentValidator(
 		ctx,
@@ -168,16 +168,16 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 	if err != nil {
 		validatorError := &helperErrors.ValidatorError{}
 		if errors.As(err, validatorError) {
-			log.Printf("[WARNING] failover: Cannot get validator: %s", validatorError)
+			log.Printf("[WARNING] failover: Read. Cannot get validator: %s", validatorError)
 		} else {
-			log.Printf("[ERROR] failover: Cannot get validator: %s", err)
+			log.Printf("[ERROR] failover: Read. Cannot get validator: %s", err)
 			return diag.FromErr(err)
 		}
 	} else {
-		log.Printf("[DEBUG] failover: Found validator scale set %q, host %q", validator.ScaleSetName, validator.Hostname)
+		log.Printf("[DEBUG] failover: Read. Found validator scale set %q, host %q", validator.ScaleSetName, validator.Hostname)
 	}
 
-	log.Printf("[DEBUG] failover: Getting instances list...")
+	log.Printf("[DEBUG] failover: Read. Getting instances list...")
 
 	vmsByScaleSet, err := azure.GetVirtualMachineScaleSetVMsWithClient(
 		ctx,
@@ -199,10 +199,10 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 
 	positions[locationIDx] = 1
 
-	log.Printf("[DEBUG] failover: Found instance numbers per region: %v", positions)
+	log.Printf("[DEBUG] failover: Read. Found instance numbers per region: %v", positions)
 	azureFailover.SetCounts(positions...)
 	azureFailover.FillDefaultCountsIfNotSet()
-	log.Printf("[DEBUG] failover: Set instance numbers per region: %v", azureFailover.FailoverInstances)
+	log.Printf("[DEBUG] failover: Read. Set instance numbers per region: %v", azureFailover.FailoverInstances)
 
 	return azureFailover.SetSchemaValuesDiag(d)
 
@@ -224,10 +224,10 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] failover: Failover mode is %q", failover.FailoverMode)
+	log.Printf("[DEBUG] failover: Create. Failover mode is %q", failover.FailoverMode)
 
 	if failover.IsDistributedMode() {
-		log.Printf("[DEBUG] failover: Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
+		log.Printf("[DEBUG] failover: Create. Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
 		failover.SetCounts(failover.Instances...)
 		id, err := failover.ID()
 		if err != nil {
@@ -250,7 +250,7 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		return diag.Errorf("[ERROR] failover: Cannot get VM scale sets: %v", err)
 	}
 
-	log.Printf("[DEBUG] failover: Found %d VM scale sets", len(vmScaleSetNames))
+	log.Printf("[DEBUG] failover: Create. Found %d VM scale sets", len(vmScaleSetNames))
 
 	if len(vmScaleSetNames) == 0 {
 		failover.SetCounts(positions...)
@@ -276,13 +276,13 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	if err != nil {
 		validatorError := &helperErrors.ValidatorError{}
 		if errors.As(err, validatorError) {
-			log.Printf("[WARNING] failover: Cannot get validator: %s", validatorError)
+			log.Printf("[WARNING] failover: Create. Cannot get validator: %s", validatorError)
 		} else {
-			log.Printf("[ERROR] failover: Cannot get validator: %s", err)
+			log.Printf("[ERROR] failover: Create. Cannot get validator: %s", err)
 			return diag.FromErr(err)
 		}
 	} else {
-		log.Printf("[DEBUG] failover: Found validator scale set %q, host %q", validator.ScaleSetName, validator.Hostname)
+		log.Printf("[DEBUG] failover: Create. Found validator scale set %q, host %q", validator.ScaleSetName, validator.Hostname)
 	}
 
 	vms, err := azure.GetVirtualMachineScaleSetVMsWithClient(
@@ -311,10 +311,10 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		}
 	}
 
-	log.Printf("[DEBUG] failover: Found instance numbers per region: %v", positions)
+	log.Printf("[DEBUG] failover: Create. Found instance numbers per region: %v", positions)
 	failover.SetCounts(positions...)
 	failover.FillDefaultCountsIfNotSet()
-	log.Printf("[DEBUG] failover: Set instance numbers per region: %v", failover.FailoverInstances)
+	log.Printf("[DEBUG] failover: Create. Set instance numbers per region: %v", failover.FailoverInstances)
 
 	id, err := failover.ID()
 	if err != nil {

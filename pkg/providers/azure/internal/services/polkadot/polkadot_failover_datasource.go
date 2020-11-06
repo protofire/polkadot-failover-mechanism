@@ -44,7 +44,7 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 	_ = failover.FromSchema(d)
 
 	if failover.IsDistributedMode() {
-		log.Printf("[DEBUG] failover: Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
+		log.Printf("[DEBUG] failover: Read. Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
 		failover.SetCounts(failover.Instances...)
 		return failover.SetSchemaValuesDiag(d)
 	}
@@ -58,7 +58,7 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 
 	features := meta.(*clients.Client).Features.PolkadotFailOverFeature
 
-	log.Printf("[DEBUG] failover: Getting instances list...")
+	log.Printf("[DEBUG] failover: Read. Getting instances list...")
 
 	vmScaleSetNames, err := azure.GetVMScaleSetNames(
 		ctx,
@@ -71,7 +71,7 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("[ERROR] failover: Cannot get VM scale sets: %v", err)
 	}
 
-	log.Printf("[DEBUG]. Found %d VM scale sets", len(vmScaleSetNames))
+	log.Printf("[DEBUG] failover: Read. Found %d VM scale sets", len(vmScaleSetNames))
 
 	if len(vmScaleSetNames) == 0 {
 		failover.FillDefaultCountsIfNotSet()
@@ -99,7 +99,7 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] failover: Found validator scale set %q, host %q", validator.ScaleSetName, validator.Hostname)
+	log.Printf("[DEBUG] failover: Read. Found validator scale set %q, host %q", validator.ScaleSetName, validator.Hostname)
 
 	vms, err := azure.GetVirtualMachineScaleSetVMsWithClient(
 		ctx,

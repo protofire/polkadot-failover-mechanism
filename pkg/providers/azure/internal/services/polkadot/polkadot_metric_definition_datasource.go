@@ -145,7 +145,7 @@ func dateSourcePolkadotMetricDefinitionRead(ctx context.Context, d *schema.Resou
 	}
 
 	log.Printf(
-		"[DEBUG] failover: Found metric definition for metric namespace %q and virtual machines scale sets %s. Metric name: %q",
+		"[DEBUG] failover: Metrics. Found metric definition for metric namespace %q and virtual machines scale sets %s. Metric name: %q",
 		metricSource.MetricNameSpace,
 		metricSource.ScaleSets,
 		metricNamesCount.metric(),

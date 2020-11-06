@@ -318,7 +318,7 @@ func WaitValidatorMetricNamesForMetricNamespace(
 					}
 					errorsCount++
 					log.Printf(
-						"error getting metric definitions for metric name %q, namespace %q, scale set %q: %v",
+						"[DEBUG] faiover: Metrics. error getting metric definitions for metric name %q, namespace %q, scale set %q: %v",
 						metricName,
 						metricNameSpace,
 						vmScaleSetName,
@@ -353,7 +353,7 @@ func WaitValidatorMetricNamesForMetricNamespace(
 				successCount++
 
 				log.Printf(
-					"[DEBUG] failover: successfully get metric definition %q for namespace %q and scale set %q. Retried: %d",
+					"[DEBUG] failover: Metrics. successfully get metric definition %q for namespace %q and scale set %q. Retried: %d",
 					metric,
 					metricNameSpace,
 					vmScaleSetName,

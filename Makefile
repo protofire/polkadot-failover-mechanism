@@ -15,8 +15,8 @@ HAS_GOLANGCI 			:= $(shell command -v golangci-lint;)
 HAS_GOIMPORTS 			:= $(shell command -v goimports;)
 GOOS            		?= $(shell go env GOOS)
 GOARCH          		?= $(shell go env GOARCH)
-VERSION         		?= $(shell git describe --tags --abbrev=8 --exact-match 2> /dev/null || \
-                           git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
+DEFAULT_VERSION    		:= 0.1.0
+VERSION         		:= $(shell git describe --tags --abbrev=8 --exact-match 2> /dev/null || echo ${DEFAULT_VERSION})
 
 PROVIDER_NAME 			:= terraform-provider-polkadot
 

@@ -45,31 +45,31 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 	err := failover.FromIDOrSchema(d)
 
 	if err != nil {
+		log.Printf("[DEBUG] failover: Read. Error reading failover state: %v", err)
 		return diag.FromErr(err)
 	}
 
 	if failover.Project == "" {
 		failover.Project, err = getProject(d, config)
 		if err != nil {
+			log.Printf("[DEBUG] failover: Read. Error getting google project: %v", err)
 			return diag.FromErr(err)
 		}
 	}
 
 	if !failover.Initialized() {
+		log.Printf("[DEBUG] failover: Read. Non initialized state. Resetting resource ID")
 		d.SetId("")
 		return nil
 	}
 
 	if failover.IsDistributedMode() {
-		log.Printf("[DEBUG] failover: Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
+		log.Printf("[DEBUG] failover: Read. Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
 		failover.SetCounts(failover.Instances...)
-		if err := failover.SetSchemaValues(d); err != nil {
-			return diag.FromErr(err)
-		}
-		return nil
+		return failover.SetSchemaValuesDiag(d)
 	}
 
-	log.Printf("[DEBUG] failover: Failover mode is %q", failover.FailoverMode)
+	log.Printf("[DEBUG] failover: Read. Failover mode is %q", failover.FailoverMode)
 
 	userAgent, err := generateUserAgentString(d, config.userAgent)
 	if err != nil {
@@ -80,7 +80,7 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	log.Printf("[DEBUG] failover: Getting instances list...")
+	log.Printf("[DEBUG] failover: Read. Getting instances list...")
 
 	instanceGroups, err := gcp.GetInstanceGroupManagersForRegions(
 		ctx,
@@ -94,32 +94,28 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] failover: Found %d managent instance groups", len(instanceGroups))
+	log.Printf("[DEBUG] failover: Read. Found %d managent instance groups", len(instanceGroups))
 
 	positions := make([]int, len(failover.Locations))
 
 	for _, group := range instanceGroups {
 		regionPosition := helpers.FindStrIndex(group.Region, failover.Locations)
 		if regionPosition == -1 {
-			log.Printf("[ERROR] failover: Cannot find region %s in locations list: %s", group.Region, strings.Join(failover.Locations, ", "))
+			log.Printf("[ERROR] failover: Read. Cannot find region %s in locations list: %s", group.Region, strings.Join(failover.Locations, ", "))
 			continue
 		}
 		positions[regionPosition] = len(group.Instances)
 	}
 
-	log.Printf("[DEBUG] failover: Found instance numbers per region: %v", positions)
+	log.Printf("[DEBUG] failover: Read. Found instance numbers per region: %v", positions)
 
 	failover.SetCounts(positions...)
 
 	failover.FillDefaultCountsIfNotSet()
 
-	log.Printf("[DEBUG] failover: Set instance numbers per region: %v", failover.FailoverInstances)
+	log.Printf("[DEBUG] failover: Read. Set instance numbers per region: %v", failover.FailoverInstances)
 
-	if err := failover.SetSchemaValues(d); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return nil
+	return failover.SetSchemaValuesDiag(d)
 }
 
 func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -129,20 +125,20 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	err := failover.FromIDOrSchema(d)
 
 	if err != nil {
+		log.Printf("[DEBUG] failover: Create. Error reading failover state: %v", err)
 		return diag.FromErr(err)
 	}
 
 	if failover.Project == "" {
 		failover.Project, err = getProject(d, config)
 		if err != nil {
+			log.Printf("[DEBUG] failover: Create. Error getting google project: %v", err)
 			return diag.FromErr(err)
 		}
 	}
 
-	log.Printf("[DEBUG] failover: Failover mode is %q", failover.FailoverMode)
-
 	if failover.IsDistributedMode() {
-		log.Printf("[DEBUG] failover: Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
+		log.Printf("[DEBUG] failover: Create. Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
 		failover.SetCounts(failover.Instances...)
 		id, err := failover.ID()
 		if err != nil {
@@ -151,6 +147,8 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		d.SetId(id)
 		return resourcePolkadotFailoverRead(ctx, d, meta)
 	}
+
+	log.Printf("[DEBUG] failover: Create. Failover mode is %q", failover.FailoverMode)
 
 	userAgent, err := generateUserAgentString(d, config.userAgent)
 	if err != nil {
@@ -185,17 +183,17 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	if err != nil {
 		validatorError := &helperErrors.ValidatorError{}
 		if errors.As(err, validatorError) {
-			log.Printf("[WARNING] failover: Cannot get validator: %s", validatorError)
+			log.Printf("[WARNING] failover: Create. Cannot get validator: %s", validatorError)
 		} else {
-			log.Printf("[ERROR] failover: Cannot get validator: %s", err)
+			log.Printf("[ERROR] failover: Create. Cannot get validator: %s", err)
 			return diag.FromErr(err)
 		}
 	}
 
 	if validator.InstanceName != "" {
-		log.Printf("[DEBUG] failover: Found validator instance: %s", validator.InstanceName)
+		log.Printf("[DEBUG] failover: Create. Found validator instance: %s", validator.InstanceName)
 	} else {
-		log.Printf("[DEBUG] failover: Have not found the validator instance")
+		log.Printf("[DEBUG] failover: Create. Have not found the validator instance")
 	}
 
 	instanceGroups, err := gcp.GetInstanceGroupManagersForRegions(
@@ -207,21 +205,21 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	)
 
 	if err != nil {
-		log.Printf("[ERROR] failover: Cannot get management instance groups: %s", err)
+		log.Printf("[ERROR] failover: Create. Cannot get management instance groups: %s", err)
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] failover: Found %d managent instance groups", len(instanceGroups))
+	log.Printf("[DEBUG] failover: Create. Found %d managent instance groups", len(instanceGroups))
 
 	positions := make([]int, len(failover.Locations))
 
 	for i := 0; i < len(instanceGroups); i++ {
 		group := &instanceGroups[i]
 		if validatorInstance := group.SearchAndRemoveInstanceByName(validator.InstanceName); validatorInstance != nil {
-			log.Printf("[DEBUG] failover: Processing validator instance: %s", validatorInstance.Instance)
+			log.Printf("[DEBUG] failover: Create. Processing validator instance: %s", validatorInstance.Instance)
 			regionPosition := helpers.FindStrIndex(group.Region, failover.Locations)
 			if regionPosition == -1 {
-				log.Printf("[ERROR] failover: Cannot find region %s in locations list: %s", group.Region, strings.Join(failover.Locations, ", "))
+				log.Printf("[ERROR] failover: Create. Cannot find region %s in locations list: %s", group.Region, strings.Join(failover.Locations, ", "))
 				continue
 			}
 			positions[regionPosition] = 1
@@ -235,7 +233,7 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	// delete all instances besides the validator instance. In case we did not find the validator, or we found multiple validators,
 	// we will delete all instances
 	log.Printf(
-		"[DEBUG] failover: Deleting %d managent instances: %q",
+		"[DEBUG] failover: Create. Deleting %d managent instances: %q",
 		instanceGroups.InstancesCount(),
 		strings.Join(instanceGroups.InstanceNames(), ", "),
 	)
