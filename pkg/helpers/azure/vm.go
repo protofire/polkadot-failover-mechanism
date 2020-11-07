@@ -582,10 +582,10 @@ func DeleteVMs(
 
 	if err := updateFuture.WaitForCompletionRef(ctx, client.Client); err != nil {
 		return fmt.Errorf(
-			"error waiting to deleting Virtual Machines %q from Scale Set %q (Resource Group %q): %w",
-			strings.Join(vmScaleSetVMIDsToDelete, ", "),
+			"error waiting for VM Scale Set %q (Resource Group %q) is being updated. Error type: %T: %w",
 			vmScaleSetName,
 			resourceGroup,
+			err,
 			err,
 		)
 	}
@@ -614,10 +614,11 @@ func DeleteVMs(
 	)
 	if err := future.WaitForCompletionRef(ctx, client.Client); err != nil {
 		return fmt.Errorf(
-			"error waiting to deleting Virtual Machines %q from Scale Set %q (Resource Group %q): %w",
+			"error waiting for Virtual Machines %q from Scale Set %q (Resource Group %q) is being deleted. Error type: %T: %w",
 			strings.Join(vmScaleSetVMIDsToDelete, ", "),
 			vmScaleSetName,
 			resourceGroup,
+			err,
 			err,
 		)
 	}
