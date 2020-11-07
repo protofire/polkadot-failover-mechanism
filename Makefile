@@ -16,7 +16,7 @@ HAS_GOIMPORTS 			:= $(shell command -v goimports;)
 GOOS            		?= $(shell go env GOOS)
 GOARCH          		?= $(shell go env GOARCH)
 DEFAULT_VERSION    		:= 0.1.0
-VERSION         		:= $(shell git describe --tags --abbrev=8 --exact-match 2> /dev/null || echo ${DEFAULT_VERSION})
+VERSION         		?= $(shell git describe --tags --abbrev=8 --exact-match 2> /dev/null || echo ${DEFAULT_VERSION})
 
 PROVIDER_NAME 			:= terraform-provider-polkadot
 
