@@ -55,14 +55,17 @@ trap default_trap ERR EXIT
 set +eE
 trap - ERR
 /usr/sbin/mkfs.xfs /dev/sdb
-trap default_trap ERR
+/usr/bin/mkdir -p /data
+if grep -qs '/data ' /proc/mounts; then
+    echo "Disk already mounted, skipping..."
+else
+    mount /dev/sdb /data
+fi
+grep /dev/sdb /etc/fstab || /usr/bin/echo "/dev/sdb /data xfs defaults 0 0" >> /etc/fstab
 set -eE
-# Mound disk and add automount entry in /etc/fstab
-/usr/bin/mkdir /data
-/usr/bin/mount /dev/sdb /data
-/usr/bin/echo "/dev/sdb /data xfs defaults 0 0" >> /etc/fstab
+trap default_trap ERR
 
-chown "$polkadot_user_id:$polkadot_user_id" /data
+chown "$polkadot_user_id:$polkadot_user_id" /data -R
 
 # Run docker with regular polkadot container inside of it
 /bin/systemctl enable docker
