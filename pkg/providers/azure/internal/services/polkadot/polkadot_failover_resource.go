@@ -109,38 +109,42 @@ func deleteVms(
 
 func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
-	azureFailover := &AzureFailover{}
-	err := azureFailover.FromIDOrSchema(d)
+	failover := &AzureFailover{}
+	err := failover.FromIDOrSchema(d)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if !azureFailover.Initialized() {
+	if !failover.Initialized() {
 		d.SetId("")
 		return nil
 	}
 
-	if azureFailover.IsDistributedMode() {
-		log.Printf("[DEBUG] failover: Read. Failover mode is %q. Using predefined number of instances", azureFailover.FailoverMode)
-		azureFailover.SetCounts(azureFailover.Instances...)
-		return azureFailover.SetSchemaValuesDiag(d)
+	if failover.IsDistributedMode() {
+		log.Printf(
+			"[DEBUG] failover: Read. Failover mode is %q. Using predefined number of instances %d",
+			failover.FailoverMode,
+			failover.Instances,
+		)
+		failover.SetCounts(failover.Instances...)
+		return failover.SetSchemaValuesDiag(d)
 	}
 
-	log.Printf("[DEBUG] failover: Read. Failover mode is %q", azureFailover.FailoverMode)
+	log.Printf("[DEBUG] failover: Read. Failover mode is %q", failover.FailoverMode)
 
 	client := meta.(*clients.Client)
 
 	ctx, cancel := timeouts.ForRead(ctx, d)
 	defer cancel()
 
-	positions := make([]int, len(azureFailover.Locations))
+	positions := make([]int, len(failover.Locations))
 
 	vmScaleSetNames, err := azure.GetVMScaleSetNames(
 		ctx,
 		client.Polkadot.VMScaleSetsClient,
-		azureFailover.ResourceGroup,
-		azureFailover.Prefix,
+		failover.ResourceGroup,
+		failover.Prefix,
 	)
 
 	if err != nil {
@@ -153,9 +157,9 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 		ctx,
 		client.Polkadot.MetricsClient,
 		vmScaleSetNames,
-		azureFailover.ResourceGroup,
-		azureFailover.MetricName,
-		azureFailover.MetricNameSpace,
+		failover.ResourceGroup,
+		failover.MetricName,
+		failover.MetricNameSpace,
 		insights.Maximum,
 	)
 
@@ -177,15 +181,15 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 		ctx,
 		client.Polkadot.VMScaleSetsClient,
 		client.Polkadot.VMScaleSetVMsClient,
-		azureFailover.Prefix,
-		azureFailover.ResourceGroup,
+		failover.Prefix,
+		failover.ResourceGroup,
 	)
 
 	if err != nil {
 		return diag.Errorf("[ERROR] failover: Cannot get scale set VMs: %+v", err)
 	}
 
-	locationIDx := getValidatorLocation(vmsByScaleSet, azureFailover.Locations, validator.ScaleSetName)
+	locationIDx := getValidatorLocation(vmsByScaleSet, failover.Locations, validator.ScaleSetName)
 
 	if locationIDx == -1 {
 		locationIDx = 0
@@ -194,11 +198,11 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 	positions[locationIDx] = 1
 
 	log.Printf("[DEBUG] failover: Read. Found instance numbers per region: %v", positions)
-	azureFailover.SetCounts(positions...)
-	azureFailover.FillDefaultCountsIfNotSet()
-	log.Printf("[DEBUG] failover: Read. Set instance numbers per region: %v", azureFailover.FailoverInstances)
+	failover.SetCounts(positions...)
+	failover.FillDefaultCountsIfNotSet()
+	log.Printf("[DEBUG] failover: Read. Set instance numbers per region: %v", failover.FailoverInstances)
 
-	return azureFailover.SetSchemaValuesDiag(d)
+	return failover.SetSchemaValuesDiag(d)
 
 }
 
@@ -218,10 +222,12 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] failover: Create. Failover mode is %q", failover.FailoverMode)
-
 	if failover.IsDistributedMode() {
-		log.Printf("[DEBUG] failover: Create. Failover mode is %q. Using predefined number of instances", failover.FailoverMode)
+		log.Printf(
+			"[DEBUG] failover: Create. Failover mode is %q. Using predefined number of instances: %d",
+			failover.FailoverMode,
+			failover.Instances,
+		)
 		failover.SetCounts(failover.Instances...)
 		id, err := failover.ID()
 		if err != nil {
@@ -230,6 +236,8 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		d.SetId(id)
 		return resourcePolkadotFailoverRead(ctx, d, meta)
 	}
+
+	log.Printf("[DEBUG] failover: Create. Failover mode is %q", failover.FailoverMode)
 
 	positions := make([]int, len(failover.Locations))
 
