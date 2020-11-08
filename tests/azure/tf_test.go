@@ -290,9 +290,6 @@ func TestBundle(t *testing.T) {
 
 	})
 
-	terraformOptions.Vars["failover_mode"] = "single"
-	terraformOptions.Vars["delete_vms_with_api_in_single_mode"] = true
-
 	ctx := context.Background()
 
 	metricNamespace := fmt.Sprintf("%s/validator", prefix)
@@ -311,7 +308,7 @@ func TestBundle(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(600))
+	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(900))
 	defer cancel()
 
 	validatorBefore, err := azure.WaitForValidator(
@@ -328,6 +325,8 @@ func TestBundle(t *testing.T) {
 	require.NotEmpty(t, validatorBefore.ScaleSetName)
 	require.NotEmpty(t, validatorBefore.Hostname)
 
+	terraformOptions.Vars["failover_mode"] = "single"
+	terraformOptions.Vars["delete_vms_with_api_in_single_mode"] = true
 	terraform.Apply(t, terraformOptions)
 
 	t.Run("singleMode", func(t *testing.T) {
