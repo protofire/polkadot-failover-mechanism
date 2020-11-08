@@ -2,10 +2,15 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/Azure/go-autorest/autorest"
+
+	"github.com/Azure/go-autorest/autorest/azure"
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/fanout"
 
@@ -49,6 +54,25 @@ func IPAddressFromString(addr string) *IPAddress {
 		IFName:              parts[11],
 		IPConfigurationName: parts[13],
 		PublicAddressName:   parts[15],
+	}
+}
+
+var retryableServiceErrorCodes = []string{"NetworkingInternalOperationError"}
+
+type future interface {
+	WaitForCompletionRef(ctx context.Context, client autorest.Client) (err error)
+}
+
+func waitForFuture(ctx context.Context, future future, client *compute.VirtualMachineScaleSetsClient) error {
+	for {
+		if err := future.WaitForCompletionRef(ctx, client.Client); err != nil {
+			sErr := &azure.ServiceError{}
+			if errors.As(err, sErr) && helpers.StringsContainsBool(sErr.Code, retryableServiceErrorCodes) {
+				continue
+			}
+			return err
+		}
+		return nil
 	}
 }
 
@@ -580,7 +604,7 @@ func DeleteVMs(
 		return fmt.Errorf("cannot update vm scale set %q: %w", vmScaleSetName, err)
 	}
 
-	if err := updateFuture.WaitForCompletionRef(ctx, client.Client); err != nil {
+	if err := waitForFuture(ctx, &updateFuture, client); err != nil {
 		return fmt.Errorf(
 			"error waiting for VM Scale Set %q (Resource Group %q) is being updated. Error type: %T: %w",
 			vmScaleSetName,
@@ -590,7 +614,7 @@ func DeleteVMs(
 		)
 	}
 
-	future, err := client.DeleteInstances(
+	deleteFuture, err := client.DeleteInstances(
 		ctx,
 		resourceGroup,
 		vmScaleSetName,
@@ -612,7 +636,8 @@ func DeleteVMs(
 		vmScaleSetName,
 		resourceGroup,
 	)
-	if err := future.WaitForCompletionRef(ctx, client.Client); err != nil {
+
+	if err := waitForFuture(ctx, &deleteFuture, client); err != nil {
 		return fmt.Errorf(
 			"error waiting for Virtual Machines %q from Scale Set %q (Resource Group %q) is being deleted. Error type: %T: %w",
 			strings.Join(vmScaleSetVMIDsToDelete, ", "),
@@ -622,6 +647,7 @@ func DeleteVMs(
 			err,
 		)
 	}
+
 	log.Printf("[DEBUG] failover: Virtual Machines from Scale Set %q (Resource Group %q) was deleted", vmScaleSetName, resourceGroup)
 	return nil
 }
