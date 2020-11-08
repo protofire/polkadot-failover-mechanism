@@ -265,6 +265,7 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		return resourcePolkadotFailoverRead(ctx, d, meta)
 	}
 
+	log.Printf("[DEBUG] failover: Create. Getting validator...")
 	validator, err := azure.GetCurrentValidator(
 		ctx,
 		client.Polkadot.MetricsClient,
@@ -287,6 +288,11 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		log.Printf("[DEBUG] failover: Create. Found validator scale set %q, host %q", validator.ScaleSetName, validator.Hostname)
 	}
 
+	if validator.ScaleSetName != "" {
+		log.Printf("[DEBUG] failover: Create. Found validator %#v", validator)
+	} else {
+		log.Printf("[DEBUG] failover: Create. Did not find validator")
+	}
 	vms, err := azure.GetVirtualMachineScaleSetVMsWithClient(
 		ctx,
 		client.Polkadot.VMScaleSetsClient,
@@ -299,18 +305,16 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		return diag.Errorf("[ERROR] failover: Cannot get scale set VMs: %v", err)
 	}
 
-	locationIDx := getValidatorLocation(vms, failover.Locations, validator.ScaleSetName)
-
-	if locationIDx == -1 {
-		locationIDx = 0
-	}
-
-	positions[locationIDx] = 1
+	log.Printf("[DEBUG] failover: Create. Found %d virtual machines", vms.Size())
 
 	if features.DeleteVmsWithAPIInSingleMode {
 		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator, false); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	if locationIDx := getValidatorLocation(vms, failover.Locations, validator.ScaleSetName); locationIDx != -1 {
+		positions[locationIDx] = 1
 	}
 
 	log.Printf("[DEBUG] failover: Create. Found instance numbers per region: %v", positions)

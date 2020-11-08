@@ -197,7 +197,7 @@ variable "vault_soft_delete_enabled" {
 variable "delete_vms_with_api_in_single_mode" {
   description = "Delete vms in single mode with API call preserving current active validator"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "docker_image" {
