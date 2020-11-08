@@ -575,13 +575,12 @@ func GetVMScaleSetInstancesCount(ctx context.Context, client *compute.VirtualMac
 
 }
 
-func DeleteVMs(
+func setVMssCapacity(
 	ctx context.Context,
 	client *compute.VirtualMachineScaleSetsClient,
 	resourceGroup,
 	vmScaleSetName string,
-	vmScaleSetVMIDsToDelete []string,
-) error {
+	removeVmsCount int) error {
 
 	vmss, err := client.Get(ctx, resourceGroup, vmScaleSetName)
 
@@ -590,11 +589,13 @@ func DeleteVMs(
 	}
 
 	sku := vmss.Sku
-	*sku.Capacity = *sku.Capacity - int64(len(vmScaleSetVMIDsToDelete))
+	*sku.Capacity = *sku.Capacity - int64(removeVmsCount)
 
 	if *sku.Capacity < 0 {
 		*sku.Capacity = 0
 	}
+
+	log.Printf("[DEBUG] failover: updating vm scale set %q to capacity %d...", vmScaleSetName, *sku.Capacity)
 
 	updateFuture, err := client.Update(ctx, resourceGroup, vmScaleSetName, compute.VirtualMachineScaleSetUpdate{
 		Sku: sku,
@@ -613,6 +614,23 @@ func DeleteVMs(
 			err,
 		)
 	}
+
+	log.Printf("[DEBUG] failover: updated vm scale set %q to capacity %d", vmScaleSetName, *sku.Capacity)
+
+	return nil
+
+}
+
+func DeleteVMs(
+	ctx context.Context,
+	client *compute.VirtualMachineScaleSetsClient,
+	resourceGroup,
+	vmScaleSetName string,
+	vmScaleSetVMIDsToDelete []string,
+	updateVMssCapacity bool,
+) error {
+
+	log.Printf("[DEBUG] failover: deleting vm scale set %q instances %s", vmScaleSetName, vmScaleSetVMIDsToDelete)
 
 	deleteFuture, err := client.DeleteInstances(
 		ctx,
@@ -649,5 +667,10 @@ func DeleteVMs(
 	}
 
 	log.Printf("[DEBUG] failover: Virtual Machines from Scale Set %q (Resource Group %q) was deleted", vmScaleSetName, resourceGroup)
+
+	if updateVMssCapacity {
+		return setVMssCapacity(ctx, client, resourceGroup, vmScaleSetName, len(vmScaleSetVMIDsToDelete))
+	}
+
 	return nil
 }

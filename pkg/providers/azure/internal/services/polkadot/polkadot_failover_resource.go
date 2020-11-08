@@ -51,12 +51,13 @@ func deleteVms(
 	vmScaleSetNames []string,
 	vms azure.VMSMap,
 	validator azure.Validator,
+	updateVMssCapacity bool,
 ) error {
 
 	vmsToDelete := getVmsToDelete(vms, validator.Hostname)
 	log.Printf("[DEBUG] failover: Create. We will delete instances %#v with API requests", vmsToDelete)
 	for vmSSName, vmsIDs := range vmsToDelete {
-		if err := azure.DeleteVMs(ctx, client.Polkadot.VMScaleSetsClient, failover.ResourceGroup, vmSSName, vmsIDs); err != nil {
+		if err := azure.DeleteVMs(ctx, client.Polkadot.VMScaleSetsClient, failover.ResourceGroup, vmSSName, vmsIDs, updateVMssCapacity); err != nil {
 			return err
 		}
 	}
@@ -84,7 +85,7 @@ func deleteVms(
 
 	if validator.ScaleSetName != "" {
 
-		log.Printf("[DEBUG] failover: Create. Waiting for validator")
+		log.Printf("[DEBUG] failover: Create. Waiting for validator...")
 
 		validator, err := azure.WaitForValidator(
 			ctx,
@@ -299,7 +300,7 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	positions[locationIDx] = 1
 
 	if features.DeleteVmsWithAPIInSingleMode {
-		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator); err != nil {
+		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator, false); err != nil {
 			return diag.FromErr(err)
 		}
 	}

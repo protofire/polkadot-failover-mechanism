@@ -122,7 +122,7 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 	positions[locationIDx] = 1
 
 	if features.DeleteVmsWithAPIInSingleMode {
-		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator); err != nil {
+		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator, false); err != nil {
 			return diag.FromErr(err)
 		}
 	}
