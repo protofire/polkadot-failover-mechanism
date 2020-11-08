@@ -45,8 +45,8 @@ func dataSourcePolkadotMetricDefinition() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(time.Minute * 60),
 			Update: schema.DefaultTimeout(time.Minute * 60),
-			Read:   schema.DefaultTimeout(time.Minute * 30),
-			Delete: schema.DefaultTimeout(time.Minute * 30),
+			Read:   schema.DefaultTimeout(time.Minute * 60),
+			Delete: schema.DefaultTimeout(time.Minute * 60),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -101,8 +101,6 @@ func dateSourcePolkadotMetricDefinitionRead(ctx context.Context, d *schema.Resou
 	client := meta.(*clients.Client)
 
 	ctx, cancel := timeouts.ForRead(ctx, d)
-	defer cancel()
-
 	defer cancel()
 
 	vmScaleSetToMetricName, err := azure.WaitValidatorMetricNamesForMetricNamespace(

@@ -34,8 +34,8 @@ func resourcePolkadotFailOver() *schema.Resource {
 		DeleteContext: resourcePolkadotFailoverDelete,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(time.Minute * 60),
-			Update: schema.DefaultTimeout(time.Minute * 60),
+			Create: schema.DefaultTimeout(time.Minute * 90),
+			Update: schema.DefaultTimeout(time.Minute * 90),
 			Read:   schema.DefaultTimeout(time.Minute * 30),
 			Delete: schema.DefaultTimeout(time.Minute * 30),
 		},
@@ -51,7 +51,6 @@ func deleteVms(
 	vmScaleSetNames []string,
 	vms azure.VMSMap,
 	validator azure.Validator,
-	timeout int,
 ) error {
 
 	vmsToDelete := getVmsToDelete(vms, validator.Hostname)
@@ -62,9 +61,6 @@ func deleteVms(
 		}
 	}
 
-	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(timeout))
-	defer cancel()
-
 	waitForCount := 1
 	if validator.ScaleSetName == "" {
 		waitForCount = 0
@@ -73,7 +69,7 @@ func deleteVms(
 	log.Printf("[DEBUG] failover: Create. Waiting for VMs count: %d", waitForCount)
 
 	if err := azure.WaitForVirtualMachineScaleSetVMsWithClient(
-		ctxTimeout,
+		ctx,
 		client.Polkadot.VMScaleSetsClient,
 		client.Polkadot.VMScaleSetVMsClient,
 		failover.Prefix,
@@ -86,15 +82,12 @@ func deleteVms(
 
 	log.Printf("[DEBUG] failover: Create. Ensured VMs count: %d", waitForCount)
 
-	ctxTimeout, cancel = context.WithTimeout(ctx, time.Second*time.Duration(timeout))
-	defer cancel()
-
 	if validator.ScaleSetName != "" {
 
 		log.Printf("[DEBUG] failover: Create. Waiting for validator")
 
 		validator, err := azure.WaitForValidator(
-			ctxTimeout,
+			ctx,
 			client.Polkadot.MetricsClient,
 			vmScaleSetNames,
 			failover.ResourceGroup,
@@ -306,7 +299,7 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	positions[locationIDx] = 1
 
 	if features.DeleteVmsWithAPIInSingleMode {
-		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator, 1200); err != nil {
+		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator); err != nil {
 			return diag.FromErr(err)
 		}
 	}

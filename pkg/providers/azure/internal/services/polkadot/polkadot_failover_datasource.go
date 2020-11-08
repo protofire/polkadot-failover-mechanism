@@ -28,8 +28,8 @@ func dataSourcePolkadotFailOver() *schema.Resource {
 		ReadContext: dateSourcePolkadotFailOverRead,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(time.Minute * 30),
-			Update: schema.DefaultTimeout(time.Minute * 60),
+			Create: schema.DefaultTimeout(time.Minute * 90),
+			Update: schema.DefaultTimeout(time.Minute * 90),
 			Read:   schema.DefaultTimeout(time.Minute * 30),
 			Delete: schema.DefaultTimeout(time.Minute * 30),
 		},
@@ -122,7 +122,7 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 	positions[locationIDx] = 1
 
 	if features.DeleteVmsWithAPIInSingleMode {
-		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator, 1200); err != nil {
+		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator); err != nil {
 			return diag.FromErr(err)
 		}
 	}
