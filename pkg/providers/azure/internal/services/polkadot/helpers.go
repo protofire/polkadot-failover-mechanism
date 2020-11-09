@@ -25,6 +25,14 @@ func (v vmssWithInstancesList) String() string {
 	return strings.Join(pairs, ". ")
 }
 
+func (v vmssWithInstancesList) Size() int {
+	s := 0
+	for _, vmss := range v {
+		s += len(vmss.vmsIDs)
+	}
+	return s
+}
+
 func getVmsToDelete(vmScaleSetVMs azure.VMSMap, validatorHostname string) vmssWithInstancesList {
 
 	var results vmssWithInstancesList

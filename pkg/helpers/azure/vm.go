@@ -376,12 +376,15 @@ func WaitForVirtualMachineScaleSetVMsWithClient(
 
 	defer ticker.Stop()
 
+	var err error
+	var vms VMSMap
+
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("period waiting for validator. Context has been cancelled")
+			return nil, fmt.Errorf("period waiting for validator. Context has been cancelled. Last error: %w", err)
 		case <-tickerChan:
-			vms, err := GetVirtualMachineScaleSetVMsWithClient(
+			vms, err = GetVirtualMachineScaleSetVMsWithClient(
 				ctx,
 				vmScaleSetClient,
 				vmScaleSetClientVMs,
@@ -391,6 +394,11 @@ func WaitForVirtualMachineScaleSetVMsWithClient(
 			)
 			if err == nil && vms.Size() == size {
 				return vms, nil
+			}
+			if err != nil {
+				log.Printf("[ERROR] failover: Got error while was waiting for VM scale sets: %v", err)
+			} else {
+				log.Printf("[DEBUG] failover: Got %d virtual machines instead %d", vms.Size(), size)
 			}
 		}
 	}

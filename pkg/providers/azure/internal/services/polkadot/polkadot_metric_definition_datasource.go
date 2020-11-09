@@ -138,8 +138,8 @@ func dateSourcePolkadotMetricDefinitionRead(ctx context.Context, d *schema.Resou
 		metricSource.ResourceGroup,
 		metricSource.MetricName,
 		metricSource.MetricNameSpace,
-		10,
-		10,
+		5,
+		20,
 	)
 
 	if err != nil {

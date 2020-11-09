@@ -106,12 +106,15 @@ func WaitForValidator(
 
 	defer ticker.Stop()
 
+	var err error
+	var validator Validator
+
 	for {
 		select {
 		case <-ctx.Done():
-			return Validator{}, fmt.Errorf("timeout waiting for validator. context has been cancelled")
+			return validator, fmt.Errorf("timeout waiting for validator. context has been cancelled. last error: %w", err)
 		case <-tickerChan:
-			validator, err := GetCurrentValidator(
+			validator, err = GetCurrentValidator(
 				ctx,
 				client,
 				vmScaleSetNames,
@@ -122,6 +125,16 @@ func WaitForValidator(
 			)
 			if err == nil && validator.ScaleSetName != "" {
 				return validator, err
+			}
+			if err != nil {
+				log.Printf("[ERROR] failover: Got error while was waiting for validator: %v", err)
+			} else {
+				log.Printf(
+					"[DEBUG] failover: Did not find validator for virtual machines %s, metric %q, metric namespace %q",
+					vmScaleSetNames,
+					metricName,
+					metricNamespace,
+				)
 			}
 		}
 	}
