@@ -299,13 +299,14 @@ func TestBundle(t *testing.T) {
 	vmsClient, err := azure.GetVMScaleSetClient(azureSubscriptionID)
 	require.NoError(t, err)
 
-	vmScaleSetNames, err := azure.GetVMScaleSetNames(
+	vmScaleSetNames, err := azure.GetVMScaleSetNamesWithInstances(
 		ctx,
 		&vmsClient,
 		azureResourceGroup,
 		prefix,
 	)
 	require.NoError(t, err)
+	require.Greater(t, len(vmScaleSetNames), 0)
 
 	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(900))
 	defer cancel()
@@ -331,6 +332,15 @@ func TestBundle(t *testing.T) {
 	t.Run("singleMode", func(t *testing.T) {
 
 		t.Run("CheckValidator", func(t *testing.T) {
+
+			vmScaleSetNames, err := azure.GetVMScaleSetNamesWithInstances(
+				ctx,
+				&vmsClient,
+				azureResourceGroup,
+				prefix,
+			)
+			require.NoError(t, err)
+			require.Greater(t, len(vmScaleSetNames), 0)
 
 			ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(600))
 			defer cancel()

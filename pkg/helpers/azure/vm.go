@@ -580,6 +580,31 @@ func GetVMScaleSetNames(ctx context.Context, client *compute.VirtualMachineScale
 
 }
 
+func GetVMScaleSetNamesWithInstances(ctx context.Context, client *compute.VirtualMachineScaleSetsClient, resourceGroup, prefix string) ([]string, error) {
+
+	vmScaleSets, err := GetVirtualMachineScaleSetsWithClient(
+		ctx,
+		client,
+		prefix,
+		resourceGroup,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR]. Cannot get VM scale sets: %w", err)
+	}
+
+	vmScaleSetsNames := make([]string, 0, len(vmScaleSets))
+
+	for _, vmScaleSet := range vmScaleSets {
+		if *vmScaleSet.Sku.Capacity > 0 {
+			vmScaleSetsNames = append(vmScaleSetsNames, *vmScaleSet.Name)
+		}
+	}
+
+	return vmScaleSetsNames, nil
+
+}
+
 func GetVMScaleSetInstancesCount(ctx context.Context, client *compute.VirtualMachineScaleSetsClient, resourceGroup, prefix string, locations ...string) (map[string]int, error) {
 
 	vmScaleSets, err := GetVirtualMachineScaleSetsWithClient(
