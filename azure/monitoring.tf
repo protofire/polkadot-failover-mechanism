@@ -94,6 +94,14 @@ data "polkadot_metric_definition" "disk" {
     module.primary_region,
     module.secondary_region,
     module.tertiary_region,
+    azurerm_key_vault.polkadot,
+    azurerm_key_vault_secret.cpu_limit,
+    azurerm_key_vault_secret.keys,
+    azurerm_key_vault_secret.node_key,
+    azurerm_key_vault_secret.ram_limit,
+    azurerm_key_vault_secret.seeds,
+    azurerm_key_vault_secret.types,
+    azurerm_key_vault_secret.name,
   ]
 }
 
@@ -109,6 +117,14 @@ data "polkadot_metric_definition" "health" {
     module.primary_region,
     module.secondary_region,
     module.tertiary_region,
+    azurerm_key_vault.polkadot,
+    azurerm_key_vault_secret.cpu_limit,
+    azurerm_key_vault_secret.keys,
+    azurerm_key_vault_secret.node_key,
+    azurerm_key_vault_secret.ram_limit,
+    azurerm_key_vault_secret.seeds,
+    azurerm_key_vault_secret.types,
+    azurerm_key_vault_secret.name,
   ]
 }
 
@@ -124,5 +140,13 @@ data "polkadot_metric_definition" "consul_health" {
     module.primary_region,
     module.secondary_region,
     module.tertiary_region,
+    azurerm_key_vault.polkadot,
+    azurerm_key_vault_secret.cpu_limit,
+    azurerm_key_vault_secret.keys,
+    azurerm_key_vault_secret.node_key,
+    azurerm_key_vault_secret.ram_limit,
+    azurerm_key_vault_secret.seeds,
+    azurerm_key_vault_secret.types,
+    azurerm_key_vault_secret.name,
   ]
 }
