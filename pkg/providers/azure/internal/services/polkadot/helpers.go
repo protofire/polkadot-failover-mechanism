@@ -1,23 +1,44 @@
 package polkadot
 
 import (
+	"fmt"
 	"path"
+	"strings"
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/azure"
 )
 
-func getVmsToDelete(vmScaleSetVMs azure.VMSMap, validatorHostname string) map[string][]string {
+type vmssWithInstances struct {
+	vmssName string
+	vmsIDs   []string
+}
 
-	results := make(map[string][]string)
+type vmssWithInstancesList []vmssWithInstances
+
+func (v vmssWithInstancesList) String() string {
+	var pairs []string
+	for _, vmss := range v {
+		pairs = append(pairs, fmt.Sprintf("%s => %s", vmss.vmssName, strings.Join(vmss.vmsIDs, ", ")))
+	}
+	return strings.Join(pairs, ". ")
+}
+
+func getVmsToDelete(vmScaleSetVMs azure.VMSMap, validatorHostname string) vmssWithInstancesList {
+
+	var results vmssWithInstancesList
 
 	for vmssName, vms := range vmScaleSetVMs {
+		vmss := vmssWithInstances{vmssName: vmssName}
 		for _, vm := range vms {
 			vmHostname := vm.OsProfile.ComputerName
 			if vmHostname == nil || *vmHostname != validatorHostname {
-				results[vmssName] = append(results[vmssName], path.Base(*vm.ID))
+				vmss.vmsIDs = append(vmss.vmsIDs, path.Base(*vm.ID))
 			}
+		}
+		if len(vmss.vmsIDs) > 0 {
+			results = append(results, vmss)
 		}
 	}
 

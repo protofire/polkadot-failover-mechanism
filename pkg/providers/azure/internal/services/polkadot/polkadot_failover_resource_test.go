@@ -53,11 +53,24 @@ func TestGetVMsToDelete(t *testing.T) {
 
 	result := getVmsToDelete(vms, validatorHostname)
 	require.Len(t, result, 2)
-	require.Equal(t, result[vmSSName1], []string{id2})
-	require.Equal(t, result[vmSSName2], []string{id3})
+
+	for _, vmss := range result {
+		if vmss.vmssName == vmSSName1 {
+			require.Equal(t, vmss.vmsIDs, []string{id2})
+		}
+		if vmss.vmssName == vmSSName2 {
+			require.Equal(t, vmss.vmsIDs, []string{id3})
+		}
+	}
 
 	result = getVmsToDelete(vms, "")
 	require.Len(t, result, 2)
-	require.Equal(t, result[vmSSName1], []string{id1, id2})
-	require.Equal(t, result[vmSSName2], []string{id3})
+	for _, vmss := range result {
+		if vmss.vmssName == vmSSName1 {
+			require.Equal(t, vmss.vmsIDs, []string{id1, id2})
+		}
+		if vmss.vmssName == vmSSName2 {
+			require.Equal(t, vmss.vmsIDs, []string{id3})
+		}
+	}
 }

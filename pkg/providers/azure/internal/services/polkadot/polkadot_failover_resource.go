@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/fanout"
+
 	helperErrors "github.com/protofire/polkadot-failover-mechanism/pkg/helpers/errors"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/resources/mgmt/insights"
@@ -55,11 +57,25 @@ func deleteVms(
 ) error {
 
 	vmsToDelete := getVmsToDelete(vms, validator.Hostname)
-	log.Printf("[DEBUG] failover: Create. We will delete instances %#v with API requests", vmsToDelete)
-	for vmSSName, vmsIDs := range vmsToDelete {
-		if err := azure.DeleteVMs(ctx, client.Polkadot.VMScaleSetsClient, failover.ResourceGroup, vmSSName, vmsIDs, updateVMssCapacity); err != nil {
-			return err
-		}
+	log.Printf("[DEBUG] failover: Create. We will delete instances %s with API requests", vmsToDelete)
+
+	var vmsToDeleteInf []interface{}
+	for _, vmss := range vmsToDelete {
+		vmsToDeleteInf = append(vmsToDeleteInf, vmss)
+	}
+
+	if err := fanout.ReadErrorsChannel(fanout.ConcurrentResponseErrors(ctx, func(ctx context.Context, value interface{}) error {
+		vmss := value.(vmssWithInstances)
+		return azure.DeleteVMs(
+			ctx,
+			client.Polkadot.VMScaleSetsClient,
+			failover.ResourceGroup,
+			vmss.vmssName,
+			vmss.vmsIDs,
+			updateVMssCapacity,
+		)
+	}, vmsToDeleteInf...)); err != nil {
+		return err
 	}
 
 	waitForCount := 1
