@@ -14,7 +14,6 @@ require (
 	github.com/emicklei/go-restful v2.14.3+incompatible
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-git/go-git/v5 v5.2.0 // indirect
-	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.2
 	github.com/gruntwork-io/terratest v0.30.15
@@ -57,6 +56,7 @@ require (
 )
 
 require (
+	github.com/hashicorp/aws-sdk-go-base v0.7.0
+	github.com/kr/pretty v0.2.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
-	k8s.io/client-go v0.19.1 // indirect
 )

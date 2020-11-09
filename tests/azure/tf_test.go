@@ -29,6 +29,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	helpers2 "github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
@@ -115,7 +116,6 @@ func TestBundle(t *testing.T) {
 		"ssh_user":              sshUser,
 		"ssh_key_content":       sshKey.PublicKey,
 		"prefix":                prefix,
-		"wait_vmss":             true,
 		"use_msi":               true,
 		"delete_on_termination": !noDeleteOnTermination,
 		"cpu_limit":             "1",
@@ -289,9 +289,6 @@ func TestBundle(t *testing.T) {
 
 	})
 
-	terraformOptions.Vars["failover_mode"] = "single"
-	terraformOptions.Vars["delete_vms_with_api_in_single_mode"] = true
-
 	ctx := context.Background()
 
 	metricNamespace := fmt.Sprintf("%s/validator", prefix)
@@ -302,26 +299,61 @@ func TestBundle(t *testing.T) {
 	vmsClient, err := azure.GetVMScaleSetClient(azureSubscriptionID)
 	require.NoError(t, err)
 
-	vmScaleSetNames, err := azure.GetVMScaleSetNames(
+	vmScaleSetNames, err := azure.GetVMScaleSetNamesWithInstances(
 		ctx,
 		&vmsClient,
 		azureResourceGroup,
 		prefix,
 	)
 	require.NoError(t, err)
+	require.Greater(t, len(vmScaleSetNames), 0)
 
-	validatorBefore, err := azure.WaitForValidator(ctx, &metricsClient, vmScaleSetNames, azureResourceGroup, metricName, metricNamespace, 600)
+	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(900))
+	defer cancel()
+
+	validatorBefore, err := azure.WaitForValidator(
+		ctxTimeout,
+		&metricsClient,
+		vmScaleSetNames,
+		azureResourceGroup,
+		metricName,
+		metricNamespace,
+		5,
+	)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, validatorBefore.ScaleSetName)
 	require.NotEmpty(t, validatorBefore.Hostname)
 
+	terraformOptions.Vars["failover_mode"] = "single"
+	terraformOptions.Vars["delete_vms_with_api_in_single_mode"] = true
 	terraform.Apply(t, terraformOptions)
 
 	t.Run("singleMode", func(t *testing.T) {
 
 		t.Run("CheckValidator", func(t *testing.T) {
-			validatorAfter, err := azure.WaitForValidator(ctx, &metricsClient, vmScaleSetNames, azureResourceGroup, metricName, metricNamespace, 600)
+
+			vmScaleSetNames, err := azure.GetVMScaleSetNamesWithInstances(
+				ctx,
+				&vmsClient,
+				azureResourceGroup,
+				prefix,
+			)
+			require.NoError(t, err)
+			require.Greater(t, len(vmScaleSetNames), 0)
+
+			ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*time.Duration(600))
+			defer cancel()
+
+			validatorAfter, err := azure.WaitForValidator(
+				ctxTimeout,
+				&metricsClient,
+				vmScaleSetNames,
+				azureResourceGroup,
+				metricName,
+				metricNamespace,
+				5,
+			)
 			require.NoError(t, err)
 			require.NotEmpty(t, validatorAfter.ScaleSetName)
 			require.NotEmpty(t, validatorAfter.Hostname)

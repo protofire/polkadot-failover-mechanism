@@ -86,14 +86,14 @@ function install_consul {
   lb_primary="$3"
   lb_secondary="$4"
   lb_tertiary="$5"
-  cluster_tag_name=$prefix
 
-  lbs=()
+  local lbs=()
 
   [ -n "${lb_primary}" ] && lbs+=( "\"${lb_primary}\"" )
   [ -n "${lb_secondary}" ] && lbs+=( "\"${lb_secondary}\"" )
   [ -n "${lb_tertiary}" ] && lbs+=( "\"${lb_tertiary}\"" )
 
+  local lbs_str
   lbs_str=$(join_by ", ", "${lbs[@]}")
 
   echo "LoadBalancers: ${lbs_str}"

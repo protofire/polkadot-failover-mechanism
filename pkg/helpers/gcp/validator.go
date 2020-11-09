@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/errors"
+
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 )
 
@@ -14,53 +16,9 @@ const (
 	metricName      = "validator/value"
 )
 
-type ValidatorErrorType int
-
-func (vt ValidatorErrorType) String() string {
-	switch vt {
-	case ValidatorErrorUnknown:
-		return "ValidatorErrorUnknown"
-	case ValidatorErrorNotFound:
-		return "ValidatorErrorNotFound"
-	case ValidatorErrorMultiple:
-		return "ValidatorErrorMultiple"
-	}
-	return ""
-}
-
-const (
-	ValidatorErrorUnknown ValidatorErrorType = iota
-	ValidatorErrorNotFound
-	ValidatorErrorMultiple
-)
-
 type Validator struct {
 	InstanceName string
 	Metric       int
-}
-
-type ValidatorError struct {
-	Message string
-	Kind    ValidatorErrorType
-}
-
-func NewValidatorError(message string, kind ValidatorErrorType) ValidatorError {
-	return ValidatorError{
-		Message: message,
-		Kind:    kind,
-	}
-}
-
-func (v ValidatorError) Error() string {
-	return fmt.Sprintf("%s: Error type: %s", v.Message, v.Kind)
-}
-
-func (v ValidatorError) IsNotFound() bool {
-	return v.Kind == ValidatorErrorNotFound
-}
-
-func (v ValidatorError) MultipleValidators() bool {
-	return v.Kind == ValidatorErrorMultiple
 }
 
 func GetValidatorWithClient(
@@ -102,11 +60,11 @@ func GetValidatorWithClient(
 
 	switch len(validators) {
 	case 0:
-		return Validator{}, NewValidatorError("cannot find validators", ValidatorErrorNotFound)
+		return Validator{}, errors.NewValidatorError("cannot find validators", errors.ValidatorErrorNotFound)
 	case 1:
 		return validators[0], nil
 	default:
-		return Validator{}, NewValidatorError(fmt.Sprintf("found %d validators: %#v", len(validators), validators), ValidatorErrorMultiple)
+		return Validator{}, errors.NewValidatorError(fmt.Sprintf("found %d validators: %#v", len(validators), validators), errors.ValidatorErrorMultiple)
 	}
 
 }

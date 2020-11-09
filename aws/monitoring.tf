@@ -13,12 +13,32 @@ resource "aws_cloudwatch_metric_alarm" "validator_count" {
   alarm_actions     = [module.primary_region.sns.arn]
   ok_actions        = [module.primary_region.sns.arn]
 
-  metric_name = "validator_value"
-  period      = 60
-  statistic   = "Sum"
-  namespace   = var.prefix
-  dimensions = {
-    asg_name = "${var.prefix}-polkadot-validator"
+  metric_query {
+    id          = "e1"
+    expression  = "SUM(METRICS())"
+    label       = "Validators count"
+    return_data = "true"
+  }
+
+  dynamic "metric_query" {
+
+    for_each = [
+      module.primary_region.asg.name,
+      module.secondary_region.asg.name,
+    module.tertiary_region.asg.name]
+
+    content {
+      id = "m${metric_query.key}"
+      metric {
+        metric_name = "validator_value"
+        period      = 60
+        stat        = "Maximum"
+        namespace   = var.prefix
+        dimensions = {
+          asg_name = metric_query.value
+        }
+      }
+    }
   }
 
   depends_on = [
@@ -29,6 +49,7 @@ resource "aws_cloudwatch_metric_alarm" "validator_count" {
   ]
 
 }
+
 
 resource "aws_cloudwatch_metric_alarm" "validator_overflow" {
 
@@ -45,12 +66,32 @@ resource "aws_cloudwatch_metric_alarm" "validator_overflow" {
   alarm_actions     = [module.primary_region.sns.arn]
   ok_actions        = [module.primary_region.sns.arn]
 
-  metric_name = "validator_value"
-  period      = 60
-  statistic   = "Sum"
-  namespace   = var.prefix
-  dimensions = {
-    asg_name = "${var.prefix}-polkadot-validator"
+  metric_query {
+    id          = "e2"
+    expression  = "SUM(METRICS())"
+    label       = "Validators overflow"
+    return_data = "true"
+  }
+
+  dynamic "metric_query" {
+
+    for_each = [
+      module.primary_region.asg.name,
+      module.secondary_region.asg.name,
+    module.tertiary_region.asg.name]
+
+    content {
+      id = "m${metric_query.key}"
+      metric {
+        metric_name = "validator_value"
+        period      = 60
+        stat        = "Maximum"
+        namespace   = var.prefix
+        dimensions = {
+          asg_name = metric_query.value
+        }
+      }
+    }
   }
 
   depends_on = [

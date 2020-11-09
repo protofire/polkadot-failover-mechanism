@@ -48,7 +48,7 @@ It is highly recommended running these scripts at the dedicated resource group.
     gpgcheck=1
     gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo'
     sudo yum install -y azure-cli
-    
+
 #### Ubuntu/Debian
 
     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
@@ -86,9 +86,11 @@ You will need to clone this repository and its submodules. Use `git clone --recu
 2. Open `azure` folder of the cloned (downloaded) repo.
 3. Create `terraform.tfvars` file inside of the `azure` folder of the cloned repo, where `terraform.tfvars.example` is located.
 4. Fill it with the appropriate variables. You can check the very minimum example at [example](terraform.tfvars.example) file and the full list of supported variables (and their types) at [variables](variables.tf) file. Fill `validator_keys` variable with your SESSION KEYS. For key types use short types from the following table - [Keys reference](#keys-reference).
-5. Run `terraform init`.
-In case you use azure service principal, copy backend/azurerm.tf.example into backend/azurerm.tf,
-fill variables and run `terraform init -backend-config=backend/azurerm.tf`
+5. You can either place a Terraform state file on Azure storage bucket or on your local machine.
+   * To place it on the local machine rename the `remote_state.tf` file to `remote_state.tf.stop`. `terraform init`
+   * To place it on Azure storage bucket - create azure storage bucket. `az storage container create --public-access=off -n name`
+   * Rename `backend/azurerm.tf.example` file to `backend/azurerm.tf`.
+   * Run `terraform init -backend-config=backend/azurerm.tf --reconfigure`.
 6. Run `terraform plan -out terraform.tfplan` and check the set of resources to be created on your cloud account.
 7. If you are okay with the proposed plan - run `terraform apply terraform.tfplan` to apply the deployment.
 8. After the deployment is complete you can open Azure Portal to check that the instances were deployed successfully.
@@ -111,7 +113,7 @@ fill variables and run `terraform init -backend-config=backend/azurerm.tf`
 
 1. Watch [Polkadot Telemetry](https://telemetry.polkadot.io/) for your node to synchronize with the network.<br />
 2. Make sure you have funds on your STASH account. Bond your fund to CONTROLLER account. For this and the following steps you can either perform a transaction on your node or use or use [PolkadotJS](https://polkadot.js.org/apps/#/staking/actions) website. For this operation use `staking.bond` transaction.
-3. Set your session keys to the network - perform a `session.setKeys` transaction. As an argument pass all your session keys in hex format in a order specified [here](https://github.com/paritytech/polkadot/blob/master/runtime/kusama/src/lib.rs#L258) concatenating them one by one. 
+3. Set your session keys to the network - perform a `session.setKeys` transaction. As an argument pass all your session keys in hex format in a order specified [here](https://github.com/paritytech/polkadot/blob/master/runtime/kusama/src/lib.rs#L258) concatenating them one by one.
 ```
 For example if you have the following keys:
 GRAN - 0xbeaa0ec217371a8559f0d1acfcc4705b48082b7a02fd6cb2e76714380576151e

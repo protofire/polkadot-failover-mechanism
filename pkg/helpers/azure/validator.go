@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/errors"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/resources/mgmt/insights"
 )
 
@@ -79,11 +81,11 @@ func findValidator(metrics map[string]insights.Metric, aggregationType insights.
 
 	switch len(validators) {
 	case 0:
-		return Validator{}, fmt.Errorf("cannot find validators")
+		return Validator{}, errors.NewValidatorError("cannot find validators", errors.ValidatorErrorNotFound)
 	case 1:
 		return validators[0], nil
 	default:
-		return Validator{}, fmt.Errorf("found %d validators: %#v", len(validators), validators)
+		return Validator{}, errors.NewValidatorError(fmt.Sprintf("found %d validators: %#v", len(validators), validators), errors.ValidatorErrorMultiple)
 	}
 
 }
@@ -96,20 +98,23 @@ func WaitForValidator(
 	resourceGroup,
 	metricName,
 	metricNamespace string,
-	timeout int,
+	period int,
 ) (Validator, error) {
 
-	timer := time.NewTimer(time.Duration(timeout) * time.Second)
-	timerChan := timer.C
+	ticker := time.NewTicker(time.Duration(period) * time.Second)
+	tickerChan := ticker.C
 
-	defer timer.Stop()
+	defer ticker.Stop()
+
+	var err error
+	var validator Validator
 
 	for {
 		select {
-		case <-timerChan:
-			return Validator{}, fmt.Errorf("timeout waiting for validator")
-		default:
-			validator, err := GetCurrentValidator(
+		case <-ctx.Done():
+			return validator, fmt.Errorf("timeout waiting for validator. context has been cancelled. last error: %w", err)
+		case <-tickerChan:
+			validator, err = GetCurrentValidator(
 				ctx,
 				client,
 				vmScaleSetNames,
@@ -121,7 +126,16 @@ func WaitForValidator(
 			if err == nil && validator.ScaleSetName != "" {
 				return validator, err
 			}
-			time.Sleep(5 * time.Second)
+			if err != nil {
+				log.Printf("[ERROR] failover: Got error while was waiting for validator: %v", err)
+			} else {
+				log.Printf(
+					"[DEBUG] failover: Did not find validator for virtual machines %s, metric %q, metric namespace %q",
+					vmScaleSetNames,
+					metricName,
+					metricNamespace,
+				)
+			}
 		}
 	}
 }

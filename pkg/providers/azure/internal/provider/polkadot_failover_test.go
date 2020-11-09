@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
+
 	"github.com/protofire/polkadot-failover-mechanism/pkg/providers/azure/internal/clients"
 
 	"github.com/stretchr/testify/require"
@@ -42,8 +44,21 @@ func TestPolkadotConfigureCheck(t *testing.T) {
 		"delete_vms_with_api_in_single_mode": false,
 	}))
 	require.Len(t, diagnostics, 0)
-	ds := prov.DataSources()[0]
-	require.Equal(t, "polkadot_failover", ds.Name)
+
+	var resourceNames []string
+	var dataSourceNames []string
+
+	for _, resource := range prov.Resources() {
+		resourceNames = append(resourceNames, resource.Name)
+	}
+	require.Equal(t, 0, helpers.FindStrIndex("polkadot_failover", resourceNames))
+
+	for _, dataSource := range prov.DataSources() {
+		dataSourceNames = append(dataSourceNames, dataSource.Name)
+	}
+	require.NotEqual(t, helpers.FindStrIndex("polkadot_failover", dataSourceNames), -1)
+	require.NotEqual(t, helpers.FindStrIndex("polkadot_metric_definition", dataSourceNames), -1)
+
 	futures := prov.Meta().(*clients.Client).Features.PolkadotFailOverFeature
 	require.False(t, futures.DeleteVmsWithAPIInSingleMode)
 }

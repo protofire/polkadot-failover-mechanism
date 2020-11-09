@@ -1,4 +1,4 @@
-package location
+package azure
 
 import "strings"
 
@@ -6,16 +6,6 @@ import "strings"
 // into the canonical value to allow comparisons between user-code and API Responses
 func Normalize(input string) string {
 	return strings.Replace(strings.ToLower(input), " ", "", -1)
-}
-
-// NormalizeNilable normalizes the Location field even if it's nil to ensure this field
-// can always have a value
-func NormalizeNilable(input *string) string {
-	if input == nil {
-		return ""
-	}
-
-	return Normalize(*input)
 }
 
 func NormalizeSlice(input []string) []string {

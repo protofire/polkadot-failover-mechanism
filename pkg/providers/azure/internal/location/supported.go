@@ -8,6 +8,7 @@ import (
 )
 
 // supportedLocations can be (validly) nil - as such this shouldn't be relied on
+// nolint
 var supportedLocations *[]string
 
 // CacheSupportedLocations attempts to retrieve the supported locations from the Azure MetaData Service

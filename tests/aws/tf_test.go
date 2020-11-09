@@ -11,6 +11,7 @@ Additional envs:
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -124,116 +125,141 @@ func TestBundle(t *testing.T) {
 	// Run `terraform apply` and fail the test if there are any errors
 	terraform.Apply(t, terraformOptions)
 
-	// TEST 1: Verify that there are healthy instances in each region with public ips assigned
-	var instanceIDs []string
-	var publicIPs []string
+	require.True(t, t.Run("DistributedMode", func(t *testing.T) {
+		// TEST 1: Verify that there are healthy instances in each region with public ips assigned
+		var instanceIDs []string
+		var publicIPs []string
+		for _, region := range awsRegions {
+			// GetHealthyEc2InstanceIdsByTag located in ec2.go file
+			regionInstances := aws.GetHealthyEc2InstanceIdsByTag(t, region, "prefix", prefix)
+			require.GreaterOrEqualf(t, len(regionInstances), 1, "ERROR! No instances found in %s region.", region)
+			t.Logf("INFO. The following instances found in %s region: %s.", region, strings.Join(regionInstances, ","))
 
-	for _, region := range awsRegions {
-		// GetHealthyEc2InstanceIdsByTag located in ec2.go file
-		regionInstances := aws.GetHealthyEc2InstanceIdsByTag(t, region, "prefix", prefix)
+			instanceIDs = append(instanceIDs, regionInstances...)
+			// Fetching PublicIPs for the instances we have found
+			regionIPs := taws.GetPublicIpsOfEc2Instances(t, regionInstances, region)
 
-		require.GreaterOrEqualf(t, len(regionInstances), 1, "ERROR! No instances found in %s region.", region)
-		t.Logf("INFO. The following instances found in %s region: %s.", region, strings.Join(regionInstances, ","))
-
-		instanceIDs = append(instanceIDs, regionInstances...)
-		// Fetching PublicIPs for the instances we have found
-		regionIPs := taws.GetPublicIpsOfEc2Instances(t, regionInstances, region)
-
-		require.GreaterOrEqualf(t, len(regionIPs), 1, "ERROR! No public IPs found for instances in %s region.", region)
-		for k, v := range regionIPs {
-			publicIPs = append(publicIPs, v)
-			t.Logf("InstanceID: %s, InstanceIP: %s", k, v)
-		}
-	}
-
-	t.Logf("INFO. Instances IDs found in all regions: %s", strings.Join(instanceIDs, ","))
-
-	// TEST 2: Verify the number of existing EC2 instances - should be an odd number
-	t.Run("Instance count", func(t *testing.T) {
-
-		instanceCount := len(instanceIDs)
-
-		require.Equal(t, instanceCount%2, 1, "INFO. There are odd instances running")
-		t.Log("INFO. There are odd instances running")
-
-		// TEST 3: Verify the number of existing EC2 instances - should be at least 3
-		require.Greaterf(t, instanceCount, 2, "ERROR! Minimum viable instance count (3) not reached. There are %d instances running.", instanceCount)
-		t.Logf("INFO. Minimum viable instance count (3) reached. There are %d instances running.", instanceCount)
-	})
-
-	// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
-	t.Run("Consul verifications", func(t *testing.T) {
-
-		if assert.True(t, helpers.ConsulLockCheck(t, publicIPs, sshKey, sshUser)) {
-			t.Log("INFO. Consul lock check passed. Each Consul node can see exactly 1 lock.")
+			require.GreaterOrEqualf(t, len(regionIPs), 1, "ERROR! No public IPs found for instances in %s region.", region)
+			for k, v := range regionIPs {
+				publicIPs = append(publicIPs, v)
+				t.Logf("InstanceID: %s, InstanceIP: %s", k, v)
+			}
 		}
 
-		// TEST 5: All of the Consul nodes should be healthy
-		if assert.True(t, helpers.ConsulCheck(t, publicIPs, sshKey, sshUser)) {
-			t.Log("INFO. Consul check passed. Each node can see full cluster, all nodes are healthy")
-		}
+		t.Logf("INFO. Instances IDs found in all regions: %s", strings.Join(instanceIDs, ","))
 
-	})
+		// TEST 2: Verify the number of existing EC2 instances - should be an odd number
+		t.Run("Instance count", func(t *testing.T) {
 
-	t.Run("Polkadot verifications", func(t *testing.T) {
+			instanceCount := len(instanceIDs)
 
-		// TEST 6: Verify that there is only one Polkadot node working in Validator mode at a time
-		if assert.True(t, helpers.LeadersCheck(t, publicIPs, sshKey, sshUser)) {
-			t.Log("INFO. Leaders check passed. Exactly 1 leader found")
-		}
+			require.Equal(t, instanceCount%2, 1, "INFO. There are odd instances running")
+			t.Log("INFO. There are odd instances running")
 
-		// TEST 7: Verify that all Polkadot nodes are health
-		if assert.True(t, helpers.PolkadotCheck(t, publicIPs, sshKey, sshUser)) {
-			t.Log("INFO. Polkadot node check passed. All instances are healthy")
-		}
+			// TEST 3: Verify the number of existing EC2 instances - should be at least 3
+			require.Greaterf(t, instanceCount, 2, "ERROR! Minimum viable instance count (3) not reached. There are %d instances running.", instanceCount)
+			t.Logf("INFO. Minimum viable instance count (3) reached. There are %d instances running.", instanceCount)
+		})
 
-	})
+		// TEST 4: Verify the number of Consul locks each instance is aware about. Should be exactly 1 lock on each instnace
+		t.Run("Consul verifications", func(t *testing.T) {
 
-	// TEST 8: All the validator keys were successfully uploaded to SSM in each region
-	t.Run("SSM tests", func(t *testing.T) {
+			if assert.True(t, helpers.ConsulLockCheck(t, publicIPs, sshKey, sshUser)) {
+				t.Log("INFO. Consul lock check passed. Each Consul node can see exactly 1 lock.")
+			}
 
-		if assert.True(t, aws.SSMCheck(t, awsRegions, prefix), awsRegions, prefix) {
-			t.Log("INFO. All keys were uploaded. Private key is encrypted.")
-		}
-	})
+			// TEST 5: All of the Consul nodes should be healthy
+			if assert.True(t, helpers.ConsulCheck(t, publicIPs, sshKey, sshUser)) {
+				t.Log("INFO. Consul check passed. Each node can see full cluster, all nodes are healthy")
+			}
 
-	// TEST 9: Verify that all the groups that are used by the nodes are valid and contains verified rules only.
-	t.Run("Security groups tests", func(t *testing.T) {
+		})
 
-		if assert.True(t, aws.SGCheck(t, awsRegions, prefix)) {
-			t.Log("INFO. Security groups contains only an appropriate set of rules.")
-		}
-	})
+		t.Run("Polkadot verifications", func(t *testing.T) {
 
-	// TEST 10: Check that there are no unassigned volumes after the nodes started
-	t.Run("Volumes tests", func(t *testing.T) {
-		if assert.Truef(t, aws.VolumesCheck(t, awsRegions, prefix), "WARNING! An unattached disk was detected with prefix %s", prefix) {
-			t.Log("INFO. No disks left unattached.")
-		}
-	})
+			// TEST 6: Verify that there is only one Polkadot node working in Validator mode at a time
+			if assert.True(t, helpers.LeadersCheck(t, publicIPs, sshKey, sshUser)) {
+				t.Log("INFO. Leaders check passed. Exactly 1 leader found")
+			}
 
-	// TEST 11: Check that no CloudWatch alarm were triggered
-	t.Run("CloudWatch tests", func(t *testing.T) {
-		expectedAlertsPerRegion := map[string]int{
-			awsRegions[0]: 5,
-			awsRegions[1]: 3,
-			awsRegions[2]: 3,
-		}
-		if assert.True(t, aws.CloudWatchCheck(t, awsRegions, prefix, expectedAlertsPerRegion), "ERROR! Cloud Watch alarms are not in a good state") {
-			t.Log("INFO. All Cloud Watch alarms were created. No Cloud Watch alarm were triggered.")
-		}
-	})
+			// TEST 7: Verify that all Polkadot nodes are health
+			if assert.True(t, helpers.PolkadotCheck(t, publicIPs, sshKey, sshUser)) {
+				t.Log("INFO. Polkadot node check passed. All instances are healthy")
+			}
 
-	// TEST 12: Check that ELB and each target group confirms that all the instances are healthy
-	t.Run("NLB tests", func(t *testing.T) {
-		if assert.True(t, aws.NLBCheck(t, terraform.OutputList(t, terraformOptions, "lbs"), awsRegions)) {
-			t.Log("INFO. NLB is configured. All target groups do exists. Health checks responds that instance state is OK.")
-		}
-	})
-	// TEST 13: Check that there are exactly 5 keys in the keystore
-	t.Run("Keystore tests", func(t *testing.T) {
-		if assert.True(t, helpers.KeystoreCheck(t, publicIPs, sshKey, sshUser)) {
-			t.Log("INFO. There are exactly 5 keys in the Keystore")
-		}
+		})
+
+		// TEST 8: All the validator keys were successfully uploaded to SSM in each region
+		t.Run("SSM tests", func(t *testing.T) {
+
+			if assert.True(t, aws.SSMCheck(t, awsRegions, prefix), awsRegions, prefix) {
+				t.Log("INFO. All keys were uploaded. Private key is encrypted.")
+			}
+		})
+
+		// TEST 9: Verify that all the groups that are used by the nodes are valid and contains verified rules only.
+		t.Run("Security groups tests", func(t *testing.T) {
+
+			if assert.True(t, aws.SGCheck(t, awsRegions, prefix)) {
+				t.Log("INFO. Security groups contains only an appropriate set of rules.")
+			}
+		})
+
+		// TEST 10: Check that there are no unassigned volumes after the nodes started
+		t.Run("Volumes tests", func(t *testing.T) {
+			if assert.Truef(t, aws.VolumesCheck(t, awsRegions, prefix), "WARNING! An unattached disk was detected with prefix %s", prefix) {
+				t.Log("INFO. No disks left unattached.")
+			}
+		})
+
+		// TEST 11: Check that no CloudWatch alarm were triggered
+		t.Run("CloudWatch tests", func(t *testing.T) {
+			expectedAlertsPerRegion := map[string]int{
+				awsRegions[0]: 5,
+				awsRegions[1]: 3,
+				awsRegions[2]: 3,
+			}
+			if assert.True(t, aws.CloudWatchCheck(t, awsRegions, prefix, expectedAlertsPerRegion), "ERROR! Cloud Watch alarms are not in a good state") {
+				t.Log("INFO. All Cloud Watch alarms were created. No Cloud Watch alarm were triggered.")
+			}
+		})
+
+		// TEST 12: Check that ELB and each target group confirms that all the instances are healthy
+		t.Run("NLB tests", func(t *testing.T) {
+			if assert.True(t, aws.NLBCheck(t, terraform.OutputList(t, terraformOptions, "lbs"), awsRegions)) {
+				t.Log("INFO. NLB is configured. All target groups do exists. Health checks responds that instance state is OK.")
+			}
+		})
+		// TEST 13: Check that there are exactly 5 keys in the keystore
+		t.Run("Keystore tests", func(t *testing.T) {
+			if assert.True(t, helpers.KeystoreCheck(t, publicIPs, sshKey, sshUser)) {
+				t.Log("INFO. There are exactly 5 keys in the Keystore")
+			}
+		})
+	}))
+
+	log.Printf("[DEBUG] failover: Getting validator in distributed mode....")
+	validatorBefore, err := aws.WaitForValidatorRegions(awsRegions, prefix, "validator_value", prefix, 1200, 5)
+	require.NoError(t, err)
+	require.NotEmpty(t, validatorBefore.InstanceID)
+
+	terraformOptions.Vars["failover_mode"] = "single"
+	terraform.Apply(t, terraformOptions)
+
+	t.Run("SingleMode", func(t *testing.T) {
+		t.Run("CheckValidator", func(t *testing.T) {
+			log.Printf("[DEBUG] failover: Getting validator in single mode....")
+			validatorAfter, err := aws.WaitForValidatorRegions(awsRegions, prefix, "validator_value", prefix, 1200, 5)
+			require.NoError(t, err)
+			require.NotEmpty(t, validatorAfter.InstanceID)
+			require.Equal(t, validatorBefore.InstanceID, validatorAfter.InstanceID)
+		})
+
+		t.Run("CheckVirtualMachines", func(t *testing.T) {
+			count, err := aws.CheckVmsCount(awsRegions, prefix)
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+		})
+
 	})
 }

@@ -161,12 +161,6 @@ variable "admin_email" {
   description = "An Admin email to send alerts to"
 }
 
-variable "wait_vmss" {
-  description = "Should we wait until vmss is being ready. Required set az console utility"
-  type        = bool
-  default     = false
-}
-
 variable "failover_mode" {
   description = "Failover mode. Either 'single' or 'distributed'"
   type        = string
@@ -197,7 +191,7 @@ variable "vault_soft_delete_enabled" {
 variable "delete_vms_with_api_in_single_mode" {
   description = "Delete vms in single mode with API call preserving current active validator"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "docker_image" {

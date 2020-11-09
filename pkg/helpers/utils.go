@@ -83,6 +83,11 @@ func StringsContains(input string, search []string) (int, bool) {
 	return idx, idx != -1
 }
 
+func StringsContainsBool(input string, search []string) bool {
+	idx := FindStrIndex(input, search)
+	return idx != -1
+}
+
 func RemoveFromSlice(slice []string, i int) []string {
 	slice[i] = slice[len(slice)-1]
 	slice[len(slice)-1] = ""

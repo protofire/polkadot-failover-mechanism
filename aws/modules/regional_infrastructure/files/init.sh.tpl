@@ -66,11 +66,6 @@ health_metric_name="health"
 data="/data"
 polkadot_user_id=1000
 
-lbs=()
-[ -n "${lb-primary}" ] && lbs+=( "${lb-primary}" )
-[ -n "${lb-secondary}" ] && lbs+=( "${lb-secondary}" )
-[ -n "${lb-tertiary}" ] && lbs+=( "${lb-tertiary}" )
-
 # Check that instance profile is attached
 until aws sts get-caller-identity; do
 
@@ -197,6 +192,14 @@ install_consulate
 
 set -eE
 trap default_trap ERR EXIT
+
+lbs=()
+
+[ -n "${lb-primary}" ] && lbs+=( "${lb-primary}" )
+[ -n "${lb-secondary}" ] && lbs+=( "${lb-secondary}" )
+[ -n "${lb-tertiary}" ] && lbs+=( "${lb-tertiary}" )
+
+echo "LoadBalancers: $${lbs[@]}"
 
 cluster_members=0
 until [ $cluster_members -gt "${total_instance_count}" ]; do

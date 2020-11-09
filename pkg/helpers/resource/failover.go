@@ -1,12 +1,10 @@
 package resource
 
 import (
-	"encoding/base64"
-	"strings"
+	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/failover"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type FailoverSource int
@@ -15,8 +13,6 @@ type FailoverSource int
 type FailOverMode string
 
 const (
-	fieldSeparator = "$$"
-
 	FailoverSourceID FailoverSource = iota + 1
 	FailoverSourceSchema
 
@@ -25,6 +21,7 @@ const (
 	// FailOverModeSingle ...
 	FailOverModeSingle FailOverMode = "single"
 
+	TagsFieldName              = "tags"
 	InstancesFieldName         = "instances"
 	LocationsFieldName         = "locations"
 	PrimaryCountFieldName      = "primary_count"
@@ -35,72 +32,7 @@ const (
 	PrefixFieldName            = "prefix"
 	MetricNameFieldName        = "metric_name"
 	MetricNamespaceFieldName   = "metric_namespace"
-	TagsFieldName              = "tags"
 )
-
-type Pack func(failover interface{}) (string, error)
-type UnPack func(failover interface{}, data string) error
-
-func bsonPack(failover interface{}) (string, error) {
-	data, err := bson.Marshal(failover)
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(data), nil
-}
-
-func bsonUnPack(failover interface{}, data string) error {
-	res, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return err
-	}
-	return bson.Unmarshal(res, failover)
-}
-
-func SetSchemaValues(d *schema.ResourceData, diagnostics diag.Diagnostics, primaryCount, secondaryCount, tertiaryCount int) diag.Diagnostics {
-
-	if diagnostics == nil {
-		diagnostics = make(diag.Diagnostics, 0)
-	}
-
-	if err := d.Set(PrimaryCountFieldName, primaryCount); err != nil {
-		diagnostics = append(diagnostics, diag.FromErr(err)...)
-	}
-
-	if err := d.Set(SecondaryCountFieldName, secondaryCount); err != nil {
-		diagnostics = append(diagnostics, diag.FromErr(err)...)
-	}
-
-	if err := d.Set(TertiaryCountFieldName, tertiaryCount); err != nil {
-		diagnostics = append(diagnostics, diag.FromErr(err)...)
-	}
-
-	if err := d.Set(FailoverInstancesFieldName, []int{primaryCount, secondaryCount, tertiaryCount}); err != nil {
-		diagnostics = append(diagnostics, diag.FromErr(err)...)
-	}
-
-	return diagnostics
-}
-
-func ExpandInt(values []interface{}) []int {
-	results := make([]int, 0, len(values))
-	for _, value := range values {
-		results = append(results, value.(int))
-	}
-	return results
-}
-
-func ExpandString(values []interface{}) []string {
-	results := make([]string, 0, len(values))
-	for _, value := range values {
-		results = append(results, value.(string))
-	}
-	return results
-}
-
-func PrepareID(values ...string) string {
-	return strings.Join(values, fieldSeparator)
-}
 
 type Failover struct {
 	Prefix            string
@@ -114,16 +46,6 @@ type Failover struct {
 	TertiaryCount     int
 	FailoverInstances []int
 	Source            FailoverSource
-}
-
-type GCPFailover struct {
-	Failover
-	Project string
-}
-
-type AzureFailover struct {
-	Failover
-	ResourceGroup string
 }
 
 func (f *Failover) SetPrimaryCount(n int) {
@@ -146,14 +68,15 @@ func (f Failover) IsNotSet() bool {
 }
 
 func (f Failover) Initialized() bool {
-	return len(f.Locations) != 0 && f.MetricName != "" && f.MetricNameSpace != ""
+	return len(f.Instances) != 0 && f.MetricName != "" && f.MetricNameSpace != ""
 }
 
 func (f *Failover) FillDefaultCountsIfNotSet() {
 	if f.IsNotSet() {
 		if f.IsSingleMode() {
 			// get first location for validator
-			f.SetCounts([]int{1, 0, 0}...)
+			counts := failover.CalculateInstancesForSingleFailOverMode(f.Instances)
+			f.SetCounts(counts...)
 		} else {
 			f.SetCounts(f.Instances...)
 		}
@@ -239,45 +162,4 @@ func (f *Failover) FromSchema(d *schema.ResourceData) error {
 
 	return nil
 
-}
-
-func (f *GCPFailover) FromIDOrSchema(d *schema.ResourceData) error {
-	if id := d.Id(); id != "" {
-		err := bsonUnPack(f, id)
-		if err != nil {
-			return err
-		}
-		f.Source = FailoverSourceID
-		return nil
-	}
-	return f.FromSchema(d)
-
-}
-
-func (f *GCPFailover) FromID(id string) error {
-	return bsonUnPack(f, id)
-}
-
-func (f *GCPFailover) ID() (string, error) {
-	return bsonPack(f)
-}
-
-func (f *AzureFailover) FromIDOrSchema(d *schema.ResourceData) error {
-	if id := d.Id(); id != "" {
-		err := bsonUnPack(f, id)
-		if err != nil {
-			return err
-		}
-		f.Source = FailoverSourceID
-		return nil
-	}
-	return f.FromSchema(d)
-}
-
-func (f *AzureFailover) FromID(id string) error {
-	return bsonUnPack(f, id)
-}
-
-func (f *AzureFailover) ID() (string, error) {
-	return bsonPack(f)
 }

@@ -2,8 +2,15 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
+	"time"
+
+	"github.com/Azure/go-autorest/autorest"
+
+	"github.com/Azure/go-autorest/autorest/azure"
 
 	"github.com/protofire/polkadot-failover-mechanism/pkg/helpers/fanout"
 
@@ -17,11 +24,11 @@ import (
 type VMSMap map[string][]compute.VirtualMachineScaleSetVM
 
 func (vmss VMSMap) Size() int {
-	l := 0
+	s := 0
 	for _, vms := range vmss {
-		l += len(vms)
+		s += len(vms)
 	}
-	return l
+	return s
 }
 
 // IPAddress represents virtual machine scale set IP public address configuration
@@ -47,6 +54,25 @@ func IPAddressFromString(addr string) *IPAddress {
 		IFName:              parts[11],
 		IPConfigurationName: parts[13],
 		PublicAddressName:   parts[15],
+	}
+}
+
+var retryableServiceErrorCodes = []string{"NetworkingInternalOperationError"}
+
+type future interface {
+	WaitForCompletionRef(ctx context.Context, client autorest.Client) (err error)
+}
+
+func waitForFuture(ctx context.Context, future future, client *compute.VirtualMachineScaleSetsClient) error {
+	for {
+		if err := future.WaitForCompletionRef(ctx, client.Client); err != nil {
+			sErr := &azure.ServiceError{}
+			if errors.As(err, sErr) && helpers.StringsContainsBool(sErr.Code, retryableServiceErrorCodes) {
+				continue
+			}
+			return err
+		}
+		return nil
 	}
 }
 
@@ -167,7 +193,12 @@ func getVMInstancesFromVMScaleSets(
 
 }
 
-func getVirtualMachinesScaleSetVMs(ctx context.Context, vmScaleSetClient *compute.VirtualMachineScaleSetsClient, vmScaleSetVMsClient *compute.VirtualMachineScaleSetVMsClient, resourceGroup string) (VMSMap, error) {
+func getVirtualMachinesScaleSetVMs(
+	ctx context.Context,
+	vmScaleSetClient *compute.VirtualMachineScaleSetsClient,
+	vmScaleSetVMsClient *compute.VirtualMachineScaleSetVMsClient,
+	resourceGroup string,
+) (VMSMap, error) {
 
 	result, err := vmScaleSetClient.List(ctx, resourceGroup)
 	if err != nil {
@@ -230,7 +261,7 @@ func getVirtualMachineScaleSetInterfaces(ctx context.Context, client *network.In
 
 }
 
-func filterVirtualMachineScaleSets(vms *[]compute.VirtualMachineScaleSet, handler func(vm compute.VirtualMachineScaleSet) bool) {
+func FilterVirtualMachineScaleSets(vms *[]compute.VirtualMachineScaleSet, handler func(vm compute.VirtualMachineScaleSet) bool) {
 
 	start := 0
 	for i := start; i < len(*vms); i++ {
@@ -275,6 +306,7 @@ func GetVirtualMachineScaleSetVMsWithClient(
 	vmScaleSetClientVMs *compute.VirtualMachineScaleSetVMsClient,
 	prefix,
 	resourceGroup string,
+	locations ...string,
 ) (VMSMap, error) {
 
 	vms, err := getVirtualMachinesScaleSetVMs(ctx, vmScaleSetClient, vmScaleSetClientVMs, resourceGroup)
@@ -288,7 +320,88 @@ func GetVirtualMachineScaleSetVMsWithClient(
 		}
 	}
 
+	if len(locations) > 0 {
+		for name, vmsList := range vms {
+			for _, vm := range vmsList {
+				if helpers.FindStrIndex(*vm.Location, locations) != -1 {
+					delete(vms, name)
+					break
+				}
+			}
+		}
+	}
+
 	return vms, nil
+
+}
+
+func CheckVirtualMachineScaleSetVMsWithClient(
+	ctx context.Context,
+	vmScaleSetClient *compute.VirtualMachineScaleSetsClient,
+	vmScaleSetClientVMs *compute.VirtualMachineScaleSetVMsClient,
+	resourceGroup string,
+	vmssNames ...string,
+) ([]string, error) {
+
+	vms, err := getVirtualMachinesScaleSetVMs(ctx, vmScaleSetClient, vmScaleSetClientVMs, resourceGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	var vmssNamesOutput []string
+
+	for vmssName, vms := range vms {
+		if helpers.StringsContainsBool(vmssName, vmssNames) && len(vms) > 0 {
+			vmssNamesOutput = append(vmssNamesOutput, vmssName)
+		}
+	}
+
+	return vmssNamesOutput, nil
+
+}
+
+func WaitForVirtualMachineScaleSetVMsWithClient(
+	ctx context.Context,
+	vmScaleSetClient *compute.VirtualMachineScaleSetsClient,
+	vmScaleSetClientVMs *compute.VirtualMachineScaleSetVMsClient,
+	prefix,
+	resourceGroup string,
+	size int,
+	period int,
+	locations ...string,
+) (VMSMap, error) {
+
+	ticker := time.NewTicker(time.Duration(period) * time.Second)
+	tickerChan := ticker.C
+
+	defer ticker.Stop()
+
+	var err error
+	var vms VMSMap
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("period waiting for validator. Context has been cancelled. Last error: %w", err)
+		case <-tickerChan:
+			vms, err = GetVirtualMachineScaleSetVMsWithClient(
+				ctx,
+				vmScaleSetClient,
+				vmScaleSetClientVMs,
+				prefix,
+				resourceGroup,
+				locations...,
+			)
+			if err == nil && vms.Size() == size {
+				return vms, nil
+			}
+			if err != nil {
+				log.Printf("[ERROR] failover: Got error while was waiting for VM scale sets: %v", err)
+			} else {
+				log.Printf("[DEBUG] failover: Got %d virtual machines instead %d", vms.Size(), size)
+			}
+		}
+	}
 
 }
 
@@ -308,15 +421,26 @@ func GetVirtualMachineScaleSets(prefix, subscriptionID, resourceGroup string) ([
 }
 
 // GetVirtualMachineScaleSetsWithClient gets all test virtual machines
-func GetVirtualMachineScaleSetsWithClient(ctx context.Context, client *compute.VirtualMachineScaleSetsClient, prefix, resourceGroup string) ([]compute.VirtualMachineScaleSet, error) {
+func GetVirtualMachineScaleSetsWithClient(
+	ctx context.Context,
+	client *compute.VirtualMachineScaleSetsClient,
+	prefix, resourceGroup string,
+	locations ...string,
+) ([]compute.VirtualMachineScaleSet, error) {
 
 	vms, err := getVirtualMachinesScaleSets(ctx, client, resourceGroup)
 	if err != nil {
 		return nil, err
 	}
-	filterVirtualMachineScaleSets(&vms, func(vm compute.VirtualMachineScaleSet) bool {
+	FilterVirtualMachineScaleSets(&vms, func(vm compute.VirtualMachineScaleSet) bool {
 		return strings.HasPrefix(*vm.Name, helpers.GetPrefix(prefix))
 	})
+
+	if len(locations) > 0 {
+		FilterVirtualMachineScaleSets(&vms, func(vm compute.VirtualMachineScaleSet) bool {
+			return helpers.FindStrIndex(*vm.Location, locations) != -1
+		})
+	}
 
 	return vms, nil
 
@@ -462,4 +586,154 @@ func GetVMScaleSetNames(ctx context.Context, client *compute.VirtualMachineScale
 
 	return vmScaleSetsNames, nil
 
+}
+
+func GetVMScaleSetNamesWithInstances(ctx context.Context, client *compute.VirtualMachineScaleSetsClient, resourceGroup, prefix string) ([]string, error) {
+
+	vmScaleSets, err := GetVirtualMachineScaleSetsWithClient(
+		ctx,
+		client,
+		prefix,
+		resourceGroup,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR]. Cannot get VM scale sets: %w", err)
+	}
+
+	vmScaleSetsNames := make([]string, 0, len(vmScaleSets))
+
+	for _, vmScaleSet := range vmScaleSets {
+		if *vmScaleSet.Sku.Capacity > 0 {
+			vmScaleSetsNames = append(vmScaleSetsNames, *vmScaleSet.Name)
+		}
+	}
+
+	return vmScaleSetsNames, nil
+
+}
+
+func GetVMScaleSetInstancesCount(ctx context.Context, client *compute.VirtualMachineScaleSetsClient, resourceGroup, prefix string, locations ...string) (map[string]int, error) {
+
+	vmScaleSets, err := GetVirtualMachineScaleSetsWithClient(
+		ctx,
+		client,
+		prefix,
+		resourceGroup,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR]. Cannot get VM scale sets: %w", err)
+	}
+
+	vmScaleSetsNamesToInstancesCount := make(map[string]int)
+
+	for _, vmScaleSet := range vmScaleSets {
+		if _, ok := helpers.StringsContains(*vmScaleSet.Location, locations); ok {
+			vmScaleSetsNamesToInstancesCount[*vmScaleSet.Name] = int(*vmScaleSet.Sku.Capacity)
+		}
+	}
+
+	return vmScaleSetsNamesToInstancesCount, nil
+
+}
+
+func setVMssCapacity(
+	ctx context.Context,
+	client *compute.VirtualMachineScaleSetsClient,
+	resourceGroup,
+	vmScaleSetName string,
+	removeVmsCount int) error {
+
+	vmss, err := client.Get(ctx, resourceGroup, vmScaleSetName)
+
+	if err != nil {
+		return fmt.Errorf("cannot get vm scale set %q: %w", vmScaleSetName, err)
+	}
+
+	sku := vmss.Sku
+	*sku.Capacity = *sku.Capacity - int64(removeVmsCount)
+
+	if *sku.Capacity < 0 {
+		*sku.Capacity = 0
+	}
+
+	log.Printf("[DEBUG] failover: updating vm scale set %q to capacity %d...", vmScaleSetName, *sku.Capacity)
+
+	updateFuture, err := client.Update(ctx, resourceGroup, vmScaleSetName, compute.VirtualMachineScaleSetUpdate{
+		Sku: sku,
+	})
+
+	if err != nil {
+		return fmt.Errorf("cannot update vm scale set %q: %w", vmScaleSetName, err)
+	}
+
+	if err := waitForFuture(ctx, &updateFuture, client); err != nil {
+		return fmt.Errorf(
+			"error waiting for VM Scale Set %q (Resource Group %q) is being updated. Error type: %T: %w",
+			vmScaleSetName,
+			resourceGroup,
+			err,
+			err,
+		)
+	}
+
+	log.Printf("[DEBUG] failover: updated vm scale set %q to capacity %d", vmScaleSetName, *sku.Capacity)
+
+	return nil
+
+}
+
+func DeleteVMs(
+	ctx context.Context,
+	client *compute.VirtualMachineScaleSetsClient,
+	resourceGroup,
+	vmScaleSetName string,
+	vmScaleSetVMIDsToDelete []string,
+	updateVMssCapacity bool,
+) error {
+
+	log.Printf("[DEBUG] failover: deleting vm scale set %q instances %s", vmScaleSetName, vmScaleSetVMIDsToDelete)
+
+	deleteFuture, err := client.DeleteInstances(
+		ctx,
+		resourceGroup,
+		vmScaleSetName,
+		compute.VirtualMachineScaleSetVMInstanceRequiredIDs{InstanceIds: &vmScaleSetVMIDsToDelete},
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"error deleting Virtual Machines %q from Scale Set %q (Resource Group %q): %w",
+			strings.Join(vmScaleSetVMIDsToDelete, ", "),
+			vmScaleSetName,
+			resourceGroup,
+			err,
+		)
+	}
+
+	log.Printf(
+		"[DEBUG] failover: Waiting for Virtual Machines %q from Scale Set %q (Resource Group %q) to be deleted..",
+		strings.Join(vmScaleSetVMIDsToDelete, ", "),
+		vmScaleSetName,
+		resourceGroup,
+	)
+
+	if err := waitForFuture(ctx, &deleteFuture, client); err != nil {
+		return fmt.Errorf(
+			"error waiting for Virtual Machines %q from Scale Set %q (Resource Group %q) is being deleted. Error type: %T: %w",
+			strings.Join(vmScaleSetVMIDsToDelete, ", "),
+			vmScaleSetName,
+			resourceGroup,
+			err,
+			err,
+		)
+	}
+
+	log.Printf("[DEBUG] failover: Virtual Machines from Scale Set %q (Resource Group %q) was deleted", vmScaleSetName, resourceGroup)
+
+	if updateVMssCapacity {
+		return setVMssCapacity(ctx, client, resourceGroup, vmScaleSetName, len(vmScaleSetVMIDsToDelete))
+	}
+
+	return nil
 }

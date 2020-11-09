@@ -12,12 +12,9 @@ func TestGetVMsToDelete(t *testing.T) {
 
 	id1, id2, id3 := "id1", "id2", "id3"
 	vmSSName1, vmSSName2 := "vmSS1", "vmSS2"
-	locationName1, locationName2, locationName3 := "centralus", "westus", "eastus"
+	locationName1, locationName2 := "centralus", "westus"
 	hostname1, hostname2 := "hostname1", "hostname2"
 
-	locations := []string{locationName1, locationName2, locationName3}
-
-	validatorVMSSName := vmSSName1
 	validatorHostname := hostname1
 
 	vms := map[string][]compute.VirtualMachineScaleSetVM{
@@ -54,24 +51,26 @@ func TestGetVMsToDelete(t *testing.T) {
 		},
 	}
 
-	result := getVmsToDelete(vms, locations, []int{1, 0, 0}, validatorVMSSName, validatorHostname)
+	result := getVmsToDelete(vms, validatorHostname)
 	require.Len(t, result, 2)
-	require.Equal(t, result[vmSSName1], []string{id2})
-	require.Equal(t, result[vmSSName2], []string{id3})
 
-	result = getVmsToDelete(vms, locations, []int{1, 0, 0}, "", "")
+	for _, vmss := range result {
+		if vmss.vmssName == vmSSName1 {
+			require.Equal(t, vmss.vmsIDs, []string{id2})
+		}
+		if vmss.vmssName == vmSSName2 {
+			require.Equal(t, vmss.vmsIDs, []string{id3})
+		}
+	}
+
+	result = getVmsToDelete(vms, "")
 	require.Len(t, result, 2)
-	require.Equal(t, result[vmSSName1], []string{id1})
-	require.Equal(t, result[vmSSName2], []string{id3})
-
-	result = getVmsToDelete(vms, locations, []int{2, 1, 0}, "", "")
-	require.Len(t, result, 0)
-
-	result = getVmsToDelete(vms, locations, []int{0, 1, 0}, validatorVMSSName, validatorHostname)
-	require.Len(t, result, 1)
-	require.Equal(t, result[vmSSName1], []string{id1, id2})
-
-	result = getVmsToDelete(vms, locations, []int{0, 1, 0}, "", "")
-	require.Len(t, result, 1)
-	require.Equal(t, result[vmSSName1], []string{id1, id2})
+	for _, vmss := range result {
+		if vmss.vmssName == vmSSName1 {
+			require.Equal(t, vmss.vmsIDs, []string{id1, id2})
+		}
+		if vmss.vmssName == vmSSName2 {
+			require.Equal(t, vmss.vmsIDs, []string{id3})
+		}
+	}
 }

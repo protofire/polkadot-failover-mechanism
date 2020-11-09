@@ -54,24 +54,42 @@ trap default_trap ERR EXIT
 /usr/bin/systemctl start docker
 
 # Fetch validator instance parameters from Secret Manager
+
+trap - ERR
+set +eE
+set -o pipefail
+
 exit_code=1
 until [ $exit_code -eq 0 ]; do
 
-  trap - ERR
-  set +eE
-  az keyvault secret show --name "polkadot-${prefix}-name" --vault-name "${key_vault_name}"
+  NAME=$(az keyvault secret show --name "polkadot-${prefix}-name" --vault-name "${key_vault_name}" | jq .value -r)
   exit_code=$?
-  set -eE
-  trap default_trap ERR
-  echo "Can not access secret at vault. Sleeping for 30s..."
-  sleep 30
+  if [ $exit_code -ne 0 ]; then
+    continue
+  fi
+  CPU=$(az keyvault secret show --name "polkadot-${prefix}-cpulimit" --vault-name "${key_vault_name}" | jq .value -r)
+  exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+    continue
+  fi
+  RAM=$(az keyvault secret show --name "polkadot-${prefix}-ramlimit" --vault-name "${key_vault_name}" | jq .value -r)
+  exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+    continue
+  fi
+  NODEKEY=$(az keyvault secret show --name "polkadot-${prefix}-nodekey" --vault-name "${key_vault_name}" | jq .value -r)
+  exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+    continue
+  fi
+  echo "Can not access secret at vault. Sleeping for 10s..."
+  sleep 10
 
 done
 
-NAME=$(az keyvault secret show --name "polkadot-${prefix}-name" --vault-name "${key_vault_name}" | jq .value -r)
-CPU=$(az keyvault secret show --name "polkadot-${prefix}-cpulimit" --vault-name "${key_vault_name}" | jq .value -r)
-RAM=$(az keyvault secret show --name "polkadot-${prefix}-ramlimit" --vault-name "${key_vault_name}" | jq .value -r)
-NODEKEY=$(az keyvault secret show --name "polkadot-${prefix}-nodekey" --vault-name "${key_vault_name}" | jq .value -r)
+set +o pipefail
+set -eE
+trap default_trap ERR
 
 curl -s -o /usr/local/bin/validator.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/validator.sh
 source /usr/local/bin/validator.sh

@@ -10,35 +10,14 @@ resource "aws_cloudwatch_metric_alarm" "health_status" {
   alarm_description = "This metric monitors the polkadot nodes state"
   alarm_actions     = [aws_sns_topic.sns.arn]
 
-  metric_query {
-
-    id          = "e3"
-    expression  = "SUM(METRICS())"
-    label       = "Health state"
-    return_data = "true"
-
+  metric_name = "health_value"
+  period      = 60
+  statistic   = "Maximum"
+  namespace   = var.prefix
+  dimensions = {
+    asg_name = aws_autoscaling_group.polkadot.name
   }
-
-  dynamic "metric_query" {
-
-    for_each = data.aws_instances.ec2-asg-instance-info.ids
-
-    content {
-      id = "m${metric_query.key}"
-      metric {
-        metric_name = "health_value"
-        period      = 60
-        stat        = "Maximum"
-        namespace   = var.prefix
-        dimensions = {
-          asg_name    = aws_autoscaling_group.polkadot.name
-          instance_id = metric_query.value
-        }
-      }
-    }
-  }
-
-  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns, data.aws_instances.ec2-asg-instance-info]
+  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns]
 
 }
 
@@ -54,37 +33,19 @@ resource "aws_cloudwatch_metric_alarm" "consul_health_status" {
   alarm_description = "This metric monitors the polkadot nodes state"
   alarm_actions     = [aws_sns_topic.sns.arn]
 
-  metric_query {
-    id          = "e4"
-    expression  = "SUM(METRICS())"
-    label       = "Consul health state"
-    return_data = "true"
+  metric_name = "consul_health_checks_critical"
+  period      = 60
+  statistic   = "Maximum"
+  namespace   = var.prefix
+  dimensions = {
+    asg_name   = aws_autoscaling_group.polkadot.name
+    status     = "passing"
+    check_name = "Serf Health Status"
+    check_id   = "serfHealth"
   }
 
-  dynamic "metric_query" {
+  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns]
 
-    for_each = data.aws_instances.ec2-asg-instance-info.ids
-
-    content {
-      id = "m${metric_query.key}"
-      metric {
-        metric_name = "consul_health_checks_critical"
-        period      = 60
-        stat        = "Maximum"
-        namespace   = var.prefix
-        dimensions = {
-          asg_name    = aws_autoscaling_group.polkadot.name
-          instance_id = metric_query.value
-          status      = "passing"
-          node        = metric_query.value
-          check_name  = "Serf Health Status"
-          check_id    = "serfHealth"
-        }
-      }
-    }
-  }
-
-  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns, data.aws_instances.ec2-asg-instance-info]
 }
 
 resource "aws_cloudwatch_metric_alarm" "disk_used_percent" {
@@ -99,51 +60,18 @@ resource "aws_cloudwatch_metric_alarm" "disk_used_percent" {
   alarm_description = "CRITICAL! This alert means that the instance disk is running out of space"
   alarm_actions     = [aws_sns_topic.sns.arn]
 
-  metric_query {
-    id          = "e5"
-    expression  = "MAX(METRICS())"
-    label       = "Disk used percent"
-    return_data = "true"
+  metric_name = "disk_used_percent"
+  period      = 60
+  statistic   = "Maximum"
+  namespace   = var.prefix
+  dimensions = {
+    asg_name = aws_autoscaling_group.polkadot.name
+    path     = "/data"
+    mode     = "rw"
+    fstype   = "xfs"
+    device   = "nvme1n1"
   }
 
-  dynamic "metric_query" {
-
-    for_each = data.aws_instances.ec2-asg-instance-info.ids
-
-    content {
-      id = "m${metric_query.key}"
-      metric {
-        metric_name = "disk_used_percent"
-        period      = 60
-        stat        = "Maximum"
-        namespace   = var.prefix
-        dimensions = {
-          asg_name    = aws_autoscaling_group.polkadot.name
-          instance_id = metric_query.value
-          path        = "/data"
-          mode        = "rw"
-          fstype      = "xfs"
-          device      = "nvme1n1"
-        }
-      }
-    }
-
-  }
-
-  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns, data.aws_instances.ec2-asg-instance-info]
-
-}
-
-data "aws_instances" "ec2-asg-instance-info" {
-
-  instance_tags = {
-    Name                        = "${var.prefix}-failover-validator"
-    prefix                      = var.prefix
-    "aws:autoscaling:groupName" = "${var.prefix}-polkadot-validator"
-  }
-
-  instance_state_names = ["running"]
-
-  depends_on = [aws_autoscaling_group.polkadot]
+  depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns]
 
 }
