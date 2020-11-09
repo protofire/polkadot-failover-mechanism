@@ -15,7 +15,8 @@ resource "azurerm_monitor_action_group" "main" {
 }
 
 resource "azurerm_monitor_metric_alert" "health" {
-  count               = 3
+  count               = length(var.instance_count)
+  enabled             = polkadot_failover.polkadot.failover_instances[count.index] > 0
   name                = "${var.prefix}-health-${local.region_names[count.index]}"
   scopes              = [local.scale_set_ids[count.index]]
   resource_group_name = var.azure_rg
@@ -37,7 +38,8 @@ resource "azurerm_monitor_metric_alert" "health" {
 }
 
 resource "azurerm_monitor_metric_alert" "consul_health" {
-  count               = 3
+  count               = length(var.instance_count)
+  enabled             = polkadot_failover.polkadot.failover_instances[count.index] > 0
   name                = "${var.prefix}-consul-health-${local.region_names[count.index]}"
   scopes              = [local.scale_set_ids[count.index]]
   resource_group_name = var.azure_rg
@@ -60,7 +62,8 @@ resource "azurerm_monitor_metric_alert" "consul_health" {
 }
 
 resource "azurerm_monitor_metric_alert" "disk" {
-  count               = 3
+  count               = length(var.instance_count)
+  enabled             = polkadot_failover.polkadot.failover_instances[count.index] > 0
   name                = "${var.prefix}-disk-${local.region_names[count.index]}"
   scopes              = [local.scale_set_ids[count.index]]
   resource_group_name = var.azure_rg
@@ -84,7 +87,7 @@ resource "azurerm_monitor_metric_alert" "disk" {
 
 data "polkadot_metric_definition" "disk" {
   provider            = polkadot
-  count               = 3
+  count               = length(var.instance_count)
   scale_sets          = [local.scale_set_names[count.index]]
   prefix              = var.prefix
   metric_namespace    = local.metric_namespaces.disk.namespace
@@ -107,7 +110,7 @@ data "polkadot_metric_definition" "disk" {
 
 data "polkadot_metric_definition" "health" {
   provider            = polkadot
-  count               = 3
+  count               = length(var.instance_count)
   scale_sets          = [local.scale_set_names[count.index]]
   prefix              = var.prefix
   metric_namespace    = local.metric_namespaces.health.namespace
@@ -130,7 +133,7 @@ data "polkadot_metric_definition" "health" {
 
 data "polkadot_metric_definition" "consul_health" {
   provider            = polkadot
-  count               = 3
+  count               = length(var.instance_count)
   scale_sets          = [local.scale_set_names[count.index]]
   prefix              = var.prefix
   metric_namespace    = local.metric_namespaces.consul_health.namespace
