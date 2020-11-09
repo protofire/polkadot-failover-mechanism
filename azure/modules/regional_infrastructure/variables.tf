@@ -125,12 +125,6 @@ variable "key_vault_name" {
   type = string
 }
 
-variable "wait_vmss" {
-  description = "Should we wait until vmss is being ready. Required set az console utility"
-  type        = bool
-  default     = false
-}
-
 variable "docker_image" {
   description = "Polkadot docker image"
   type        = string

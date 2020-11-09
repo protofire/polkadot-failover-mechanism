@@ -116,7 +116,6 @@ func TestBundle(t *testing.T) {
 		"ssh_user":              sshUser,
 		"ssh_key_content":       sshKey.PublicKey,
 		"prefix":                prefix,
-		"wait_vmss":             true,
 		"use_msi":               true,
 		"delete_on_termination": !noDeleteOnTermination,
 		"cpu_limit":             "1",

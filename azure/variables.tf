@@ -161,12 +161,6 @@ variable "admin_email" {
   description = "An Admin email to send alerts to"
 }
 
-variable "wait_vmss" {
-  description = "Should we wait until vmss is being ready. Required set az console utility"
-  type        = bool
-  default     = false
-}
-
 variable "failover_mode" {
   description = "Failover mode. Either 'single' or 'distributed'"
   type        = string
