@@ -193,7 +193,12 @@ func getVMInstancesFromVMScaleSets(
 
 }
 
-func getVirtualMachinesScaleSetVMs(ctx context.Context, vmScaleSetClient *compute.VirtualMachineScaleSetsClient, vmScaleSetVMsClient *compute.VirtualMachineScaleSetVMsClient, resourceGroup string) (VMSMap, error) {
+func getVirtualMachinesScaleSetVMs(
+	ctx context.Context,
+	vmScaleSetClient *compute.VirtualMachineScaleSetsClient,
+	vmScaleSetVMsClient *compute.VirtualMachineScaleSetVMsClient,
+	resourceGroup string,
+) (VMSMap, error) {
 
 	result, err := vmScaleSetClient.List(ctx, resourceGroup)
 	if err != nil {
@@ -330,6 +335,31 @@ func GetVirtualMachineScaleSetVMsWithClient(
 
 }
 
+func CheckVirtualMachineScaleSetVMsWithClient(
+	ctx context.Context,
+	vmScaleSetClient *compute.VirtualMachineScaleSetsClient,
+	vmScaleSetClientVMs *compute.VirtualMachineScaleSetVMsClient,
+	resourceGroup string,
+	vmssNames ...string,
+) ([]string, error) {
+
+	vms, err := getVirtualMachinesScaleSetVMs(ctx, vmScaleSetClient, vmScaleSetClientVMs, resourceGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	var vmssNamesOutput []string
+
+	for vmssName, vms := range vms {
+		if helpers.StringsContainsBool(vmssName, vmssNames) && len(vms) > 0 {
+			vmssNamesOutput = append(vmssNamesOutput, vmssName)
+		}
+	}
+
+	return vmssNamesOutput, nil
+
+}
+
 func WaitForVirtualMachineScaleSetVMsWithClient(
 	ctx context.Context,
 	vmScaleSetClient *compute.VirtualMachineScaleSetsClient,
@@ -339,7 +369,7 @@ func WaitForVirtualMachineScaleSetVMsWithClient(
 	size int,
 	period int,
 	locations ...string,
-) error {
+) (VMSMap, error) {
 
 	ticker := time.NewTicker(time.Duration(period) * time.Second)
 	tickerChan := ticker.C
@@ -349,7 +379,7 @@ func WaitForVirtualMachineScaleSetVMsWithClient(
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("period waiting for validator. Context has been cancelled")
+			return nil, fmt.Errorf("period waiting for validator. Context has been cancelled")
 		case <-tickerChan:
 			vms, err := GetVirtualMachineScaleSetVMsWithClient(
 				ctx,
@@ -360,7 +390,7 @@ func WaitForVirtualMachineScaleSetVMsWithClient(
 				locations...,
 			)
 			if err == nil && vms.Size() == size {
-				return nil
+				return vms, nil
 			}
 		}
 	}

@@ -343,14 +343,14 @@ func WaitValidatorMetricNamesForMetricNamespace(
 					continue
 				}
 
+				successCount++
+
 				if successCount >= attempts {
 					return metricItem{
 						metric:         metric,
 						vmScaleSetName: vmScaleSetName,
 					}, nil
 				}
-
-				successCount++
 
 				log.Printf(
 					"[DEBUG] failover: Metrics. successfully get metric definition %q for namespace %q and scale set %q. Retried: %d",

@@ -103,10 +103,38 @@ func dateSourcePolkadotMetricDefinitionRead(ctx context.Context, d *schema.Resou
 	ctx, cancel := timeouts.ForRead(ctx, d)
 	defer cancel()
 
+	vmssNames, err := azure.CheckVirtualMachineScaleSetVMsWithClient(
+		ctx,
+		client.Polkadot.VMScaleSetsClient,
+		client.Polkadot.VMScaleSetVMsClient,
+		metricSource.ResourceGroup,
+		metricSource.ScaleSets...,
+	)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	log.Printf(
+		"[DEBUG] failover: Metrics. Filtered virtual machine scale sets %s. Requested %s",
+		vmssNames,
+		metricSource.ScaleSets,
+	)
+
+	if len(vmssNames) == 0 {
+		metricSource.SetMetric(metricSource.MetricName)
+		id, err := metricSource.ID()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		d.SetId(id)
+		return metricSource.SetSchemaValuesDiag(d)
+	}
+
 	vmScaleSetToMetricName, err := azure.WaitValidatorMetricNamesForMetricNamespace(
 		ctx,
 		client.Polkadot.MetricDefinitionsClient,
-		metricSource.ScaleSets,
+		vmssNames,
 		metricSource.ResourceGroup,
 		metricSource.MetricName,
 		metricSource.MetricNameSpace,

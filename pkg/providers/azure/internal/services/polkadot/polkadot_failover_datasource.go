@@ -101,7 +101,7 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[DEBUG] failover: Read. Found validator scale set %q, host %q", validator.ScaleSetName, validator.Hostname)
 
-	vms, err := azure.GetVirtualMachineScaleSetVMsWithClient(
+	vmss, err := azure.GetVirtualMachineScaleSetVMsWithClient(
 		ctx,
 		client.Polkadot.VMScaleSetsClient,
 		client.Polkadot.VMScaleSetVMsClient,
@@ -113,12 +113,12 @@ func dateSourcePolkadotFailOverRead(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("[ERROR] failover: Cannot get scale set VMs: %v", err)
 	}
 
-	if locationIDx := getValidatorLocation(vms, failover.Locations, validator.ScaleSetName); locationIDx != -1 {
+	if locationIDx := getValidatorLocation(vmss, failover.Locations, validator.ScaleSetName); locationIDx != -1 {
 		positions[locationIDx] = 1
 	}
 
 	if features.DeleteVmsWithAPIInSingleMode {
-		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator, false); err != nil {
+		if err := deleteVms(ctx, client, failover, vmss, validator, false); err != nil {
 			return diag.FromErr(err)
 		}
 	}

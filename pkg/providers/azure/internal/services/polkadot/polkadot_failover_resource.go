@@ -50,7 +50,6 @@ func deleteVms(
 	ctx context.Context,
 	client *clients.Client,
 	failover *AzureFailover,
-	vmScaleSetNames []string,
 	vms azure.VMSMap,
 	validator azure.Validator,
 	updateVMssCapacity bool,
@@ -85,7 +84,7 @@ func deleteVms(
 
 	log.Printf("[DEBUG] failover: Create. Waiting for VMs count: %d", waitForCount)
 
-	if err := azure.WaitForVirtualMachineScaleSetVMsWithClient(
+	vmss, err := azure.WaitForVirtualMachineScaleSetVMsWithClient(
 		ctx,
 		client.Polkadot.VMScaleSetsClient,
 		client.Polkadot.VMScaleSetVMsClient,
@@ -93,13 +92,22 @@ func deleteVms(
 		failover.ResourceGroup,
 		waitForCount,
 		5,
-	); err != nil {
+	)
+	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] failover: Create. Ensured VMs count: %d", waitForCount)
 
-	if validator.ScaleSetName != "" {
+	var vmScaleSetNames []string
+
+	for name, vms := range vmss {
+		if len(vms) > 0 {
+			vmScaleSetNames = append(vmScaleSetNames, name)
+		}
+	}
+
+	if validator.ScaleSetName != "" && len(vmScaleSetNames) > 0 {
 
 		log.Printf("[DEBUG] failover: Create. Waiting for validator...")
 
@@ -156,18 +164,28 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 
 	positions := make([]int, len(failover.Locations))
 
-	vmScaleSetNames, err := azure.GetVMScaleSetNames(
+	vmss, err := azure.GetVirtualMachineScaleSetVMsWithClient(
 		ctx,
 		client.Polkadot.VMScaleSetsClient,
-		failover.ResourceGroup,
+		client.Polkadot.VMScaleSetVMsClient,
 		failover.Prefix,
+		failover.ResourceGroup,
 	)
 
 	if err != nil {
-		return diag.Errorf("[ERROR] failover: Cannot get VM scale sets: %v", err)
+		return diag.Errorf("[ERROR] failover: Cannot get scale set VMs: %v", err)
 	}
 
-	log.Printf("[DEBUG] failover: Read. Found %d VM scale sets", len(vmScaleSetNames))
+	log.Printf("[DEBUG] failover: Read. Found %d virtual machines", vmss.Size())
+	log.Printf("[DEBUG] failover: Read. Found %d virtual machines scale sets", len(vmss))
+
+	var vmScaleSetNames []string
+
+	for name, vms := range vmss {
+		if len(vms) > 0 {
+			vmScaleSetNames = append(vmScaleSetNames, name)
+		}
+	}
 
 	validator, err := azure.GetCurrentValidator(
 		ctx,
@@ -193,19 +211,7 @@ func resourcePolkadotFailoverRead(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("[DEBUG] failover: Read. Getting instances list...")
 
-	vmsByScaleSet, err := azure.GetVirtualMachineScaleSetVMsWithClient(
-		ctx,
-		client.Polkadot.VMScaleSetsClient,
-		client.Polkadot.VMScaleSetVMsClient,
-		failover.Prefix,
-		failover.ResourceGroup,
-	)
-
-	if err != nil {
-		return diag.Errorf("[ERROR] failover: Cannot get scale set VMs: %+v", err)
-	}
-
-	locationIDx := getValidatorLocation(vmsByScaleSet, failover.Locations, validator.ScaleSetName)
+	locationIDx := getValidatorLocation(vmss, failover.Locations, validator.ScaleSetName)
 
 	if locationIDx == -1 {
 		locationIDx = 0
@@ -257,18 +263,28 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 
 	positions := make([]int, len(failover.Locations))
 
-	vmScaleSetNames, err := azure.GetVMScaleSetNames(
+	vmss, err := azure.GetVirtualMachineScaleSetVMsWithClient(
 		ctx,
 		client.Polkadot.VMScaleSetsClient,
-		failover.ResourceGroup,
+		client.Polkadot.VMScaleSetVMsClient,
 		failover.Prefix,
+		failover.ResourceGroup,
 	)
 
 	if err != nil {
-		return diag.Errorf("[ERROR] failover: Cannot get VM scale sets: %v", err)
+		return diag.Errorf("[ERROR] failover: Cannot get scale set VMs: %v", err)
 	}
 
-	log.Printf("[DEBUG] failover: Create. Found %d VM scale sets", len(vmScaleSetNames))
+	log.Printf("[DEBUG] failover: Create. Found %d virtual machines", vmss.Size())
+	log.Printf("[DEBUG] failover: Create. Found %d virtual machines scale sets", len(vmss))
+
+	var vmScaleSetNames []string
+
+	for name, vms := range vmss {
+		if len(vms) > 0 {
+			vmScaleSetNames = append(vmScaleSetNames, name)
+		}
+	}
 
 	if len(vmScaleSetNames) == 0 {
 		failover.SetCounts(positions...)
@@ -309,27 +325,27 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 	} else {
 		log.Printf("[DEBUG] failover: Create. Did not find validator")
 	}
-	vms, err := azure.GetVirtualMachineScaleSetVMsWithClient(
-		ctx,
-		client.Polkadot.VMScaleSetsClient,
-		client.Polkadot.VMScaleSetVMsClient,
-		failover.Prefix,
-		failover.ResourceGroup,
-	)
-
-	if err != nil {
-		return diag.Errorf("[ERROR] failover: Cannot get scale set VMs: %v", err)
-	}
-
-	log.Printf("[DEBUG] failover: Create. Found %d virtual machines", vms.Size())
-
 	if features.DeleteVmsWithAPIInSingleMode {
-		if err := deleteVms(ctx, client, failover, vmScaleSetNames, vms, validator, false); err != nil {
+		if err := deleteVms(ctx, client, failover, vmss, validator, false); err != nil {
 			return diag.FromErr(err)
 		}
+		vmss, err := azure.GetVirtualMachineScaleSetVMsWithClient(
+			ctx,
+			client.Polkadot.VMScaleSetsClient,
+			client.Polkadot.VMScaleSetVMsClient,
+			failover.Prefix,
+			failover.ResourceGroup,
+		)
+
+		if err != nil {
+			return diag.Errorf("[ERROR] failover: Cannot get scale set VMs: %v", err)
+		}
+
+		log.Printf("[DEBUG] failover: Create. Found %d virtual machines", vmss.Size())
+		log.Printf("[DEBUG] failover: Create. Found %d virtual machines scale sets", len(vmss))
 	}
 
-	if locationIDx := getValidatorLocation(vms, failover.Locations, validator.ScaleSetName); locationIDx != -1 {
+	if locationIDx := getValidatorLocation(vmss, failover.Locations, validator.ScaleSetName); locationIDx != -1 {
 		positions[locationIDx] = 1
 	}
 
