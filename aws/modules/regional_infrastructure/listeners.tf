@@ -63,3 +63,15 @@ resource "aws_lb_listener" "polkadot" {
     target_group_arn = aws_lb_target_group.polkadot.arn
   }
 }
+
+resource "aws_lb_listener" "prometheus" {
+  count             = var.expose_prometheus ? 1 : 0
+  load_balancer_arn = var.lb.arn
+  port              = var.prometheus_port
+  protocol          = "TCP_UDP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.prometheus[count.index].arn
+  }
+}

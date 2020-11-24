@@ -3,4 +3,3 @@ resource "aws_key_pair" "blockscout" {
   key_name   = "${var.prefix}-${var.key_name}"
   public_key = var.key_content
 }
-

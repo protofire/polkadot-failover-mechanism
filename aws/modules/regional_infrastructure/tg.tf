@@ -111,3 +111,23 @@ resource "aws_lb_target_group" "polkadot" {
 
   }
 }
+
+resource "aws_lb_target_group" "prometheus" {
+  count    = var.expose_prometheus ? 1 : 0
+  name     = "${var.prefix}-polkadot-prometheus"
+  port     = var.prometheus_port
+  protocol = "TCP_UDP"
+  vpc_id   = var.vpc.id
+
+  deregistration_delay = 1
+
+  health_check {
+
+    enabled             = true
+    protocol            = "TCP"
+    interval            = var.health_check_interval
+    healthy_threshold   = var.health_check_healthy_threshold
+    unhealthy_threshold = var.health_check_unhealthy_threshold
+
+  }
+}

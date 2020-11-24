@@ -1,12 +1,23 @@
+namespace=$1
+hostname=$2
+asg_name=$3
+instance_id=$4
+region1=$5
+region2=$6
+region3=$7
+expose_prometheus=${8:-false}
+polkadot_prometheus_port=$9
+prometheus_port=${10}
+
 cat <<EOF >/etc/telegraf/telegraf.conf
 [global_tags]
-asg_name = "$3" # will tag all metrics with asg name
+asg_name = "${asg_name}" # will tag all metrics with asg name
 
 # Configuration for telegraf agent
 [agent]
   interval = "60s"
   round_interval = true
-  hostname = "$2"
+  hostname = "${hostname}"
   omit_hostname = true
 
 ###############################################################################
@@ -15,22 +26,40 @@ asg_name = "$3" # will tag all metrics with asg name
 
 # Send aggregate metrics to AWS cloudwatch
 [[outputs.cloudwatch]]
-  region = "$5"
-  namespace = "$1"
+  region = "${region1}"
+  namespace = "${namespace}"
   high_resolution_metrics = false
   write_statistics = false
+  namedrop = ["prometheus_*", "polkadot_*"]
 
 [[outputs.cloudwatch]]
-  region = "$6"
-  namespace = "$1"
+  region = "${region2}"
+  namespace = "${namespace}"
   high_resolution_metrics = false
   write_statistics = false
+  namedrop = ["prometheus_*", "polkadot_*"]
 
 [[outputs.cloudwatch]]
-  region = "$7"
-  namespace = "$1"
+  region = "${region3}"
+  namespace = "${namespace}"
   high_resolution_metrics = false
   write_statistics = false
+  namedrop = ["prometheus_*", "polkadot_*"]
+EOF
+
+if [ "${expose_prometheus}" = true ]; then
+cat <<EOF >>/etc/telegraf/telegraf.conf
+
+[[outputs.prometheus_client]]
+  listen = ":${prometheus_port}"
+  metric_version = 2
+  expiration_interval = "120s"
+  path = "/metrics"
+  collectors_exclude = ["gocollector", "process"]
+EOF
+fi
+
+cat <<EOF >>/etc/telegraf/telegraf.conf
 
 ###############################################################################
 #                            INPUT PLUGINS                                    #
@@ -54,7 +83,7 @@ asg_name = "$3" # will tag all metrics with asg name
   # no configuration
 
 [[inputs.consul]]
-  datacenter = "$1"
+  datacenter = "${namespace}"
   metric_version = 2
   tagexclude = ["node"]
 
@@ -70,5 +99,20 @@ asg_name = "$3" # will tag all metrics with asg name
   max_body_size = "1MB"
   data_format = "influx"
   [inputs.http_listener_v2.tags]
-    instance_id = "$4"
+    instance_id = "${instance_id}"
 EOF
+
+if [ "${expose_prometheus}" = true ]; then
+cat <<EOF >>/etc/telegraf/telegraf.conf
+
+[[inputs.prometheus]]
+  urls = ["http://localhost:${polkadot_prometheus_port}/metrics"]
+  metric_version = 2
+  response_timeout = "5s"
+  interval = "10s"
+  [inputs.prometheus.tags]
+    job = "polkadot"
+    instance_id = "${instance_id}"
+    asg_name = "${asg_name}"
+EOF
+fi

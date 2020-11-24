@@ -25,7 +25,7 @@ disk_attach ()
     # If attach was not successful - increment over loop.
     n=$((n + 1))
     sleep $((( RANDOM % 10 ) + 1 ))s
-    
+
     # If we reached the fifth retry - fail script, send alarm to cloudwatch and shutdown instance
     if [ $n -eq 5 ]; then
       echo "ERROR! No disk can be attached. Shutting down instance"
@@ -72,15 +72,15 @@ until aws sts get-caller-identity; do
   echo "No AWS credentials found. Retrying..."
   sleep 5
 
-done  
+done
 
-default_trap () 
+default_trap ()
 {
   echo \"Catching error on line $LINENO. Shutting down instance\";
   set_health_metrics "$health_metric_name" 1000
   /usr/local/bin/consul leave;
   docker stop polkadot
-  shutdown -P +1  
+  shutdown -P +1
 }
 
 # On error notify cloudwatch and shutdown instance
@@ -114,7 +114,7 @@ else
 
     VOLUMES=$(aws ec2 describe-volumes --region "$region" --filters "Name=status,Values=available" "Name=tag:prefix,Values=${prefix}" --query 'Volumes[*].VolumeId' --output json)
     VOLUMES_COUNT=$(echo "$VOLUMES" | jq '. | length')
-  
+
     if [ "$VOLUMES_COUNT" -gt 0 ]; then
 
       disk_attach
@@ -163,7 +163,8 @@ source /usr/local/bin/validator.sh
 # Run docker with regular polkadot container inside of it
 /usr/bin/systemctl start docker
 
-start_polkadot_passive_mode "$docker_name" "${cpu_limit}" "${ram_limit}GB" "${docker_image}" "${chain}" "$data"
+start_polkadot_passive_mode "$docker_name" "${cpu_limit}" "${ram_limit}GB" "${docker_image}" "${chain}" "$data" false \
+                            "${expose_prometheus}" "${polkadot_prometheus_port}"
 
 exit_code=1
 set +eE
@@ -183,7 +184,10 @@ curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofir
 
 source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh
-source /usr/local/bin/telegraf.sh "${prefix}" "$hostname" "${autoscaling-name}" "$instance_id" "${primary-region}" "${secondary-region}" "${tertiary-region}"
+source /usr/local/bin/telegraf.sh "${prefix}" "$hostname" "${autoscaling-name}" \
+      "$instance_id" "${primary-region}" \
+      "${secondary-region}" "${tertiary-region}" \
+      "${expose_prometheus}" "${polkadot_prometheus_port}" "${prometheus_port}"
 /usr/bin/systemctl enable telegraf
 /usr/bin/systemctl restart telegraf
 
@@ -241,7 +245,7 @@ until [ $n -ge 6 ]; do
   set -eE
   trap default_trap ERR
   node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep Full | wc -l)
-  if [ "$node" != 1 ]; then 
+  if [ "$node" != 1 ]; then
     echo "ERROR! Node either does not work or work in not correct way"
     default_trap
   fi
@@ -251,13 +255,14 @@ until [ $n -ge 6 ]; do
   /usr/local/bin/consul lock prefix \
     "source /usr/local/bin/validator.sh && \
     /usr/local/bin/double-signing-control.sh && \
-    start_polkadot_passive_mode $docker_name ${cpu_limit} ${ram_limit}GB ${docker_image} ${chain} $data true && \
+    start_polkadot_passive_mode $docker_name ${cpu_limit} ${ram_limit}GB ${docker_image} ${chain} $data true ${expose_prometheus} ${polkadot_prometheus_port} && \
     /usr/local/bin/key-insert.sh ${prefix} && \
     (consul kv delete blocks/.lock && \
     consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
-    start_polkadot_validator_mode $docker_name ${cpu_limit} ${ram_limit}GB ${docker_image} ${chain} $data $NAME $NODEKEY"
+    start_polkadot_validator_mode $docker_name ${cpu_limit} ${ram_limit}GB ${docker_image} ${chain} $data $NAME $NODEKEY ${expose_prometheus} ${polkadot_prometheus_port}"
 
-  start_polkadot_passive_mode "$docker_name" "${cpu_limit}" "${ram_limit}GB" "${docker_image}" "${chain}" $data
+  start_polkadot_passive_mode "$docker_name" "${cpu_limit}" "${ram_limit}GB" "${docker_image}" "${chain}" $data false \
+                              "${expose_prometheus}" "${polkadot_prometheus_port}"
   pkill best-grep.sh
 
   sleep 10;

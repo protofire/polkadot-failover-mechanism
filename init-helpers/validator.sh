@@ -14,8 +14,16 @@ function start_polkadot_passive_mode () {
   local chain="$5"
   local data="$6"
   local unsafe="${7:-false}"
+  local expose_prometheus="${8:-false}"
+  local prometheus_port="${9:-9615}"
 
   local cmd=( "${image}" "--chain=${chain}" "--pruning=archive" "-d" "${data}" )
+  local listeners=( "-p" "127.0.0.1:9933:9933" "-p" "30333:30333" )
+
+  if [ "${expose_prometheus}" = true ]; then
+    listeners+=( "-p" "127.0.0.1:${prometheus_port}:${prometheus_port}" )
+    cmd+=( "--prometheus-external" "--prometheus-port" "${prometheus_port}" )
+  fi
 
   if [ "${unsafe}" = true ]; then
     cmd+=( "--rpc-methods=Unsafe" "--rpc-external" )
@@ -32,9 +40,8 @@ function start_polkadot_passive_mode () {
   --name "${docker_name}" \
   --restart unless-stopped \
   -d \
-  -p 127.0.0.1:9933:9933 \
-  -p 30333:30333 \
   -v "${data}:${data}:z" \
+  "${listeners[@]}" \
   "${cmd[@]}"
 }
 
@@ -53,9 +60,19 @@ function start_polkadot_validator_mode () {
   local data="$6"
   local validator_name="$7"
   local validator_node_key="$8"
+  local expose_prometheus="${9:-false}"
+  local prometheus_port="${10:-9615}"
 
   /usr/bin/docker stop "${docker_name}"
   /usr/bin/docker rm -f "${docker_name}"
+
+  local cmd=( "${image}" --chain "${chain}" --validator --name "${validator_name}" --node-key "${validator_node_key}" -d "${data}" )
+  local listeners=( "-p" "127.0.0.1:9933:9933" "-p" "30333:30333" )
+
+  if [ "${expose_prometheus}" = true ]; then
+    listeners+=( "-p" "127.0.0.1:${prometheus_port}:${prometheus_port}" )
+    cmd+=( "--prometheus-external" "--prometheus-port" "${prometheus_port}" )
+  fi
 
   /usr/bin/docker run \
   --cpus "${cpu}" \
@@ -64,8 +81,7 @@ function start_polkadot_validator_mode () {
   --network=host \
   --name "${docker_name}" \
   --restart unless-stopped \
-  -p 127.0.0.1:9933:9933 \
-  -p 30333:30333 \
   -v "${data}:${data}:z" \
-  "${image}" --chain "${chain}" --validator --name "${validator_name}" --node-key "${validator_node_key}" -d "${data}"
+  "${listeners[@]}" \
+  "${cmd[@]}"
 }
