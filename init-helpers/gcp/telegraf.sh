@@ -22,6 +22,7 @@ prefix = "$1" # will tag all metrics with dc=us-east-1
   project = "$3"
   namespace = "$4"
   resource_type = "gce_instance"
+  namedrop = ["prometheus_*", "polkadot_*"]
 
 # Additional resource labels
   [outputs.stackdriver.resource_labels]
