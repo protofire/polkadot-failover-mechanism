@@ -48,12 +48,16 @@ resource "google_compute_instance_template" "instance_template" {
   }
 
   metadata_startup_script = templatefile("${path.module}/files/init.sh.tpl", {
-    prefix               = var.prefix,
-    chain                = var.chain,
-    total_instance_count = var.total_instance_count
-    docker_image         = var.docker_image
-    project              = var.gcp_project
-    metrics_namespace    = var.metrics_namespace
+    prefix                   = var.prefix,
+    chain                    = var.chain,
+    total_instance_count     = var.total_instance_count
+    docker_image             = var.docker_image
+    project                  = var.gcp_project
+    group_name               = local.group_name_region
+    metrics_namespace        = var.metrics_namespace
+    prometheus_port          = var.prometheus_port,
+    polkadot_prometheus_port = local.polkadot_prometheus_port,
+    expose_prometheus        = var.expose_prometheus,
   })
 
   metadata = {
@@ -67,7 +71,8 @@ resource "google_compute_instance_template" "instance_template" {
     scopes = [
       "compute-ro",
       "monitoring-write",
-    "https://www.googleapis.com/auth/cloud-platform"]
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
   }
 
   lifecycle {
@@ -78,7 +83,7 @@ resource "google_compute_instance_template" "instance_template" {
 resource "google_compute_region_instance_group_manager" "instance_group_manager" {
   project = var.gcp_project != "" ? var.gcp_project : null
 
-  name = "${var.prefix}-instance-group-manager"
+  name = local.group_name
   version {
     instance_template = google_compute_instance_template.instance_template.self_link
   }
@@ -106,6 +111,14 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
   named_port {
     name = "consul-dns"
     port = "8600"
+  }
+
+  dynamic "named_port" {
+    for_each = var.expose_prometheus ? [1] : []
+    content {
+      name = "prometheus"
+      port = var.prometheus_port
+    }
   }
 
   base_instance_name = "${var.prefix}-polkadot-failover-instance"

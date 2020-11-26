@@ -34,6 +34,14 @@ resource "google_compute_firewall" "validator-node-internal" {
     protocol = "udp"
   }
 
+  dynamic "allow" {
+    for_each = var.expose_prometheus ? [1] : []
+    content {
+      ports    = [var.prometheus_port]
+      protocol = "tcp"
+    }
+  }
+
   priority    = 1001
   source_tags = [var.prefix]
 }

@@ -161,3 +161,19 @@ variable "metric_family" {
   type        = string
   default     = "validator"
 }
+
+variable "expose_prometheus" {
+  description = "Expose prometheus metrics"
+  type        = bool
+  default     = false
+}
+
+variable "prometheus_port" {
+  type    = number
+  default = 9273
+}
+
+variable "prometheus_instance_type" {
+  type    = string
+  default = "e2-small"
+}

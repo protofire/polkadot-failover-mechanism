@@ -95,3 +95,14 @@ variable "metrics_namespace" {
   type    = string
   default = "polkadot"
 }
+
+variable "expose_prometheus" {
+  description = "Expose prometheus metrics"
+  type        = bool
+  default     = false
+}
+
+variable "prometheus_port" {
+  type    = number
+  default = 9273
+}

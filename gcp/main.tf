@@ -38,6 +38,9 @@ module "primary_region" {
   gcp_ssh_user    = var.gcp_ssh_user
   gcp_ssh_pub_key = var.gcp_ssh_pub_key
 
+  prometheus_port   = var.prometheus_port
+  expose_prometheus = var.expose_prometheus
+
   providers = {
     google = google.primary
   }
@@ -83,6 +86,9 @@ module "secondary_region" {
 
   gcp_ssh_user    = var.gcp_ssh_user
   gcp_ssh_pub_key = var.gcp_ssh_pub_key
+
+  prometheus_port   = var.prometheus_port
+  expose_prometheus = var.expose_prometheus
 
   providers = {
     google = google.secondary
@@ -130,8 +136,37 @@ module "tertiary_region" {
   gcp_ssh_user    = var.gcp_ssh_user
   gcp_ssh_pub_key = var.gcp_ssh_pub_key
 
+  prometheus_port   = var.prometheus_port
+  expose_prometheus = var.expose_prometheus
+
   providers = {
     google = google.tertiary
   }
   docker_image = var.docker_image
 }
+
+module "prometheus" {
+  count                    = var.expose_prometheus ? 1 : 0
+  source                   = "./modules/prometheus"
+  prefix                   = var.prefix
+  sa_email                 = google_service_account.service_account.email
+  network                  = google_compute_network.vpc_network.name
+  subnets                  = [google_compute_subnetwork.primary.name, google_compute_subnetwork.secondary.name, google_compute_subnetwork.tertiary.name]
+  gcp_project              = var.gcp_project
+  gcp_ssh_user             = var.gcp_ssh_user
+  gcp_ssh_pub_key          = var.gcp_ssh_pub_key
+  gcp_regions              = var.gcp_regions
+  managed_groups           = [module.primary_region.managed_group, module.secondary_region.managed_group, module.tertiary_region.managed_group]
+  instance_type            = var.prometheus_instance_type
+  expose_ssh               = var.expose_ssh
+  instance_count_primary   = polkadot_failover.polkadot.primary_count
+  instance_count_secondary = polkadot_failover.polkadot.secondary_count
+  instance_count_tertiary  = polkadot_failover.polkadot.tertiary_count
+  prometheus_port          = var.prometheus_port
+
+  providers = {
+    google = google.primary
+  }
+
+}
+

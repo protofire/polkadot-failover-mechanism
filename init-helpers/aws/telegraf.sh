@@ -113,6 +113,6 @@ cat <<EOF >>/etc/telegraf/telegraf.conf
   [inputs.prometheus.tags]
     job = "polkadot"
     instance_id = "${instance_id}"
-    asg_name = "${asg_name}"
+    group_name = "${asg_name}"
 EOF
 fi
