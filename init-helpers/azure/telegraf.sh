@@ -66,7 +66,8 @@ cat <<EOF >>/etc/telegraf/telegraf.conf
   # no configuration
 
 [[inputs.consul]]
-datacenter = "${prefix}"
+  datacenter = "${prefix}"
+  metric_version = 2
 
 [[inputs.http_listener_v2]]
   service_address = ":12500"
