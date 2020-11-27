@@ -9,7 +9,7 @@ module "private_lb" {
   type                                   = "private"
   frontend_subnet_id                     = azurerm_subnet.polkadot.id
   frontend_private_ip_address_allocation = "Static"
-  frontend_private_ip_address            = cidrhost(var.subnet_cidr, 10)
+  frontend_private_ip_address            = local.lb_address.private_lb_address
 
   lb_hc = local.lb_hc
 

@@ -4,14 +4,18 @@ data "template_file" "script" {
   template = file("${path.module}/files/init.sh.tpl")
 
   vars = {
-    prefix               = var.prefix
-    chain                = var.chain
-    total_instance_count = var.total_instance_count
-    key_vault_name       = var.key_vault_name
-    lb-primary           = var.instance_count_primary > 0 ? cidrhost(var.subnet_cidrs[0], 10) : ""
-    lb-secondary         = var.instance_count_secondary > 0 ? cidrhost(var.subnet_cidrs[1], 10) : ""
-    lb-tertiary          = var.instance_count_tertiary > 0 ? cidrhost(var.subnet_cidrs[2], 10) : ""
-    docker_image         = var.docker_image
+    prefix                   = var.prefix
+    chain                    = var.chain
+    total_instance_count     = var.total_instance_count
+    key_vault_name           = var.key_vault_name
+    lb-primary               = var.instance_count_primary > 0 ? local.lb_address.primary : ""
+    lb-secondary             = var.instance_count_secondary > 0 ? local.lb_address.secondary : ""
+    lb-tertiary              = var.instance_count_tertiary > 0 ? local.lb_address.tertiary : ""
+    docker_image             = var.docker_image
+    group_name               = "${var.prefix}-instance-${var.region_prefix}"
+    prometheus_port          = var.prometheus_port
+    polkadot_prometheus_port = local.polkadot_prometheus_port
+    expose_prometheus        = var.expose_prometheus
   }
 }
 

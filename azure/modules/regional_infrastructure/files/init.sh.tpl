@@ -94,7 +94,8 @@ trap default_trap ERR
 curl -s -o /usr/local/bin/validator.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/validator.sh
 source /usr/local/bin/validator.sh
 
-start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data" false
+start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data" false \
+                            "${expose_prometheus}" "${polkadot_prometheus_port}"
 
 # Since polkadot container does not have curl inside - port it from host instance
 
@@ -117,7 +118,7 @@ curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofir
 
 source /usr/local/bin/install_consul.sh
 source /usr/local/bin/install_consulate.sh
-source /usr/local/bin/telegraf.sh "${prefix}" "$hostname"
+source /usr/local/bin/telegraf.sh "${prefix}" "$hostname" "${group_name}" "${expose_prometheus}" "${polkadot_prometheus_port}" "${prometheus_port}"
 /usr/bin/systemctl enable telegraf
 /usr/bin/systemctl restart telegraf
 
@@ -181,13 +182,14 @@ until [ $n -ge 6 ]; do
   /usr/local/bin/consul lock prefix \
     "source /usr/local/bin/validator.sh && \
     /usr/local/bin/double-signing-control.sh && \
-    start_polkadot_passive_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data true && \
+    start_polkadot_passive_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data true ${expose_prometheus} ${polkadot_prometheus_port} && \
     /usr/local/bin/key-insert.sh '${key_vault_name}' '${prefix}' && \
     consul kv delete blocks/.lock && \
     (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
-    start_polkadot_validator_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data $NAME $NODEKEY"
+    start_polkadot_validator_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data $NAME $NODEKEY ${expose_prometheus} ${polkadot_prometheus_port}"
 
-  start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data" false
+  start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data" false \
+                              "${expose_prometheus}" "${polkadot_prometheus_port}"
   pkill best-grep.sh
   sleep 10;
   n=$((n+1))

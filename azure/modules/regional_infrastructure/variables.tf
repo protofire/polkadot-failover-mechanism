@@ -129,3 +129,14 @@ variable "docker_image" {
   description = "Polkadot docker image"
   type        = string
 }
+
+variable "expose_prometheus" {
+  description = "Expose prometheus metrics"
+  type        = bool
+  default     = false
+}
+
+variable "prometheus_port" {
+  type    = number
+  default = 9273
+}

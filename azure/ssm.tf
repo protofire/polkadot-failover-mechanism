@@ -116,7 +116,7 @@ resource "azurerm_key_vault" "polkadot" {
 
   network_acls {
     ip_rules                   = ["${data.http.my_public_ip.body}/32"]
-    virtual_network_subnet_ids = [module.primary_region.subnet, module.secondary_region.subnet, module.tertiary_region.subnet]
+    virtual_network_subnet_ids = [module.primary_region.subnet_id, module.secondary_region.subnet_id, module.tertiary_region.subnet_id]
     default_action             = "Deny"
     bypass                     = "AzureServices"
   }

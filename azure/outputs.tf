@@ -8,9 +8,9 @@ output "vnet" {
 
 output "subnet" {
   value = [
-    module.primary_region.subnet,
-    module.secondary_region.subnet,
-    module.tertiary_region.subnet,
+    module.primary_region.subnet_id,
+    module.secondary_region.subnet_id,
+    module.tertiary_region.subnet_id,
   ]
 }
 
@@ -36,4 +36,8 @@ output "private_lb_id" {
     module.secondary_region.private_lb_id,
     module.tertiary_region.private_lb_id,
   ]
+}
+
+output "prometheus_target" {
+  value = var.expose_prometheus ? module.prometheus[0].prometheus_target : ""
 }

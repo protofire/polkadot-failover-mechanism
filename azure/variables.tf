@@ -199,3 +199,19 @@ variable "docker_image" {
   type        = string
   default     = "parity/polkadot:master-0.8.26-80e3a7e-5d52c096"
 }
+
+variable "expose_prometheus" {
+  description = "Expose prometheus metrics"
+  type        = bool
+  default     = false
+}
+
+variable "prometheus_port" {
+  type    = number
+  default = 9273
+}
+
+variable "prometheus_instance_type" {
+  type    = string
+  default = "Standard_A1_v2"
+}
