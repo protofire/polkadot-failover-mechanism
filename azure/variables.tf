@@ -30,7 +30,7 @@ variable "use_msi" {
 
 variable "azure_regions" {
   type        = list(string)
-  default     = ["Central US", "East US", "West US"]
+  default     = ["Central US", "West US2", "West US"]
   description = "Should be an array consisting of exactly three elements"
   validation {
     condition     = length(var.azure_regions) == 3
