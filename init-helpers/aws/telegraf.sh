@@ -1,6 +1,6 @@
 namespace=$1
 hostname=$2
-asg_name=$3
+group_name=$3
 instance_id=$4
 region1=$5
 region2=$6
@@ -11,9 +11,9 @@ prometheus_port=${10}
 
 cat <<EOF >/etc/telegraf/telegraf.conf
 [global_tags]
-asg_name = "${asg_name}" # will tag all metrics with asg name
+  prefix = "${namespace}"
+  group_name = "${group_name}"
 
-# Configuration for telegraf agent
 [agent]
   interval = "60s"
   round_interval = true
@@ -30,21 +30,24 @@ asg_name = "${asg_name}" # will tag all metrics with asg name
   namespace = "${namespace}"
   high_resolution_metrics = false
   write_statistics = false
-  namedrop = ["prometheus_*", "polkadot_*"]
+  namedrop = ["*prometheus*"]
+  tagexclude = ["prefix", "job"]
 
 [[outputs.cloudwatch]]
   region = "${region2}"
   namespace = "${namespace}"
   high_resolution_metrics = false
   write_statistics = false
-  namedrop = ["prometheus_*", "polkadot_*"]
+  namedrop = ["*prometheus*"]
+  tagexclude = ["prefix", "job"]
 
 [[outputs.cloudwatch]]
   region = "${region3}"
   namespace = "${namespace}"
   high_resolution_metrics = false
   write_statistics = false
-  namedrop = ["prometheus_*", "polkadot_*"]
+  namedrop = ["*prometheus*"]
+  tagexclude = ["prefix", "job"]
 EOF
 
 if [ "${expose_prometheus}" = true ]; then
@@ -113,6 +116,6 @@ cat <<EOF >>/etc/telegraf/telegraf.conf
   [inputs.prometheus.tags]
     job = "polkadot"
     instance_id = "${instance_id}"
-    group_name = "${asg_name}"
+    group_name = "${group_name}"
 EOF
 fi
