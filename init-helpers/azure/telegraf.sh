@@ -7,7 +7,7 @@ prometheus_port=$6
 
 cat <<EOF >/etc/telegraf/telegraf.conf
 [global_tags]
-  prefix = "${prefix}" # will tag all metrics with dc=us-east-1
+  prefix = "${prefix}"
   instance_id = "${hostname}"
   group_name = "${group_name}"
 
@@ -28,6 +28,7 @@ cat <<EOF >/etc/telegraf/telegraf.conf
   timeout = "20s"
   namespace_prefix = "${prefix}/"
   strings_as_dimensions = true
+  namedrop = ["prometheus_*", "polkadot_*"]
 EOF
 
 if [ "${expose_prometheus}" = true ]; then
