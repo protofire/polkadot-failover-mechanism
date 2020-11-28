@@ -12,6 +12,7 @@ prometheus_port=${10}
 cat <<EOF >/etc/telegraf/telegraf.conf
 [global_tags]
   prefix = "${namespace}"
+  instance_id = "${instance_id}"
   group_name = "${group_name}"
 
 [agent]
@@ -34,7 +35,31 @@ cat <<EOF >/etc/telegraf/telegraf.conf
   tagexclude = ["prefix", "job"]
 
 [[outputs.cloudwatch]]
+  region = "${region1}"
+  namespace = "${namespace}"
+  high_resolution_metrics = false
+  write_statistics = false
+  namedrop = ["*prometheus*"]
+  tagexclude = ["prefix", "instance_id", "job"]
+
+[[outputs.cloudwatch]]
   region = "${region2}"
+  namespace = "${namespace}"
+  high_resolution_metrics = false
+  write_statistics = false
+  namedrop = ["*prometheus*"]
+  tagexclude = ["prefix", "job"]
+
+[[outputs.cloudwatch]]
+  region = "${region2}"
+  namespace = "${namespace}"
+  high_resolution_metrics = false
+  write_statistics = false
+  namedrop = ["*prometheus*"]
+  tagexclude = ["prefix", "instance_id", "job"]
+
+[[outputs.cloudwatch]]
+  region = "${region3}"
   namespace = "${namespace}"
   high_resolution_metrics = false
   write_statistics = false
@@ -47,7 +72,7 @@ cat <<EOF >/etc/telegraf/telegraf.conf
   high_resolution_metrics = false
   write_statistics = false
   namedrop = ["*prometheus*"]
-  tagexclude = ["prefix", "job"]
+  tagexclude = ["prefix", "instance_id", "job"]
 EOF
 
 if [ "${expose_prometheus}" = true ]; then
@@ -95,14 +120,6 @@ cat <<EOF >>/etc/telegraf/telegraf.conf
   path = "/telegraf"
   max_body_size = "1MB"
   data_format = "influx"
-
-[[inputs.http_listener_v2]]
-  service_address = ":12501"
-  path = "/telegraf"
-  max_body_size = "1MB"
-  data_format = "influx"
-  [inputs.http_listener_v2.tags]
-    instance_id = "${instance_id}"
 EOF
 
 if [ "${expose_prometheus}" = true ]; then
@@ -115,7 +132,5 @@ cat <<EOF >>/etc/telegraf/telegraf.conf
   interval = "10s"
   [inputs.prometheus.tags]
     job = "polkadot"
-    instance_id = "${instance_id}"
-    group_name = "${group_name}"
 EOF
 fi
