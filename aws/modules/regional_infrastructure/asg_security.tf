@@ -4,7 +4,7 @@ resource "aws_security_group" "validator-node" {
   vpc_id      = var.vpc.id
 
   dynamic "ingress" {
-    for_each = var.expose_ssh ? [1] : [0]
+    for_each = var.expose_ssh ? [1] : []
     content {
       from_port   = 22
       to_port     = 22

@@ -197,16 +197,24 @@ func SGCheck(t *testing.T, awsRegions []string, prefix string) bool {
 		},
 	}
 
+	expectedSecurityGroupRulesCount := 9
+
 	// For each region fetch all the security groups prefixed with predefined prefix and compare it one by one with a list of predefined groups
 	for _, region := range awsRegions {
 
 		t.Logf("INFO. Checking matching of SG rules. Region: %s...", region)
 
 		ruleSlice := getSGRulesMapByTag(t, region, "prefix", prefix)
-		lenRuleSlice := len(ruleSlice)
 
-		if lenRuleSlice != 9 {
-			t.Errorf("ERROR! Expecting to get 9 security groups, got %d", lenRuleSlice)
+		t.Logf("INFO. Got security group rules for region %s: %+v", region, ruleSlice)
+
+		if len(ruleSlice) != expectedSecurityGroupRulesCount {
+			t.Errorf(
+				"ERROR! Expecting to get %d security groups, got %d: %+v",
+				expectedSecurityGroupRulesCount,
+				len(ruleSlice),
+				ruleSlice,
+			)
 			return false
 		}
 
