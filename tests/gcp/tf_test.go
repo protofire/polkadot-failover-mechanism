@@ -27,10 +27,12 @@ POLKADOT_TEST_CLEANUP=yes POLKADOT_TEST_EXIT_AFTER_CLEANUP=yes DRY_RUN=yes make 
 */
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	helpers2 "github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
@@ -44,14 +46,16 @@ import (
 
 //Gather environmental variables and set reasonable defaults
 var (
-	gcpRegion     = []string{"us-east1", "us-east4", "us-west1"}
-	gcpProject    = os.Getenv("GCP_PROJECT")
-	forceCleanup  = len(os.Getenv("POLKADOT_TEST_CLEANUP")) > 0
-	exitOnCleanup = len(os.Getenv("POLKADOT_TEST_EXIT_AFTER_CLEANUP")) > 0
-	noApply       = len(os.Getenv("POLKADOT_TEST_NO_INITIAL_TF_APPLY")) > 0
-	dryRun        = len(os.Getenv("DRY_RUN")) > 0
-	sshUser       = "polkadot"
-	terraformDir  = "../../gcp/"
+	gcpRegion        = []string{"us-east1", "us-east4", "us-west1"}
+	gcpProject       = os.Getenv("GCP_PROJECT")
+	forceCleanup     = len(os.Getenv("POLKADOT_TEST_CLEANUP")) > 0
+	exitOnCleanup    = len(os.Getenv("POLKADOT_TEST_EXIT_AFTER_CLEANUP")) > 0
+	noApply          = len(os.Getenv("POLKADOT_TEST_NO_INITIAL_TF_APPLY")) > 0
+	dryRun           = len(os.Getenv("DRY_RUN")) > 0
+	sshUser          = "polkadot"
+	terraformDir     = "../../gcp/"
+	exposePrometheus = true
+	exposeSSH        = true
 )
 
 func TestBundle(t *testing.T) {
@@ -114,8 +118,8 @@ func TestBundle(t *testing.T) {
 			"cpu_limit":             "1",
 			"ram_limit":             "1",
 			"validator_name":        "test",
-			"expose_ssh":            true,
-			"expose_prometheus":     false,
+			"expose_ssh":            exposeSSH,
+			"expose_prometheus":     exposePrometheus,
 			"node_key":              "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
 			"chain":                 "westend",
 			"admin_email":           "1627_DEV@altoros.com",
@@ -217,7 +221,7 @@ func TestBundle(t *testing.T) {
 
 		// TEST 9: All the firewalls were successfully created
 		t.Run("FirewallTests", func(t *testing.T) {
-			if assert.NoError(t, gcpHelpers.FirewallCheck(prefix, gcpProject)) {
+			if assert.NoError(t, gcpHelpers.FirewallCheck(prefix, gcpProject, exposePrometheus, exposeSSH)) {
 				t.Log("INFO. All firewalls were successfully created")
 			}
 		})
@@ -250,6 +254,17 @@ func TestBundle(t *testing.T) {
 			}
 		})
 
+		if exposePrometheus {
+			// Test 14. Check prometheus target
+			t.Run("Prometheus", func(t *testing.T) {
+				prometheusTarget := terraform.Output(t, terraformOptions, "prometheus_target")
+				require.NotEmpty(t, prometheusTarget)
+				ctx, done := context.WithTimeout(context.Background(), 20*time.Minute)
+				defer done()
+				require.NoError(t, helpers.WaitPrometheusTarget(ctx, prometheusTarget, "validator_value"))
+			})
+		}
+
 	})
 
 	validatorBefore, err := gcpHelpers.WaitForValidator(gcpProject, prefix, 1, 600)
@@ -266,7 +281,7 @@ func TestBundle(t *testing.T) {
 			validatorAfter, err := gcpHelpers.WaitForValidator(gcpProject, prefix, 1, 600)
 			require.NoError(t, err)
 			require.NotEmpty(t, validatorAfter.InstanceName)
-			require.Equal(t, validatorBefore.InstanceName, validatorAfter.InstanceName)
+			require.Equal(t, validatorBefore.GroupName, validatorAfter.GroupName)
 		})
 
 		t.Run("CheckVirtualMachines", func(t *testing.T) {

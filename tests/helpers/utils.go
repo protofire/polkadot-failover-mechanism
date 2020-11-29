@@ -35,3 +35,14 @@ func SetInitialTFCleanUp(t *testing.T, opts *terraform.Options) {
 		t.Log("Skipping initial terraform cleanup...")
 	}
 }
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func StringSlice(s string, n int) string {
+	return s[:min(n, len(s))]
+}

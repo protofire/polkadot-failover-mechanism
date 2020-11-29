@@ -25,21 +25,13 @@ resource "google_compute_firewall" "validator-node-internal" {
   network     = google_compute_network.vpc_network.self_link
 
   allow {
-    ports    = ["8500", "8600", "8300", "8301", "8302"]
+    ports    = local.internal_node_ports_tcp
     protocol = "tcp"
   }
 
   allow {
-    ports    = ["8500", "8600", "8301", "8302"]
+    ports    = local.internal_node_ports_udp
     protocol = "udp"
-  }
-
-  dynamic "allow" {
-    for_each = var.expose_prometheus ? [1] : []
-    content {
-      ports    = [var.prometheus_port]
-      protocol = "tcp"
-    }
   }
 
   priority    = 1001
@@ -54,21 +46,13 @@ resource "google_compute_firewall" "validator-node-external" {
   description = "For blockchain node to be accessible from outside, also for SSH access if configured"
   network     = google_compute_network.vpc_network.self_link
 
-  dynamic "allow" {
-    for_each = var.expose_ssh ? [1] : []
-    content {
-      ports    = ["22"]
-      protocol = "tcp"
-    }
-  }
-
   allow {
-    ports    = ["30333"]
+    ports    = local.external_node_ports_tcp
     protocol = "tcp"
   }
 
   allow {
-    ports    = ["30333"]
+    ports    = local.external_node_ports_udp
     protocol = "udp"
   }
 

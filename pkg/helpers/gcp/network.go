@@ -340,7 +340,18 @@ func compareFirewall(f1, f2 *compute.Firewall) bool {
 		cmp.Equal(f1.Allowed, f2.Allowed)
 }
 
-func prepareTestFirewalls() []*compute.Firewall {
+func prepareTestFirewalls(exposePrometheus bool, exposeSSH bool) []*compute.Firewall {
+	innerTCPPorts := []string{"8500", "8600", "8300", "8301", "8302"}
+	if exposePrometheus {
+		innerTCPPorts = append(innerTCPPorts, "9273")
+	}
+	outerTCPPorts := []string{"30333"}
+	if exposeSSH {
+		outerTCPPorts = append(outerTCPPorts, "22")
+	}
+	innerUDPPorts := []string{"8500", "8600", "8301", "8302"}
+	outerUDPPorts := []string{"30333"}
+
 	fw1 := &compute.Firewall{
 		Allowed: []*compute.FirewallAllowed{
 			{
@@ -356,11 +367,11 @@ func prepareTestFirewalls() []*compute.Firewall {
 		Allowed: []*compute.FirewallAllowed{
 			{
 				IPProtocol: "tcp",
-				Ports:      []string{"8500", "8600", "8300", "8301", "8302"},
+				Ports:      innerTCPPorts,
 			},
 			{
 				IPProtocol: "udp",
-				Ports:      []string{"8500", "8600", "8301", "8302"},
+				Ports:      innerUDPPorts,
 			},
 		},
 		Direction: "INGRESS",
@@ -370,15 +381,11 @@ func prepareTestFirewalls() []*compute.Firewall {
 		Allowed: []*compute.FirewallAllowed{
 			{
 				IPProtocol: "tcp",
-				Ports:      []string{"30333"},
+				Ports:      outerTCPPorts,
 			},
 			{
 				IPProtocol: "udp",
-				Ports:      []string{"30333"},
-			},
-			{
-				IPProtocol: "tcp",
-				Ports:      []string{"22"},
+				Ports:      outerUDPPorts,
 			},
 		},
 		Direction:    "INGRESS",
@@ -395,7 +402,7 @@ func prepareTestFirewalls() []*compute.Firewall {
 }
 
 // FirewallCheck checks created firewalls
-func FirewallCheck(prefix, project string) error {
+func FirewallCheck(prefix, project string, exposePrometheus, exposeSSH bool) error {
 
 	ctx := context.Background()
 	client, err := compute.NewService(ctx)
@@ -412,7 +419,7 @@ func FirewallCheck(prefix, project string) error {
 		adjustFirewall(f)
 	}
 
-	testFireWalls := prepareTestFirewalls()
+	testFireWalls := prepareTestFirewalls(exposePrometheus, exposeSSH)
 
 	for _, testFirewall := range testFireWalls {
 		found := false
@@ -425,7 +432,7 @@ func FirewallCheck(prefix, project string) error {
 		if !found {
 			testFirewallRepresentation, _ := json.MarshalIndent(testFirewall, "", "  ")
 			firewallsRepresentation, _ := json.MarshalIndent(firewalls, "", "  ")
-			return fmt.Errorf("Cannot find firewall %s from list %s", testFirewallRepresentation, firewallsRepresentation)
+			return fmt.Errorf("cannot find firewall %s from list %s", testFirewallRepresentation, firewallsRepresentation)
 		}
 	}
 

@@ -34,7 +34,7 @@ cat <<EOF >/etc/telegraf/telegraf.conf
   project = "${project}"
   namespace = "${namespace}"
   resource_type = "gce_instance"
-  namedrop = ["prometheus_*", "polkadot_*"]
+  namedrop = ["*prometheus*"]
 
 # Additional resource labels
   [outputs.stackdriver.resource_labels]
