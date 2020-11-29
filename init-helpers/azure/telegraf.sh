@@ -28,7 +28,7 @@ cat <<EOF >/etc/telegraf/telegraf.conf
   timeout = "20s"
   namespace_prefix = "${prefix}/"
   strings_as_dimensions = true
-  namedrop = ["prometheus_*", "polkadot_*"]
+  namedrop = ["*prometheus*"]
 EOF
 
 if [ "${expose_prometheus}" = true ]; then
