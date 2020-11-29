@@ -47,7 +47,7 @@ var (
 	noPostTFCleanUp       = len(os.Getenv("POLKADOT_TEST_NO_POST_TF_CLEANUP")) > 0
 	noDeleteOnTermination = len(os.Getenv("POLKADOT_TEST_NO_DELETE_ON_TERMINATION")) > 0
 	forceDeleteBucket     = len(os.Getenv("POLKADOT_TEST_FORCE_DELETE_TF_BUCKET")) > 0
-	azureRegions          = []string{"Central US", "East US", "West US"}
+	azureRegions          = []string{"Central US", "West US2", "West US"}
 	azureSubscriptionID   = os.Getenv("AZURE_SUBSCRIPTION_ID")
 	azureClientID         = os.Getenv("AZURE_CLIENT_ID")
 	azureClientSecret     = os.Getenv("AZURE_CLIENT_SECRET")
@@ -57,6 +57,8 @@ var (
 	azureStorageAccessKey = os.Getenv("AZURE_STORAGE_ACCESS_KEY")
 	sshUser               = "polkadot"
 	terraformDir          = "../../azure"
+	exposePrometheus      = true
+	exposeSSH             = true
 )
 
 func TestBundle(t *testing.T) {
@@ -121,8 +123,8 @@ func TestBundle(t *testing.T) {
 		"cpu_limit":             "1",
 		"ram_limit":             "1",
 		"validator_name":        "test",
-		"expose_ssh":            true,
-		"expose_prometheus":     true,
+		"expose_ssh":            exposeSSH,
+		"expose_prometheus":     exposePrometheus,
 		"node_key":              "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
 		"chain":                 "westend",
 		"admin_email":           "1627_DEV@altoros.com",
@@ -251,7 +253,7 @@ func TestBundle(t *testing.T) {
 		// TEST 9: All the security groups were successfully created
 		t.Run("FirewallTests", func(t *testing.T) {
 
-			if assert.NoError(t, azure.SecurityGroupsCheck(prefix, azureSubscriptionID, azureResourceGroup)) {
+			if assert.NoError(t, azure.SecurityGroupsCheck(prefix, azureSubscriptionID, azureResourceGroup, exposePrometheus, exposeSSH)) {
 				t.Log("INFO. All security groups were successfully created")
 			}
 		})
@@ -287,6 +289,17 @@ func TestBundle(t *testing.T) {
 				t.Log("INFO. There are exactly 5 keys in the Keystore")
 			}
 		})
+
+		if exposePrometheus {
+			// Test 14. Check prometheus target
+			t.Run("Prometheus", func(t *testing.T) {
+				prometheusTarget := terraform.Output(t, terraformOptions, "prometheus_target")
+				require.NotEmpty(t, prometheusTarget)
+				ctx, done := context.WithTimeout(context.Background(), 20*time.Minute)
+				defer done()
+				require.NoError(t, helpers.WaitPrometheusTarget(ctx, prometheusTarget, "validator_value"))
+			})
+		}
 
 	})
 
