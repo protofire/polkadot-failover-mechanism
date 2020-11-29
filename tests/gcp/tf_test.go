@@ -115,6 +115,7 @@ func TestBundle(t *testing.T) {
 			"ram_limit":             "1",
 			"validator_name":        "test",
 			"expose_ssh":            true,
+			"expose_prometheus":     false,
 			"node_key":              "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
 			"chain":                 "westend",
 			"admin_email":           "1627_DEV@altoros.com",
