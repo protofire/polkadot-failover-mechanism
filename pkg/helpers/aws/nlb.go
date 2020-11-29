@@ -74,18 +74,21 @@ func newNLBClientE(region string) (*elbv2.ELBV2, error) {
 	return elbv2.New(sess), nil
 }
 
-// NLBCheck cjecks NLB
-func NLBCheck(t *testing.T, lbs []string, awsRegions []string) bool {
-	var err bool = false
+// NLBCheck checks NLB
+func NLBCheck(t *testing.T, lbs []string, awsRegions []string, exposePrometheus bool) bool {
+	expectedTargetGroupsCount := 6
+	if exposePrometheus {
+		expectedTargetGroupsCount++
+	}
+
+	var err = false
 	for i, lb := range lbs {
-		var errLocal bool = false
+		var errLocal = false
 
 		resultMap := getHealthStatusSliceByLBsARN(t, awsRegions[i], lb)
-		lenResultMap := len(resultMap)
 
-		// Check that there exactly 6 TargetGroup were created
-		if lenResultMap != 6 {
-			t.Errorf("ERROR! Expected 6 TGs at LoadBalancer %s got %d", lb, lenResultMap)
+		if len(resultMap) != expectedTargetGroupsCount {
+			t.Errorf("ERROR! Expected %d TGs at LoadBalancer %s got %d", expectedTargetGroupsCount, lb, len(resultMap))
 			err = true
 		} else {
 			t.Logf("INFO. There are exactly 6 TGs at LoadBalancer %s", lb)

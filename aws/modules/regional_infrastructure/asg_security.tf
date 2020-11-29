@@ -14,7 +14,7 @@ resource "aws_security_group" "validator-node" {
   }
 
   dynamic "ingress" {
-    for_each = var.expose_prometheus ? [1] : [0]
+    for_each = var.expose_prometheus ? [1] : []
     content {
       from_port   = var.prometheus_port
       to_port     = var.prometheus_port

@@ -10,11 +10,13 @@ Additional envs:
 */
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	helpers2 "github.com/protofire/polkadot-failover-mechanism/pkg/helpers"
 
@@ -29,11 +31,13 @@ import (
 
 // Gather environmental variables and set reasonable defaults
 var (
-	awsRegions    = []string{"us-east-1", "eu-central-1", "us-west-1"}
-	awsAccessKeys = []string{os.Getenv("AWS_ACCESS_KEY")}
-	awsSecretKeys = []string{os.Getenv("AWS_SECRET_KEY")}
-	sshUser       = "ec2-user"
-	terraformDir  = "../../aws/"
+	awsRegions       = []string{"us-east-1", "eu-central-1", "us-west-1"}
+	awsAccessKeys    = []string{os.Getenv("AWS_ACCESS_KEY")}
+	awsSecretKeys    = []string{os.Getenv("AWS_SECRET_KEY")}
+	sshUser          = "ec2-user"
+	terraformDir     = "../../aws/"
+	exposePrometheus = true
+	exposeSSH        = true
 )
 
 // A collection of tests that will be run
@@ -95,8 +99,8 @@ func TestBundle(t *testing.T) {
 			"cpu_limit":             "1",
 			"ram_limit":             "1",
 			"validator_name":        "test",
-			"expose_ssh":            true,
-			"expose_prometheus":     true,
+			"expose_ssh":            exposeSSH,
+			"expose_prometheus":     exposePrometheus,
 			"node_key":              "fc9c7cf9b4523759b0a43b15ff07064e70b9a2d39ef16c8f62391794469a1c5e",
 			"chain":                 "westend",
 		},
@@ -201,7 +205,7 @@ func TestBundle(t *testing.T) {
 		// TEST 9: Verify that all the groups that are used by the nodes are valid and contains verified rules only.
 		t.Run("Security groups tests", func(t *testing.T) {
 
-			if assert.True(t, aws.SGCheck(t, awsRegions, prefix)) {
+			if assert.True(t, aws.SGCheck(t, awsRegions, prefix, exposePrometheus, exposeSSH)) {
 				t.Log("INFO. Security groups contains only an appropriate set of rules.")
 			}
 		})
@@ -227,7 +231,8 @@ func TestBundle(t *testing.T) {
 
 		// TEST 12: Check that ELB and each target group confirms that all the instances are healthy
 		t.Run("NLB tests", func(t *testing.T) {
-			if assert.True(t, aws.NLBCheck(t, terraform.OutputList(t, terraformOptions, "lbs"), awsRegions)) {
+			lbs := terraform.OutputList(t, terraformOptions, "lbs")
+			if assert.True(t, aws.NLBCheck(t, lbs, awsRegions, exposePrometheus)) {
 				t.Log("INFO. NLB is configured. All target groups do exists. Health checks responds that instance state is OK.")
 			}
 		})
@@ -237,6 +242,18 @@ func TestBundle(t *testing.T) {
 				t.Log("INFO. There are exactly 5 keys in the Keystore")
 			}
 		})
+
+		if exposePrometheus {
+			// Test 14. Check prometheus target
+			t.Run("Prometheus", func(t *testing.T) {
+				prometheusTarget := terraform.Output(t, terraformOptions, "prometheus_target")
+				require.NotEmpty(t, prometheusTarget)
+				ctx, done := context.WithTimeout(context.Background(), 20*time.Minute)
+				defer done()
+				require.NoError(t, helpers.WaitPrometheusTarget(ctx, prometheusTarget, "validator_value"))
+			})
+		}
+
 	}))
 
 	log.Printf("[DEBUG] failover: Getting validator in distributed mode....")
