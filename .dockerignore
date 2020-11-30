@@ -1,0 +1,16 @@
+.idea
+.git
+.circleci
+.vscode
+*.tfvars
+.terraform/
+*.tfplan
+*.tfstate
+*.backup
+*.lock
+*.info
+*.swp
+.envrc
+azure/backend
+gcp/backend
+aws/backend
