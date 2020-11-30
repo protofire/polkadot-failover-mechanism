@@ -87,6 +87,18 @@ Note that you will have to wait some time before running the scripts, so the API
     terraform plan
     terraform apply -auto-approve
 
+### Expose prometheus metrics
+    
+1. Apply with next variable:
+
+
+    terraform apply -auto-approve -var expose_prometheus=true
+
+2. Get terraform output
+
+
+    terraform output prometheus_target
+
 ### Validate
 
 1. Watch [Polkadot Telemetry](https://telemetry.polkadot.io/) for your node to synchronize with the network.<br />
