@@ -32,7 +32,7 @@ func getValidatorMetric(ctx context.Context, client *cloudwatch.CloudWatch, asgN
 	period := int64(300)
 	metricID := "m1"
 	stat := "Maximum"
-	metricDim1Name := "asg_name"
+	metricDim1Name := "group_name"
 	query := &cloudwatch.MetricDataQuery{
 		Id: &metricID,
 		MetricStat: &cloudwatch.MetricStat{

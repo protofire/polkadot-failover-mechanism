@@ -17,6 +17,7 @@ const (
 )
 
 type Validator struct {
+	GroupName    string
 	InstanceName string
 	Metric       int
 }
@@ -39,7 +40,7 @@ func GetValidatorWithClient(
 
 	var validators []Validator
 
-	for instanceName, points := range points {
+	for instance, points := range points {
 		if len(points) == 0 {
 			continue
 		}
@@ -50,7 +51,8 @@ func GetValidatorWithClient(
 
 		if value == checkValue {
 			validators = append(validators, Validator{
-				InstanceName: instanceName,
+				GroupName:    instance.groupName,
+				InstanceName: instance.instanceID,
 				Metric:       checkValue,
 			})
 			continue

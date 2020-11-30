@@ -15,7 +15,7 @@ resource "aws_cloudwatch_metric_alarm" "health_status" {
   statistic   = "Maximum"
   namespace   = var.prefix
   dimensions = {
-    asg_name = aws_autoscaling_group.polkadot.name
+    group_name = aws_autoscaling_group.polkadot.name
   }
   depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns]
 
@@ -38,7 +38,7 @@ resource "aws_cloudwatch_metric_alarm" "consul_health_status" {
   statistic   = "Maximum"
   namespace   = var.prefix
   dimensions = {
-    asg_name   = aws_autoscaling_group.polkadot.name
+    group_name = aws_autoscaling_group.polkadot.name
     status     = "passing"
     check_name = "Serf Health Status"
     check_id   = "serfHealth"
@@ -65,11 +65,11 @@ resource "aws_cloudwatch_metric_alarm" "disk_used_percent" {
   statistic   = "Maximum"
   namespace   = var.prefix
   dimensions = {
-    asg_name = aws_autoscaling_group.polkadot.name
-    path     = "/data"
-    mode     = "rw"
-    fstype   = "xfs"
-    device   = "nvme1n1"
+    group_name = aws_autoscaling_group.polkadot.name
+    path       = "/data"
+    mode       = "rw"
+    fstype     = "xfs"
+    device     = "nvme1n1"
   }
 
   depends_on = [aws_autoscaling_group.polkadot, aws_sns_topic.sns]

@@ -30,7 +30,7 @@ variable "use_msi" {
 
 variable "azure_regions" {
   type        = list(string)
-  default     = ["Central US", "East US", "West US"]
+  default     = ["Central US", "West US2", "West US"]
   description = "Should be an array consisting of exactly three elements"
   validation {
     condition     = length(var.azure_regions) == 3
@@ -198,4 +198,20 @@ variable "docker_image" {
   description = "Polkadot docker image"
   type        = string
   default     = "parity/polkadot:master-0.8.26-80e3a7e-5d52c096"
+}
+
+variable "expose_prometheus" {
+  description = "Expose prometheus metrics"
+  type        = bool
+  default     = false
+}
+
+variable "prometheus_port" {
+  type    = number
+  default = 9273
+}
+
+variable "prometheus_instance_type" {
+  type    = string
+  default = "Standard_A1_v2"
 }

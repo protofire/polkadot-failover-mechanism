@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2019-11-01/network"
@@ -26,16 +27,16 @@ func (sr securityRuleItem) equals(other securityRuleItem) bool {
 
 func compareRules(testRules []securityRuleItem, actualRules []securityRuleItem) error {
 
-	for _, testRule := range testRules {
+	for _, actualRule := range actualRules {
 		found := false
-		for _, actualRule := range actualRules {
+		for _, testRule := range testRules {
 			if testRule.equals(actualRule) {
 				found = true
 				break
 			}
 		}
 		if !found {
-			return fmt.Errorf("Cannot find coinside rule for %#v", testRule)
+			return fmt.Errorf("cannot find coinside rule for %+v", actualRule)
 		}
 	}
 	return nil
@@ -70,7 +71,7 @@ func getNetworkSecurityRuleClient(subscriptionID string) (network.SecurityRulesC
 }
 
 //nolint
-func getSecurityGroups(prefix, subscriptionID, resourceGroup string) ([]network.SecurityGroup, error) {
+func getSecurityGroups(subscriptionID, resourceGroup string) ([]network.SecurityGroup, error) {
 
 	client, err := getNetworkSecurityGroupClient(subscriptionID)
 
@@ -113,51 +114,99 @@ func filterSecurityGroups(sgs *[]network.SecurityGroup, handler func(sg network.
 
 }
 
-func prepareTestRules() []securityRuleItem {
-	rule1 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"30333"}, destinationAddressesPrefixes: []string{"*"}, priority: 101, protocol: "*", direction: "Inbound"}
-	rule2 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.1.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 103, protocol: "*", direction: "Inbound"}
-	rule3 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"*"}, destinationAddressesPrefixes: []string{"*"}, priority: 100, protocol: "Tcp", direction: "Outbound"}
-	rule4 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.2.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 104, protocol: "*", direction: "Inbound"}
-	rule5 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.0.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 102, protocol: "*", direction: "Inbound"}
-	rule6 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"22"}, destinationAddressesPrefixes: []string{"*"}, priority: 100, protocol: "Tcp", direction: "Inbound"}
-	rule7 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"30333"}, destinationAddressesPrefixes: []string{"*"}, priority: 101, protocol: "*", direction: "Inbound"}
-	rule8 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"*"}, destinationAddressesPrefixes: []string{"*"}, priority: 100, protocol: "Tcp", direction: "Outbound"}
-	rule9 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"22"}, destinationAddressesPrefixes: []string{"*"}, priority: 100, protocol: "Tcp", direction: "Inbound"}
-	rule10 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.2.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 104, protocol: "*", direction: "Inbound"}
-	rule11 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.0.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 102, protocol: "*", direction: "Inbound"}
-	rule12 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.1.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 103, protocol: "*", direction: "Inbound"}
-	rule13 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.2.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 104, protocol: "*", direction: "Inbound"}
-	rule14 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"*"}, destinationAddressesPrefixes: []string{"*"}, priority: 100, protocol: "Tcp", direction: "Outbound"}
-	rule15 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.1.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 103, protocol: "*", direction: "Inbound"}
-	rule16 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"30333"}, destinationAddressesPrefixes: []string{"*"}, priority: 101, protocol: "*", direction: "Inbound"}
-	rule17 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"10.0.0.0/24"}, destinationPortRanges: []string{"8301", "8300", "8600", "8500", "8302"}, destinationAddressesPrefixes: []string{"*"}, priority: 102, protocol: "*", direction: "Inbound"}
-	rule18 := securityRuleItem{sourcePortRanges: []string{"*"}, sourceAddressesPrefixes: []string{"*"}, destinationPortRanges: []string{"22"}, destinationAddressesPrefixes: []string{"*"}, priority: 100, protocol: "Tcp", direction: "Inbound"}
-	return []securityRuleItem{
-		rule1,
-		rule2,
-		rule3,
-		rule4,
-		rule5,
-		rule6,
-		rule7,
-		rule8,
-		rule9,
-		rule10,
-		rule11,
-		rule12,
-		rule13,
-		rule14,
-		rule15,
-		rule16,
-		rule17,
-		rule18,
+func prepareTestRules(exposePrometheus, exposeSSH bool) []securityRuleItem {
+	subnetPorts := []string{"8300", "8301", "8600", "8500", "8302"}
+	if exposePrometheus {
+		subnetPorts = append(subnetPorts, "9273")
 	}
+	sort.Strings(subnetPorts)
+	inboundSubnetRules := []securityRuleItem{
+		{
+			sourcePortRanges:             []string{"*"},
+			sourceAddressesPrefixes:      []string{"10.0.0.0/24"},
+			destinationPortRanges:        subnetPorts,
+			destinationAddressesPrefixes: []string{"*"},
+			priority:                     102,
+			protocol:                     "*",
+			direction:                    "Inbound",
+		},
+		{
+			sourcePortRanges:             []string{"*"},
+			sourceAddressesPrefixes:      []string{"10.1.0.0/24"},
+			destinationPortRanges:        subnetPorts,
+			destinationAddressesPrefixes: []string{"*"},
+			priority:                     103,
+			protocol:                     "*",
+			direction:                    "Inbound",
+		},
+		{
+			sourcePortRanges:             []string{"*"},
+			sourceAddressesPrefixes:      []string{"10.2.0.0/24"},
+			destinationPortRanges:        subnetPorts,
+			destinationAddressesPrefixes: []string{"*"},
+			priority:                     104,
+			protocol:                     "*",
+			direction:                    "Inbound",
+		},
+	}
+	inboundWildcardRules := []securityRuleItem{
+		{
+			sourcePortRanges:             []string{"*"},
+			sourceAddressesPrefixes:      []string{"*"},
+			destinationPortRanges:        []string{"30333"},
+			destinationAddressesPrefixes: []string{"*"},
+			priority:                     101,
+			protocol:                     "*",
+			direction:                    "Inbound",
+		},
+	}
+	if exposeSSH {
+		inboundWildcardRules = append(inboundWildcardRules, securityRuleItem{
+			sourcePortRanges:             []string{"*"},
+			sourceAddressesPrefixes:      []string{"*"},
+			destinationPortRanges:        []string{"22"},
+			destinationAddressesPrefixes: []string{"*"},
+			priority:                     100,
+			protocol:                     "Tcp",
+			direction:                    "Inbound",
+		})
+	}
+	if exposePrometheus {
+		inboundWildcardRules = append(inboundWildcardRules, securityRuleItem{
+			sourcePortRanges:             []string{"*"},
+			sourceAddressesPrefixes:      []string{"*"},
+			destinationPortRanges:        []string{"9273"},
+			destinationAddressesPrefixes: []string{"*"},
+			priority:                     105,
+			protocol:                     "Tcp",
+			direction:                    "Inbound",
+		})
+	}
+
+	outboundRules := []securityRuleItem{
+		{
+			sourcePortRanges:             []string{"*"},
+			sourceAddressesPrefixes:      []string{"*"},
+			destinationPortRanges:        []string{"*"},
+			destinationAddressesPrefixes: []string{"*"},
+			priority:                     100,
+			protocol:                     "Tcp",
+			direction:                    "Outbound",
+		},
+	}
+
+	var rules []securityRuleItem
+	rules = append(rules, inboundSubnetRules...)
+	rules = append(rules, inboundWildcardRules...)
+	rules = append(rules, outboundRules...)
+	return rules
+
 }
 
 // SecurityGroupsCheck checks that all SG rules has been applied correctly
-func SecurityGroupsCheck(prefix, subscriptionID, resourceGroup string) error {
+func SecurityGroupsCheck(prefix, subscriptionID, resourceGroup string, exposePrometheus, exposeSSH bool) error {
 
-	sgs, err := getSecurityGroups(prefix, subscriptionID, resourceGroup)
+	sgs, err := getSecurityGroups(subscriptionID, resourceGroup)
 
 	if err != nil {
 		return err
@@ -187,6 +236,10 @@ func SecurityGroupsCheck(prefix, subscriptionID, resourceGroup string) error {
 			if len(dpr) == 0 {
 				dpr = []string{*sr.DestinationPortRange}
 			}
+			sort.Strings(dpr)
+			sort.Strings(dap)
+			sort.Strings(spr)
+			sort.Strings(sap)
 
 			rule := securityRuleItem{
 				sourceAddressesPrefixes:      sap,
@@ -202,6 +255,6 @@ func SecurityGroupsCheck(prefix, subscriptionID, resourceGroup string) error {
 		}
 	}
 
-	return compareRules(prepareTestRules(), rules)
+	return compareRules(prepareTestRules(exposePrometheus, exposeSSH), rules)
 
 }

@@ -1,12 +1,10 @@
 data "aws_ami" "amazon-linux-2" {
   most_recent = true
-  owners = [
-  "amazon"]
+  owners      = ["amazon"]
 
   filter {
-    name = "name"
-    values = [
-    "amzn2-ami-hvm*"]
+    name   = "name"
+    values = ["amzn2-ami-hvm*"]
   }
 }
 
@@ -26,9 +24,10 @@ resource "aws_launch_template" "polkadot" {
   }
 
   network_interfaces {
-    delete_on_termination = true
-    subnet_id             = var.subnet.id
-    security_groups       = [aws_security_group.validator-node.id]
+    delete_on_termination       = true
+    subnet_id                   = var.subnet.id
+    security_groups             = [aws_security_group.validator-node.id]
+    associate_public_ip_address = var.expose_ssh || var.expose_prometheus
   }
 
   tag_specifications {
@@ -52,22 +51,26 @@ resource "aws_launch_template" "polkadot" {
   }
 
   user_data = base64encode(templatefile("${path.module}/files/init.sh.tpl", {
-    prefix                = var.prefix,
-    primary-region        = var.regions[0],
-    secondary-region      = var.regions[1],
-    tertiary-region       = var.regions[2],
-    autoscaling-name      = "${var.prefix}-polkadot-validator-${var.region_prefix}"
-    chain                 = var.chain,
-    disk_size             = var.disk_size,
-    cpu_limit             = var.cpu_limit,
-    ram_limit             = var.ram_limit,
-    lb-primary            = var.instance_count_primary > 0 ? var.lbs[0].dns_name : "",
-    lb-secondary          = var.instance_count_secondary > 0 ? var.lbs[1].dns_name : "",
-    lb-tertiary           = var.instance_count_tertiary > 0 ? var.lbs[2].dns_name : "",
-    delete_on_termination = var.delete_on_termination,
-    total_instance_count  = var.total_instance_count,
-    docker_image          = var.docker_image,
+    prefix                   = var.prefix,
+    primary-region           = var.regions[0],
+    secondary-region         = var.regions[1],
+    tertiary-region          = var.regions[2],
+    autoscaling-name         = "${var.prefix}-polkadot-validator-${var.region_prefix}"
+    chain                    = var.chain,
+    disk_size                = var.disk_size,
+    cpu_limit                = var.cpu_limit,
+    ram_limit                = var.ram_limit,
+    lb-primary               = var.instance_count_primary > 0 ? var.lbs[0].dns_name : "",
+    lb-secondary             = var.instance_count_secondary > 0 ? var.lbs[1].dns_name : "",
+    lb-tertiary              = var.instance_count_tertiary > 0 ? var.lbs[2].dns_name : "",
+    delete_on_termination    = var.delete_on_termination,
+    total_instance_count     = var.total_instance_count,
+    docker_image             = var.docker_image,
+    prometheus_port          = var.prometheus_port,
+    polkadot_prometheus_port = local.polkadot_prometheus_port,
+    expose_prometheus        = var.expose_prometheus,
   }))
+
 }
 
 resource "aws_autoscaling_group" "polkadot" {
@@ -83,17 +86,18 @@ resource "aws_autoscaling_group" "polkadot" {
 
   launch_template {
     id      = aws_launch_template.polkadot.id
-    version = "$Latest"
+    version = aws_launch_template.polkadot.latest_version
   }
 
-  target_group_arns = [
+  target_group_arns = flatten([
     aws_lb_target_group.http.id,
     aws_lb_target_group.dns.id,
     aws_lb_target_group.rpc.id,
     aws_lb_target_group.lan.id,
     aws_lb_target_group.wan.id,
-    aws_lb_target_group.polkadot.id
-  ]
+    aws_lb_target_group.polkadot.id,
+    length(aws_lb_target_group.prometheus) > 0 ? [aws_lb_target_group.prometheus[0].id] : []
+  ])
 
   vpc_zone_identifier = [var.subnet.id]
 
@@ -103,5 +107,7 @@ resource "aws_autoscaling_group" "polkadot" {
     aws_ssm_parameter.types,
     aws_ssm_parameter.name,
     aws_ssm_parameter.cpu_limit,
-  aws_ssm_parameter.ram_limit]
+    aws_ssm_parameter.ram_limit
+  ]
+
 }

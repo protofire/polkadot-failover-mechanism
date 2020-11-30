@@ -20,7 +20,12 @@ import (
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 )
 
-type InstanceMetricPoints map[string][]*monitoringpb.Point
+type instance struct {
+	instanceID string
+	groupName  string
+}
+
+type InstanceMetricPoints map[instance][]*monitoringpb.Point
 
 // nolint
 func getMetricsClient() (*monitoring.MetricClient, error) {
@@ -123,14 +128,15 @@ func listMetrics(
 		}
 
 		resource := timeSeries.Resource
-		// this is from instance hostname. It should coincide with names in other API responses
 		instanceID := resource.Labels["instance_id"]
 		projectID := resource.Labels["project_id"]
 
 		if projectID != project || !strings.HasPrefix(instanceID, helpers.GetPrefix(prefix)) {
 			continue
 		}
-		results[instanceID] = timeSeries.Points
+		metric := timeSeries.Metric
+		groupName := metric.Labels["group_name"]
+		results[instance{instanceID: instanceID, groupName: groupName}] = timeSeries.Points
 
 	}
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 ### Default trap for all errors in this script
-default_trap () 
+default_trap ()
 {
   echo "Catching error on line $LINENO. Shutting down instance";
   shutdown -P +1
   curl -i -XPOST 'http://localhost:12500/telegraf' --data-binary "health value=100000"
-  /usr/local/bin/consul leave; 
+  /usr/local/bin/consul leave;
   docker stop polkadot
 }
 
@@ -19,7 +19,7 @@ data="/data"
 polkadot_user_id=1000
 
 # Install custom repos
-curl -o /etc/yum.repos.d/azure-cli.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/azure-cli.repo 
+curl -o /etc/yum.repos.d/azure-cli.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/azure-cli.repo
 curl -o /etc/yum.repos.d/influxdb.repo -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/influxdb.repo
 
 ### Start of main script
@@ -94,7 +94,8 @@ trap default_trap ERR
 curl -s -o /usr/local/bin/validator.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/validator.sh
 source /usr/local/bin/validator.sh
 
-start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data"
+start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data" false \
+                            "${expose_prometheus}" "${polkadot_prometheus_port}"
 
 # Since polkadot container does not have curl inside - port it from host instance
 
@@ -116,8 +117,8 @@ curl -o /usr/local/bin/install_consulate.sh -L https://raw.githubusercontent.com
 curl -o /usr/local/bin/telegraf.sh -L https://raw.githubusercontent.com/protofire/polkadot-failover-mechanism/dev/init-helpers/azure/telegraf.sh
 
 source /usr/local/bin/install_consul.sh
-source /usr/local/bin/install_consulate.sh  
-source /usr/local/bin/telegraf.sh "${prefix}" "$hostname"
+source /usr/local/bin/install_consulate.sh
+source /usr/local/bin/telegraf.sh "${prefix}" "$hostname" "${group_name}" "${expose_prometheus}" "${polkadot_prometheus_port}" "${prometheus_port}"
 /usr/bin/systemctl enable telegraf
 /usr/bin/systemctl restart telegraf
 
@@ -159,7 +160,7 @@ chmod 700 /usr/local/bin/key-insert.sh
 chmod 700 /usr/local/bin/watcher.sh
 
 ### This will add a crontab entry that will check nodes health from inside the VM and send data to the Azure Monitor
-(echo '* * * * * /usr/local/bin/watcher.sh') | crontab -
+(echo -e 'MAILTO=""\n* * * * * /usr/local/bin/watcher.sh') | crontab -
 
 # Create lock for the instance
 n=0
@@ -171,7 +172,7 @@ until [ $n -ge 6 ]; do
   set -eE
   trap default_trap ERR
   node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep -c Full)
-  if [ "$node" != 1 ]; then 
+  if [ "$node" != 1 ]; then
     echo "ERROR! Node either does not work or work in not correct way"
     default_trap
   fi
@@ -181,13 +182,14 @@ until [ $n -ge 6 ]; do
   /usr/local/bin/consul lock prefix \
     "source /usr/local/bin/validator.sh && \
     /usr/local/bin/double-signing-control.sh && \
-    start_polkadot_passive_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data true && \
+    start_polkadot_passive_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data true ${expose_prometheus} ${polkadot_prometheus_port} && \
     /usr/local/bin/key-insert.sh '${key_vault_name}' '${prefix}' && \
     consul kv delete blocks/.lock && \
     (consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
-    start_polkadot_validator_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data $NAME $NODEKEY"
+    start_polkadot_validator_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data $NAME $NODEKEY ${expose_prometheus} ${polkadot_prometheus_port}"
 
-  start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data"
+  start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data" false \
+                              "${expose_prometheus}" "${polkadot_prometheus_port}"
   pkill best-grep.sh
   sleep 10;
   n=$((n+1))

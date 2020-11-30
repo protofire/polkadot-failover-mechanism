@@ -4,12 +4,22 @@ resource "aws_security_group" "validator-node" {
   vpc_id      = var.vpc.id
 
   dynamic "ingress" {
-    for_each = var.expose_ssh ? [1] : [0]
+    for_each = var.expose_ssh ? [1] : []
     content {
       from_port   = 22
       to_port     = 22
       protocol    = "TCP"
       cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  dynamic "ingress" {
+    for_each = var.expose_prometheus ? [1] : []
+    content {
+      from_port   = var.prometheus_port
+      to_port     = var.prometheus_port
+      protocol    = "TCP"
+      cidr_blocks = [var.cidrs[0], var.cidrs[1], var.cidrs[2]]
     }
   }
 

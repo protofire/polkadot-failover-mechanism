@@ -209,8 +209,13 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] failover: Create. Found %d managent instance groups", len(instanceGroups))
+	log.Printf(
+		"[DEBUG] failover: Create. Found %d managent instance groups with %d instances",
+		len(instanceGroups),
+		instanceGroups.InstancesCount(),
+	)
 
+	initialInstancesCount := instanceGroups.InstancesCount()
 	positions := make([]int, len(failover.Locations))
 
 	for i := 0; i < len(instanceGroups); i++ {
@@ -242,16 +247,18 @@ func resourcePolkadotFailoverCreateOrUpdate(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	err = gcp.WaitForInstancesCount(
-		ctx,
-		computeClient,
-		failover.Project,
-		failover.Prefix,
-		failover.InstancesCount(),
-		failover.Locations...,
-	)
-	if err != nil {
-		return diag.FromErr(err)
+	if initialInstancesCount > 0 {
+		err = gcp.WaitForInstancesCount(
+			ctx,
+			computeClient,
+			failover.Project,
+			failover.Prefix,
+			failover.InstancesCount(),
+			failover.Locations...,
+		)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	id, err := failover.ID()

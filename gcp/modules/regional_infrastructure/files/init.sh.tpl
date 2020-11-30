@@ -33,8 +33,9 @@ curl -s -o /usr/local/bin/validator.sh -L https://raw.githubusercontent.com/prot
 
 source /usr/local/bin/validator.sh
 source /usr/local/bin/install_consul.sh
-source /usr/local/bin/install_consulate.sh  
-source /usr/local/bin/telegraf.sh "${prefix}" "$hostname" "${project}" "${metrics_namespace}" "$${zone##*/}"
+source /usr/local/bin/install_consulate.sh
+source /usr/local/bin/telegraf.sh "${prefix}" "$hostname" "${project}" "${metrics_namespace}" "$${zone##*/}" "${group_name}" \
+                                  "${expose_prometheus}" "${polkadot_prometheus_port}" "${prometheus_port}"
 /usr/bin/systemctl enable telegraf
 /usr/bin/systemctl restart telegraf
 
@@ -88,7 +89,8 @@ NODEKEY_NAME=$(gcloud secrets list --format=json --filter="name ~ ${prefix}_node
 NODEKEY_NAME_ACCESS=$(gcloud secrets versions list "$NODEKEY_NAME" --format json | jq '.[] | select(.state == "ENABLED") | .name' -r)
 NODEKEY=$(gcloud secrets versions access "$NODEKEY_NAME_ACCESS" --secret="$NODEKEY_NAME" --format json | jq .payload.data -r | base64 -d)
 
-start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data"
+start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data" false \
+                            "${expose_prometheus}" "${polkadot_prometheus_port}"
 
 exit_code=1
 until [ $exit_code -eq 0 ]; do
@@ -114,7 +116,7 @@ chmod 700 /usr/local/bin/key-insert.sh
 chmod 700 /usr/local/bin/watcher.sh
 
 ### This will add a crontab entry that will check nodes health from inside the VM and send data to the GCP Monitor
-(echo '* * * * * /usr/local/bin/watcher.sh') | crontab -
+(echo -e 'MAILTO=""\n* * * * * /usr/local/bin/watcher.sh') | crontab -
 
 # Create lock for the instance
 n=0
@@ -126,23 +128,23 @@ until [ $n -ge 6 ]; do
   set -eE
   trap default_trap ERR
   node=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_nodeRoles", "params":[]}' http://localhost:9933 | grep Full | wc -l)
-  if [ "$node" != 1 ]; then 
+  if [ "$node" != 1 ]; then
     echo "ERROR! Node either does not work or work in not correct way"
     default_trap
   fi
   trap - ERR
   set +eE
-  
+
   /usr/local/bin/consul lock prefix \
     "source /usr/local/bin/validator.sh && \
     /usr/local/bin/double-signing-control.sh && \
-    start_polkadot_passive_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data true && \
+    start_polkadot_passive_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data true ${expose_prometheus} ${polkadot_prometheus_port} && \
     /usr/local/bin/key-insert.sh ${prefix} && \
     (consul kv delete blocks/.lock && \
     consul lock blocks \"while true; do /usr/local/bin/best-grep.sh; done\" &) && \
-    start_polkadot_validator_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data $NAME $NODEKEY"
+    start_polkadot_validator_mode $docker_name $CPU $${RAM}GB ${docker_image} ${chain} $data $NAME $NODEKEY ${expose_prometheus} ${polkadot_prometheus_port}"
 
-  start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data"
+  start_polkadot_passive_mode "$docker_name" "$CPU" "$${RAM}GB" "${docker_image}" "${chain}" "$data" false "${expose_prometheus}" "${polkadot_prometheus_port}"
   pkill best-grep.sh
   sleep 10;
   n=$((n+1))

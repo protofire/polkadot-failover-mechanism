@@ -58,7 +58,7 @@ resource "azurerm_network_security_rule" "consul-0" {
   access                      = "Allow"
   protocol                    = "*"
   source_port_range           = "*"
-  destination_port_ranges     = ["8300", "8301", "8302", "8500", "8600"]
+  destination_port_ranges     = local.subnet_ports
   source_address_prefix       = var.subnet_cidrs[0]
   destination_address_prefix  = "*"
   resource_group_name         = var.rg
@@ -72,7 +72,7 @@ resource "azurerm_network_security_rule" "consul-1" {
   access                      = "Allow"
   protocol                    = "*"
   source_port_range           = "*"
-  destination_port_ranges     = ["8300", "8301", "8302", "8500", "8600"]
+  destination_port_ranges     = local.subnet_ports
   source_address_prefix       = var.subnet_cidrs[1]
   destination_address_prefix  = "*"
   resource_group_name         = var.rg
@@ -86,8 +86,23 @@ resource "azurerm_network_security_rule" "consul-2" {
   access                      = "Allow"
   protocol                    = "*"
   source_port_range           = "*"
-  destination_port_ranges     = ["8300", "8301", "8302", "8500", "8600"]
+  destination_port_ranges     = local.subnet_ports
   source_address_prefix       = var.subnet_cidrs[2]
+  destination_address_prefix  = "*"
+  resource_group_name         = var.rg
+  network_security_group_name = azurerm_network_security_group.polkadot.name
+}
+
+resource "azurerm_network_security_rule" "prometheus" {
+  count                       = var.expose_prometheus ? 1 : 0
+  name                        = "prometheus"
+  priority                    = 105
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = var.prometheus_port
+  source_address_prefix       = "*"
   destination_address_prefix  = "*"
   resource_group_name         = var.rg
   network_security_group_name = azurerm_network_security_group.polkadot.name

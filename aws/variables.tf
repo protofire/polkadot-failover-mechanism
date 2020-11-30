@@ -162,3 +162,18 @@ variable "validator_metric" {
   default     = "validator_value"
 }
 
+variable "expose_prometheus" {
+  description = "Expose prometheus metrics"
+  type        = bool
+  default     = false
+}
+
+variable "prometheus_port" {
+  type    = number
+  default = 9273
+}
+
+variable "prometheus_instance_type" {
+  type    = string
+  default = "t3.small"
+}

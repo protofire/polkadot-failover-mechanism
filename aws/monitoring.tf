@@ -35,7 +35,7 @@ resource "aws_cloudwatch_metric_alarm" "validator_count" {
         stat        = "Maximum"
         namespace   = var.prefix
         dimensions = {
-          asg_name = metric_query.value
+          group_name = metric_query.value
         }
       }
     }
@@ -88,7 +88,7 @@ resource "aws_cloudwatch_metric_alarm" "validator_overflow" {
         stat        = "Maximum"
         namespace   = var.prefix
         dimensions = {
-          asg_name = metric_query.value
+          group_name = metric_query.value
         }
       }
     }
