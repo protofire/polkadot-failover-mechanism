@@ -1,0 +1,10 @@
+global:
+  scrape_interval:     15s
+  external_labels:
+    monitor: 'polkadot'
+
+scrape_configs:
+  - job_name: 'polkadot'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['${target_url}']

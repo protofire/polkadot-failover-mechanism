@@ -72,6 +72,8 @@ Either clone this repo using `git clone` command or simply download it from Web 
 
 
     terraform output prometheus_target
+    
+3. Adjust your prometheus configuration file and import [grafana dashboard](../prometheus/grafana/dashboards/polkadot.json) 
 
 ### Validate
 

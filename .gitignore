@@ -13,9 +13,11 @@
 !aws/terraform.tfvars.example
 !gcp/terraform.tfvars.example
 !azure/terraform.tfvars.example
+!prometheus/**/*.json
 .envrc
 azure/backend/*.tf
 gcp/backend/*.tf
 aws/backend/*.tf
+prometheus/prometheus.yml
 .pytest_cache
 terraform-provider-polkadot
