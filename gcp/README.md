@@ -99,6 +99,8 @@ Note that you will have to wait some time before running the scripts, so the API
 
     terraform output prometheus_target
 
+3. Adjust your prometheus configuration file and import [grafana dashboard](../prometheus/grafana/dashboards/polkadot.json) 
+
 ### Validate
 
 1. Watch [Polkadot Telemetry](https://telemetry.polkadot.io/) for your node to synchronize with the network.<br />

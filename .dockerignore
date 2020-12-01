@@ -14,3 +14,4 @@
 azure/backend
 gcp/backend
 aws/backend
+prometheus

@@ -121,6 +121,8 @@ You will need to clone this repository and its submodules. Use `git clone --recu
 
     terraform output prometheus_target
 
+3. Adjust your prometheus configuration file and import [grafana dashboard](../prometheus/grafana/dashboards/polkadot.json) 
+
 ### Validate
 
 1. Watch [Polkadot Telemetry](https://telemetry.polkadot.io/) for your node to synchronize with the network.<br />
